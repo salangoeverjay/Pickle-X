@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\User;
+
 // Small formatting helpers shared by models and views.
 
 if (! function_exists('initials')) {
@@ -16,7 +18,7 @@ if (! function_exists('palette_color')) {
     /** Stable avatar color for things without a chosen one (walk-ins, requests). */
     function palette_color(int $n): string
     {
-        return array_keys(App\Models\User::AVATARS)[$n % count(App\Models\User::AVATARS)];
+        return array_keys(User::AVATARS)[$n % count(User::AVATARS)];
     }
 }
 
