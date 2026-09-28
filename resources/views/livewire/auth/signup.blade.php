@@ -38,7 +38,7 @@
                 <div role="radiogroup" aria-label="Account type" class="grid grid-cols-2 gap-2.5">
                     @foreach ([
                         ['member', 'Member', 'Join open plays, track stats and rankings', 'users', 'bg-lime text-on-lime'],
-                        ['organizer', 'Organizer', 'Host open plays · needs admin approval', 'court', 'bg-court text-white'],
+                        ['organizer', 'Organizer', 'Play and host open plays · hosting needs approval', 'court', 'bg-court text-white'],
                     ] as [$value, $label, $hint, $icon, $iconClass])
                         <label class="group relative flex cursor-pointer flex-col items-start gap-2 rounded-[18px] border-2 border-line p-4 text-ink transition active:scale-97 has-checked:border-ink has-checked:bg-surface has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-focus">
                             <input type="radio" name="role" value="{{ $value }}" wire:model.live="role" class="sr-only">
@@ -88,7 +88,7 @@
 
                         <div class="flex items-start gap-3 rounded-2xl border border-hot-line bg-hot-soft px-4 py-3.5">
                             <x-icon name="shield" :stroke="1.9" class="mt-px text-hot" />
-                            <span class="text-sm leading-[1.45] text-ink">A PickleX admin reviews every organizer. You can log in to organizer tools once your request is approved.</span>
+                            <span class="text-sm leading-[1.45] text-ink">One account does both. You can play as a member straight away, and organizer tools switch on for this same account once a PickleX admin approves your club.</span>
                         </div>
                     </div>
                 @endif
@@ -115,8 +115,8 @@
                 <div class="flex flex-col gap-2.5">
                     <h1 class="m-0 font-display text-4xl leading-none font-extrabold tracking-[-0.04em] lg:text-[46px]">Request sent</h1>
                     <p class="m-0 text-base leading-[1.55] text-ink2">
-                        Thanks, {{ Str::before(trim($name), ' ') ?: 'there' }}. A PickleX admin will review <strong class="text-ink">{{ $club }}</strong>.
-                        Log in with <strong class="text-ink">{{ $email }}</strong> once you're approved.
+                        Thanks, {{ Str::before(trim($name), ' ') ?: 'there' }}. Your account is ready, so you can join open plays as a player right away.
+                        A PickleX admin will review <strong class="text-ink">{{ $club }}</strong>, and organizer tools unlock on this same account once it's approved.
                     </p>
                 </div>
 
@@ -144,6 +144,9 @@
                 </ol>
 
                 <div class="flex flex-wrap gap-2.5">
+                    <a href="{{ route('member.dashboard') }}" wire:navigate class="inline-flex h-13 cursor-pointer items-center gap-2 rounded-full border-2 border-cta-border bg-lime px-5.5 text-[15px] font-extrabold text-on-lime shadow-cta transition hover:brightness-96 active:scale-97">
+                        Start playing<x-icon name="arrow-right" :size="18" :stroke="2.2" />
+                    </a>
                     @if (config('app.demo'))
                         <form method="POST" action="{{ route('demo-login') }}">
                             @csrf

@@ -1,5 +1,5 @@
 {{-- Member-facing open play card (live or upcoming) with join / leave. --}}
-@props(['play', 'joined' => false])
+@props(['play', 'joined' => false, 'paid' => false, 'claimed' => false])
 
 @php
     $count = $play->playerCount();
@@ -38,11 +38,27 @@
         </div>
     </div>
 
-    @if ($joined)
-        <button type="button" wire:click="leave({{ $play->id }})" aria-pressed="true" class="h-12 cursor-pointer rounded-full border-[1.5px] border-line2 bg-transparent text-[15px] font-bold text-ink transition hover:brightness-96 active:scale-97">You're in · Leave</button>
-    @else
-        <button type="button" wire:click="join({{ $play->id }})" aria-pressed="false" @disabled($full) class="h-12 cursor-pointer rounded-full border-[1.5px] border-lime bg-lime text-[15px] font-bold text-on-lime transition hover:brightness-96 active:scale-97 disabled:cursor-not-allowed disabled:opacity-60">
-            {{ $full ? 'Full' : ($play->isLive() ? 'Join and get in line' : 'Join open play') }}
-        </button>
-    @endif
+    <div class="flex flex-wrap gap-2">
+        @if ($joined)
+            <button type="button" wire:click="leavePlay({{ $play->id }})" aria-pressed="true" class="h-12 min-w-40 flex-1 cursor-pointer rounded-full border-[1.5px] border-line2 bg-transparent text-[15px] font-bold text-ink transition hover:brightness-96 active:scale-97">You're in · Leave</button>
+        @else
+            <button type="button" wire:click="joinPlay({{ $play->id }})" aria-pressed="false" @disabled($full) class="h-12 min-w-40 flex-1 cursor-pointer rounded-full border-[1.5px] border-lime bg-lime text-[15px] font-bold text-on-lime transition hover:brightness-96 active:scale-97 disabled:cursor-not-allowed disabled:opacity-60">
+                {{ $full ? 'Full' : ($play->isLive() ? 'Join and get in line' : 'Join open play') }}
+            </button>
+        @endif
+        @if ($play->hasPaymentQr() && $paid)
+            <span class="inline-flex h-12 items-center gap-1.5 rounded-full bg-lime-soft px-4 text-sm font-extrabold text-lime-text"><x-icon name="check" :size="17" :stroke="2.4" />Paid</span>
+        @elseif ($play->hasPaymentQr())
+            <button type="button" wire:click="openPay({{ $play->id }})" @class([
+                'inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-full border-[1.5px] px-4.5 text-sm font-bold transition hover:brightness-96 active:scale-97',
+                'border-line2 bg-transparent text-ink' => $claimed,
+                'border-ink bg-ink text-bg' => ! $claimed,
+            ])><x-icon name="qr" :size="18" />{{ $claimed ? 'Payment sent · view QR' : 'Pay '.$play->feeLabel() }}</button>
+        @endif
+        @if ($play->isLive() && $play->share_code)
+            <a href="{{ route('live', $play->share_code) }}" wire:navigate class="inline-flex h-12 items-center justify-center gap-2 rounded-full border-[1.5px] border-line2 px-4.5 text-sm font-bold text-ink transition hover:brightness-96 active:scale-97">
+                <x-icon name="eye" :size="18" />Watch live
+            </a>
+        @endif
+    </div>
 </div>

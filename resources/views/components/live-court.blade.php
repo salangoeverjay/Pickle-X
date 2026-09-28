@@ -9,7 +9,7 @@
     $players = $busy ? collect([...$court['a']['ids'], ...$court['b']['ids']])->map(function ($id) use ($play, $me) {
         $p = $play->participant($id);
 
-        return [$p?->initials() ?? '?', $p?->color() ?? '#FFFFFF', $me && $p?->user_id === $me->id ? 'var(--color-lime)' : '#FFFFFF'];
+        return [$p?->initials() ?? '?', $p?->color() ?? '#FFFFFF', $me && $p?->user_id === $me->id ? 'var(--color-lime)' : '#FFFFFF', $p?->avatarUrl()];
     })->all() : [];
     $elapsed = $busy ? now()->timestamp - $court['started_at'] : 0;
     $label = $busy

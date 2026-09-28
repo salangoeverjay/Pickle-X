@@ -24,7 +24,7 @@ class MemberStatsTest extends TestCase
     {
         parent::setUp();
         $this->travelTo(now()->parse('2026-09-30 12:00')); // a Wednesday, so "hours ago" stays in this week
-        $org = User::factory()->create(['role' => 'organizer', 'organizer_status' => 'approved']);
+        $org = User::factory()->create(['organizer_status' => 'approved']);
         $this->play = OpenPlay::create([
             'organizer_id' => $org->id, 'title' => 'Test', 'club' => 'Club', 'venue' => 'Venue',
             'starts_at' => now(), 'ends_at' => now()->addHours(3), 'courts' => 2, 'cap' => 24, 'status' => 'done',
@@ -54,7 +54,9 @@ class MemberStatsTest extends TestCase
         $member = User::factory()->create(['name' => 'Zero Games', 'role' => 'member']);
         foreach (['member.dashboard', 'member.played-with', 'member.rankings'] as $route) {
             $this->actingAs($member)->get(route($route))->assertOk();
-            $this->actingAs(User::factory()->create(['role' => 'organizer', 'organizer_status' => 'approved']))->get(route($route))->assertForbidden();
+            // Organizers play on the same account; only admins are kept out.
+            $this->actingAs(User::factory()->create(['organizer_status' => 'approved']))->get(route($route))->assertOk();
+            $this->actingAs(User::factory()->create(['role' => 'admin']))->get(route($route))->assertForbidden();
         }
         $this->actingAs($member)->get(route('member.dashboard'))->assertSee('Hi, Zero')->assertSee('0%')->assertSee('No games logged yet');
     }
@@ -70,12 +72,12 @@ class MemberStatsTest extends TestCase
         $this->assertSame([3, 2, 1, 67], [$s->count(), $s->wins(), $s->losses(), $s->rate()]);
         $this->assertSame(['L', 'W', 'W'], $s->form());
         $this->assertSame('L1', $s->streak());
-        $this->assertSame('2–1', $s->lastTen());
+        $this->assertSame('2-1', $s->lastTen());
         // Walk-ins are skipped.
         $this->assertSame([$ben->id], $s->partners->pluck('user.id')->all());
         $this->assertEqualsCanonicalizing([$mika->id, $rico->id, $ben->id], $s->opponents->pluck('user.id')->all());
         $this->assertSame(2 * 10 + 3 * 3 + 1 * 2, $s->points());
-        $this->assertSame('6–11', $s->recent()->first()->score);
+        $this->assertSame('6-11', $s->recent()->first()->score);
         $this->assertSame('Guest', $s->recent()->first()->partner);
         $this->assertSame(3, $s->weeks()[7]->v);
         $this->assertSame('This wk', $s->weeks()[7]->label);
@@ -121,7 +123,7 @@ class MemberStatsTest extends TestCase
         $kai = User::firstWhere('email', 'kai@picklex.app');
 
         $this->actingAs($kai)->get(route('member.dashboard'))
-            ->assertOk()->assertSee('Live · Monday Night Open Play')->assertSee('Top partners');
+            ->assertOk()->assertSee('Live · Monday Night Open Play')->assertSee('Check in to get on court')->assertSee('Top partners');
         $this->actingAs($kai)->get(route('member.rankings'))->assertOk()->assertSee('Panabo Dink Society');
         $this->actingAs($kai)->get(route('member.played-with'))->assertOk()->assertSee('partners ·', false);
     }

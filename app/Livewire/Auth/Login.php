@@ -39,18 +39,20 @@ class Login extends Component
 
         RateLimiter::clear($key);
 
-        // Organizers can only log in once an admin has approved them.
+        // One account, two modes: organizer requests never block playing.
         $user = Auth::user();
-        if ($user->role === 'organizer' && $user->organizer_status !== 'approved') {
-            Auth::logout();
-
-            throw ValidationException::withMessages(['email' => $user->organizer_status === 'declined'
-                ? 'Your organizer request was not approved. Contact the PickleX team to reapply.'
-                : "Your organizer request for {$user->club} is still waiting for admin approval.",
-            ]);
-        }
+        $toast = match ($user->organizer_status) {
+            'approved' => "Welcome back, {$user->firstName()}. You can organize and play.",
+            'pending' => "Signed in as a player. Your organizer request for {$user->club} is still in review.",
+            'declined' => 'Signed in as a player. Your organizer request was not approved.',
+            default => null,
+        };
 
         session()->regenerate();
+        session()->forget('mode');
+        if ($toast) {
+            session()->flash('toast', $toast);
+        }
 
         return $this->redirectIntended(route($user->homeRoute()), navigate: true);
     }

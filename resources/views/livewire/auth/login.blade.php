@@ -2,8 +2,6 @@
 
 <x-auth-shell>
     <x-slot:aside class="w-[46%] bg-court text-white">
-        <div aria-hidden="true" class="court-grid pointer-events-none absolute inset-0"></div>
-
         <a href="{{ route('home') }}" wire:navigate aria-label="PickleX home" class="relative self-start">
             <x-logo class="text-[28px]" />
         </a>
@@ -17,7 +15,7 @@
                 <span class="size-1.75 animate-live rounded-full bg-lime"></span>COURT 3 · <x-live-timer />
             </span>
             <h2 class="m-0 font-display text-[46px] leading-[.98] font-extrabold tracking-[-0.04em] text-balance">Tonight's queue is already moving.</h2>
-            <p class="m-0 max-w-110 text-base leading-[1.55] text-white/90">Log in to see when you're up next — or to run the courts for your club.</p>
+            <p class="m-0 max-w-110 text-base leading-[1.55] text-white/90">Log in to see when you're up next, or to run the courts for your club.</p>
         </div>
     </x-slot:aside>
 

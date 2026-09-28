@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -19,8 +20,6 @@ class Settings extends Component
     public string $phone = '';
 
     public string $club = '';
-
-    public string $avatar = '';
 
     // Password
     public string $currentPassword = '';
@@ -38,6 +37,13 @@ class Settings extends Component
 
     public bool $confirmingDelete = false;
 
+    // "Organize open plays" request (players in member mode)
+    public string $applyClub = '';
+
+    public string $applyCity = '';
+
+    public ?string $applyError = null;
+
     public function mount()
     {
         $user = $this->user();
@@ -47,7 +53,6 @@ class Settings extends Component
             'email' => $user->email,
             'phone' => (string) $user->phone,
             'club' => (string) $user->club,
-            'avatar' => $user->color(),
             'courts' => (int) $user->pref('defaults.courts'),
             'raceTo' => (int) $user->pref('defaults.race_to'),
             'rotation' => $user->pref('defaults.rotation'),
@@ -66,31 +71,84 @@ class Settings extends Component
             'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             'phone' => 'nullable|string|max:30',
             'club' => 'nullable|string|max:255',
-            'avatar' => ['required', Rule::in(array_keys(User::AVATARS))],
         ], [
             'name.required' => 'Your name cannot be empty.',
             'email.required' => 'Enter a valid email address.',
             'email.email' => 'Enter a valid email address.',
             'email.unique' => 'Another account already uses that email address.',
             'phone.max' => 'That mobile number is too long.',
-            'avatar.*' => 'Pick one of the avatar colors.',
         ]);
 
         $user->fill([
             'name' => $data['name'],
             'email' => $data['email'],
             'phone' => trim($data['phone'] ?? '') ?: null,
-            'avatar_color' => $data['avatar'],
         ]);
 
-        // Organizer club names change through admin review, not here.
-        if ($user->isMember()) {
+        // Organizer club names (approved or under review) change through admin review, not here.
+        if ($this->homeClubEditable($user)) {
             $user->club = trim($data['club'] ?? '') ?: null;
         }
 
         $user->save();
 
         $this->dispatch('toast', message: 'Profile saved');
+    }
+
+    // ---------------------------------------------------------------- profile picture
+    // Called from the picker dialog (resources/js/avatar-picker.js); each returns ['ok' => bool, 'error' => ?string].
+
+    public function usePreset(string $id): array
+    {
+        abort_unless(isset(User::AVATAR_PRESETS[$id]), 422);
+
+        return $this->setPicture("preset:{$id}", null, 'Avatar updated: '.User::AVATAR_PRESETS[$id]);
+    }
+
+    public function useInitials(string $color): array
+    {
+        abort_unless(isset(User::AVATARS[$color]), 422);
+
+        return $this->setPicture(null, $color, 'Showing your initials');
+    }
+
+    /** $dataUrl: the 256×256 JPEG the picker cropped in the browser. */
+    public function usePhoto(string $dataUrl): array
+    {
+        $bytes = preg_match('#^data:image/jpeg;base64,([A-Za-z0-9+/]+={0,2})$#', $dataUrl, $m) ? base64_decode($m[1], true) : false;
+        $info = $bytes && strlen($bytes) <= 400_000 ? @getimagesizefromstring($bytes) : false;
+        if (! $info || $info[2] !== IMAGETYPE_JPEG || $info[0] !== 256 || $info[1] !== 256) {
+            return ['ok' => false, 'error' => "We couldn't process that photo. Try another one."];
+        }
+
+        // Re-encode so only clean pixel data is stored and served.
+        if (function_exists('imagecreatefromstring') && ($img = @imagecreatefromstring($bytes))) {
+            ob_start();
+            imagejpeg($img, null, 88);
+            $bytes = ob_get_clean();
+            imagedestroy($img);
+        }
+
+        DB::table('avatar_photos')->updateOrInsert(['user_id' => $this->user()->id], ['data' => base64_encode($bytes), 'created_at' => now(), 'updated_at' => now()]);
+
+        return $this->setPicture('photo:'.substr(sha1($bytes), 0, 12), null, 'Profile photo updated', keepPhoto: true);
+    }
+
+    public function removePicture(): void
+    {
+        $this->setPicture(null, null, 'Picture removed. Your initials are showing again.');
+    }
+
+    private function setPicture(?string $avatar, ?string $color, string $toast, bool $keepPhoto = false): array
+    {
+        $user = $this->user();
+        $user->forceFill(['avatar' => $avatar] + ($color ? ['avatar_color' => $color] : []))->save();
+        if (! $keepPhoto) {
+            DB::table('avatar_photos')->where('user_id', $user->id)->delete();
+        }
+        $this->dispatch('toast', message: $toast);
+
+        return ['ok' => true, 'error' => null, 'avatar' => $avatar, 'url' => $user->avatarUrl(), 'color' => $user->color()];
     }
 
     public function savePassword()
@@ -129,7 +187,39 @@ class Settings extends Component
         $user->setPref('defaults.rotation', $this->rotation);
         $user->save();
 
-        $this->dispatch('toast', message: 'Defaults saved — new open plays will start with them');
+        $this->dispatch('toast', message: 'Defaults saved. New open plays will start with them.');
+    }
+
+    /** A player asks to host open plays on this same account. */
+    public function requestOrganizer()
+    {
+        $user = $this->user();
+        abort_unless($user->mode() === 'member' && ! in_array($user->organizer_status, ['pending', 'approved']), 403);
+
+        $club = trim($this->applyClub);
+        $city = trim($this->applyCity);
+        if ($club === '' || $city === '' || mb_strlen($club) > 255 || mb_strlen($city) > 255) {
+            $this->applyError = 'Add your club name and city.';
+
+            return;
+        }
+
+        $user->update([
+            'organizer_status' => 'pending',
+            'club' => $club,
+            'city' => $city,
+            'courts' => $user->courts ?: 2,
+            'organizer_note' => 'Applied from an existing player account.',
+        ]);
+        $this->club = $club;
+        $this->reset('applyClub', 'applyCity', 'applyError');
+
+        $this->dispatch('toast', message: 'Organizer request sent. You keep playing on the same account.');
+    }
+
+    protected function homeClubEditable(User $user): bool
+    {
+        return $user->mode() === 'member' && ! in_array($user->organizer_status, ['pending', 'approved']);
     }
 
     /** Flip a notification or privacy switch. Saves right away. */
@@ -155,10 +245,10 @@ class Settings extends Component
         return $this->redirect(route('home'));
     }
 
-    /** Switches this role can see, [pref key => [label, hint]]. */
+    /** Switches this mode can see, [pref key => [label, hint]]. */
     protected function switches(User $user): array
     {
-        return match ($user->role) {
+        return match ($user->mode()) {
             'organizer' => [
                 'notify.joins' => ['Someone joins my open play', 'Includes the updated player count'],
                 'notify.courtIdle' => ['A court is open with players waiting', 'A nudge to fill it from the queue'],
@@ -190,11 +280,20 @@ class Settings extends Component
         $user = $this->user();
         $switches = collect($this->switches($user))->map(fn ($s, $key) => [...$s, 'on' => (bool) $user->pref($key)]);
 
+        $picker = [
+            'current' => ['avatar' => $user->avatar, 'url' => $user->avatarUrl(), 'color' => $user->color()],
+            'presets' => collect(User::AVATAR_PRESETS)->map(fn ($label, $id) => ['label' => $label, 'url' => asset("avatars/presets/{$id}.svg")]),
+            'colors' => User::AVATARS,
+        ];
+
         return view('livewire.settings', [
+            'picker' => $picker,
             'user' => $user,
             'notifications' => $switches->filter(fn ($s, $key) => str_starts_with($key, 'notify.')),
             'privacy' => $switches->filter(fn ($s, $key) => str_starts_with($key, 'privacy.')),
-            'deleteHint' => match ($user->role) {
+            'mode' => $user->mode(),
+            'homeClubEditable' => $this->homeClubEditable($user),
+            'deleteHint' => match ($user->mode()) {
                 'organizer' => "Removes your organizer access. Past sessions stay with your club's history.",
                 'admin' => 'Removes your admin access to PickleX.',
                 default => 'Removes your profile, stats and queue history.',
@@ -202,10 +301,14 @@ class Settings extends Component
             'sections' => array_filter([
                 ['profile', 'Profile', 'user'],
                 ['security', 'Password', 'lock'],
-                $user->isOrganizer() ? ['club', 'Club defaults', 'court'] : null,
+                match ($user->mode()) {
+                    'organizer' => ['club', 'Club defaults', 'court'],
+                    'member' => ['host', 'Organize', 'court'],
+                    default => null,
+                },
                 ['notify', 'Notifications', 'bell'],
                 ['look', 'Appearance', 'moon'],
-                $user->isMember() ? ['privacy', 'Privacy', 'shield'] : null,
+                $user->mode() === 'member' ? ['privacy', 'Privacy', 'shield'] : null,
                 ['danger', 'Account', 'logout'],
             ]),
         ]);

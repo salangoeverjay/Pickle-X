@@ -43,7 +43,7 @@ class MemberStats
             return (object) [
                 'won' => (bool) $r->won,
                 'at' => Carbon::parse($r->played_at),
-                'score' => $r->team === 'a' ? "{$r->score_a}–{$r->score_b}" : "{$r->score_b}–{$r->score_a}",
+                'score' => $r->team === 'a' ? "{$r->score_a}-{$r->score_b}" : "{$r->score_b}-{$r->score_a}",
                 'mates' => $players->where('team', $r->team)->values(),
                 'opps' => $players->where('team', '!=', $r->team)->values(),
             ];
@@ -99,21 +99,21 @@ class MemberStats
         return $this->games->take(10)->map(fn ($g) => $g->won ? 'W' : 'L')->all();
     }
 
-    /** "W3" / "L1" / "–". */
+    /** "W3" / "L1" / "-". */
     public function streak(): string
     {
         $first = $this->games->first();
 
-        return $first ? ($first->won ? 'W' : 'L').$this->games->takeWhile(fn ($g) => $g->won === $first->won)->count() : '–';
+        return $first ? ($first->won ? 'W' : 'L').$this->games->takeWhile(fn ($g) => $g->won === $first->won)->count() : '-';
     }
 
-    /** "7–3" over the last 10. */
+    /** "7-3" over the last 10. */
     public function lastTen(): string
     {
         $form = $this->form();
         $w = count(array_keys($form, 'W'));
 
-        return $w.'–'.(count($form) - $w);
+        return $w.'-'.(count($form) - $w);
     }
 
     /** Last 8 weeks (Monday start), oldest first: [{v, label, h}]. */

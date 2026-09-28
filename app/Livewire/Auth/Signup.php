@@ -64,6 +64,7 @@ class Signup extends Component
 
         $user = User::create($organizer ? [
             ...collect($data)->except('note'),
+            'role' => 'member', // organizer access is organizer_status, on this same player account
             'organizer_status' => 'pending',
             'organizer_note' => $data['note'] ?: null,
         ] : [
@@ -75,14 +76,17 @@ class Signup extends Component
 
         $this->reset('password');
 
+        // Everyone can play right away; organizer tools unlock on this account once approved.
+        Auth::login($user);
+        session()->regenerate();
+
         if ($organizer) {
+            // Shown after "Start playing" (a plain link: this guest-only page can't run actions once signed in).
+            session()->flash('toast', "You're in as a player. Organizer tools unlock once you're approved.");
             $this->sent = true;
 
             return;
         }
-
-        Auth::login($user);
-        session()->regenerate();
 
         return $this->redirect(route('member.dashboard'), navigate: true);
     }

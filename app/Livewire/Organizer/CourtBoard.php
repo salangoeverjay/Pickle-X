@@ -3,6 +3,8 @@
 namespace App\Livewire\Organizer;
 
 use App\Models\OpenPlay;
+use chillerlan\QRCode\QRCode;
+use chillerlan\QRCode\QROptions;
 use InvalidArgumentException;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -25,8 +27,14 @@ class CourtBoard extends Component
 
     public ?int $scoreB = 0;
 
+    /** Up-next queue entry whose sub panel is open. */
+    public ?int $subFor = null;
+
     /** Game saved in this request, so its result row can animate in. */
     protected ?int $freshGame = null;
+
+    /** Participant ids that just moved onto the podium (animated once). */
+    protected array $podNew = [];
 
     /** The organizer's live session. Querying through their own plays is the authorization. */
     private function play(): OpenPlay
@@ -55,13 +63,13 @@ class CourtBoard extends Component
         $this->attempt(fn () => $play->setAutoFill(! $play->auto_fill));
     }
 
-    public function end()
+    public function endSession()
     {
         $play = $this->play();
         $games = $play->games()->count();
         $play->end();
 
-        session()->flash('toast', "Session ended · {$games} games logged");
+        session()->flash('toast', "Session ended · {$games} ".($games === 1 ? 'game' : 'games').' logged');
 
         return $this->redirectRoute('organizer.plays', navigate: true);
     }
@@ -76,7 +84,7 @@ class CourtBoard extends Component
         }
         $this->dispatch('toast', message: $teams
             ? "Court {$n}: {$play->names($teams['a']['ids'])} vs {$play->names($teams['b']['ids'])}"
-            : 'Need 4 players in the queue to fill a court');
+            : 'Need 4 checked-in players in the queue to fill a court');
     }
 
     public function toggleSelect(int $entryId): void
@@ -124,6 +132,57 @@ class CourtBoard extends Component
         }
     }
 
+    public function checkInEntry(int $entryId): void
+    {
+        $play = $this->play();
+        $entry = collect($play->queue())->firstWhere('id', $entryId);
+
+        if ($entry && $this->attempt(fn () => $play->checkIn($entry['ids'])) !== false) {
+            $this->dispatch('toast', message: $play->names($entry['ids']).' checked in');
+        }
+    }
+
+    public function setPaused(int $entryId, bool $paused): void
+    {
+        $play = $this->play();
+        $entry = collect($play->queue())->firstWhere('id', $entryId);
+        $this->subFor = null;
+
+        if ($entry && $this->attempt(fn () => $play->setPaused($entryId, $paused)) !== false) {
+            $names = $play->names($entry['ids']);
+            $this->dispatch('toast', message: $paused ? "{$names} stepped out · keeps their spot" : "{$names} is back in the rotation");
+        }
+    }
+
+    public function subIn(int $outId, int $inId): void
+    {
+        $play = $this->play();
+        $queue = collect($play->queue());
+        [$out, $in] = [$queue->firstWhere('id', $outId), $queue->firstWhere('id', $inId)];
+        $this->subFor = null;
+        $this->selected = [];
+
+        if ($out && $in && $this->attempt(fn () => $play->subIn($outId, $inId)) !== false) {
+            $first = $play->participant($out['ids'][0])?->firstName() ?? 'Guest';
+            $this->dispatch('toast', message: "{$play->names($in['ids'])} subs in for {$play->names($out['ids'])} · {$first} keeps their spot");
+        }
+    }
+
+    /** The organizer plays too: joins their own session, already checked in. */
+    public function addMe(): void
+    {
+        $user = auth()->user();
+        abort_unless($user->isMember(), 403);
+        $play = $this->play();
+
+        $done = $this->attempt(function () use ($play, $user) {
+            $play->checkIn([$play->join($user)->id]);
+        });
+        if ($done !== false) {
+            $this->dispatch('toast', message: "You're in the queue as a player too");
+        }
+    }
+
     public function addWalkin(): void
     {
         $this->walkin = trim($this->walkin);
@@ -166,15 +225,26 @@ class CourtBoard extends Component
             return;
         }
 
+        $top3 = fn () => array_column(array_slice($play->standings(), 0, 3), 'participant_id');
+        $before = $top3();
+
         $game = $this->attempt(fn () => $play->recordScore($n, $this->scoreA, $this->scoreB));
         if ($game === false) {
             return;
         }
 
+        $after = $top3();
+        $this->podNew = array_values(array_diff($after, $before));
+        $podium = match (true) {
+            $after === $before => '',
+            (bool) $this->podNew => ' · '.$play->names($this->podNew).(count($this->podNew) > 1 ? ' move' : ' moves').' onto the podium',
+            default => ' · podium reshuffled',
+        };
+
         // wins > 0 only when winners-stay kept the winning team on this court.
         $stay = (collect($play->boardCourts())->firstWhere('n', $n)['wins'] ?? 0) > 0;
-        $score = max($this->scoreA, $this->scoreB).'–'.min($this->scoreA, $this->scoreB);
-        $this->dispatch('toast', message: "Court {$n}: {$play->names($court[$game->winner]['ids'])} won {$score}".($stay ? ' · winners stay on' : ''));
+        $score = max($this->scoreA, $this->scoreB).'-'.min($this->scoreA, $this->scoreB);
+        $this->dispatch('toast', message: "Court {$n}: {$play->names($court[$game->winner]['ids'])} won {$score}".$podium.($stay ? ' · winners stay on' : ''));
 
         $this->freshGame = $game->id;
         $this->closeScore();
@@ -209,21 +279,78 @@ class CourtBoard extends Component
         $busy = $play->busyCourtCount();
         $free = collect($courts)->first(fn ($c) => ! $c['a']);
         $started = ago(now()->timestamp - $play->started_at->timestamp);
+        $next = $play->nextUpTeams();
+        $ready = $play->readyIds();
+        $sessionIds = $play->sessionPlayerIds();
+        $user = auth()->user();
+        $shareUrl = $play->shareUrl();
+
+        // Sub panel: available waiting entries of the same shape, not already up next.
+        $subOut = $this->subFor ? collect($queue)->firstWhere('id', $this->subFor) : null;
+        $this->subFor = $subOut ? $this->subFor : null;
+        $isPair = fn ($e) => $e['locked'] && count($e['ids']) === 2;
+        $subCands = $subOut ? collect($queue)
+            ->map(fn ($e, $i) => $e + ['pos' => $i + 1])
+            ->filter(fn ($e) => $e['id'] !== $subOut['id'] && ! in_array($e['id'], $next['used'] ?? [])
+                && OpenPlay::isAvailable($e, $ready) && $isPair($e) === $isPair($subOut))
+            ->take(6)->values() : collect();
 
         return view('livewire.organizer.court-board', [
             'play' => $play,
             'courts' => $courts,
             'queue' => $queue,
-            'next' => $play->nextUpTeams(),
+            'next' => $next,
+            'ready' => $ready,
             'where' => $free ? "Court {$free['n']} is open" : 'Next court to finish',
             'gamesTonight' => $play->gamesTonight(),
             'results' => $results,
             'games' => $play->games()->count(),
             'busy' => $busy,
             'inQueue' => $play->queuedPlayerCount(),
+            'readyCount' => $play->readyQueueCount(),
+            'here' => count(array_intersect($sessionIds, $ready)),
+            'total' => count($sessionIds),
+            'running' => $started,
             'started' => $started === 'just now' ? 'Started just now' : "Started {$started} ago",
+            'subOut' => $subOut,
+            'subCands' => $subCands,
+            'canAddMe' => $user->isMember() && ! $play->participantMap()->only($sessionIds)->contains('user_id', $user->id),
+            'shareUrl' => $shareUrl,
+            'qr' => $shareUrl ? $this->qrSvg($shareUrl) : null,
+            'poster' => $shareUrl ? [
+                'title' => $play->title,
+                'sub' => implode(' · ', array_filter([$play->club, $play->venue])),
+                'when' => $play->whenLabel().' · '.$play->timeRange(),
+                'code' => $play->share_code,
+                'url' => $shareUrl,
+                'shortUrl' => preg_replace('#^https?://#', '', $shareUrl),
+                'rows' => $this->qrRows($shareUrl),
+                'file' => 'picklex-'.strtolower($play->share_code).'-live-view-qr.png',
+            ] : null,
             'scoring' => $this->scoreCourt ? collect($courts)->first(fn ($c) => $c['n'] === $this->scoreCourt && $c['a']) : null,
             'freshGame' => $this->freshGame,
+            'standings' => $play->standings(),
+            'podNew' => $this->podNew,
         ]);
+    }
+
+    /** QR modules as '1'/'0' strings (no quiet zone) for the downloadable poster, drawn on a canvas in resources/js/share-poster.js. */
+    private function qrRows(string $url): array
+    {
+        $qr = new QRCode(new QROptions(['addQuietzone' => false]));
+        $qr->addByteSegment($url);
+
+        return array_map(fn ($row) => implode('', array_map('intval', $row)), $qr->getQRMatrix()->getBooleanMatrix());
+    }
+
+    /** Inline SVG QR; dark modules inherit their fill from the wrapper. */
+    private function qrSvg(string $url): string
+    {
+        $svg = (new QRCode(new QROptions([
+            'outputBase64' => false, 'svgAddXmlHeader' => false, 'drawLightModules' => false,
+            'connectPaths' => true, 'svgUseFillAttributes' => false, 'cssClass' => '',
+        ])))->render($url);
+
+        return str_replace('<svg ', '<svg aria-hidden="true" shape-rendering="crispEdges" ', $svg);
     }
 }

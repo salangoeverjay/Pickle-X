@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="4 3.5 40 41">
+    <circle cx="24" cy="15.5" r="10" fill="#F59A3E" fill-opacity=".88"/>
+    <circle cx="31.36" cy="19.75" r="10" fill="#E5508A" fill-opacity=".88"/>
+    <circle cx="31.36" cy="28.25" r="10" fill="#7C62DA" fill-opacity=".88"/>
+    <circle cx="24" cy="32.5" r="10" fill="#3F86E8" fill-opacity=".88"/>
+    <circle cx="16.64" cy="28.25" r="10" fill="#2FBFC7" fill-opacity=".88"/>
+    <circle cx="16.64" cy="19.75" r="10" fill="#C3EA3B" fill-opacity=".88"/>
+    <g fill="#FFFFFF">
+        <path d="M24 24C22.2 21.4 22.2 18 24 15.4C25.8 18 25.8 21.4 24 24Z"/>
+        <path transform="rotate(60 24 24)" d="M24 24C22.2 21.4 22.2 18 24 15.4C25.8 18 25.8 21.4 24 24Z"/>
+        <path transform="rotate(120 24 24)" d="M24 24C22.2 21.4 22.2 18 24 15.4C25.8 18 25.8 21.4 24 24Z"/>
+        <path transform="rotate(180 24 24)" d="M24 24C22.2 21.4 22.2 18 24 15.4C25.8 18 25.8 21.4 24 24Z"/>
+        <path transform="rotate(240 24 24)" d="M24 24C22.2 21.4 22.2 18 24 15.4C25.8 18 25.8 21.4 24 24Z"/>
+        <path transform="rotate(300 24 24)" d="M24 24C22.2 21.4 22.2 18 24 15.4C25.8 18 25.8 21.4 24 24Z"/>
+        <circle cx="24" cy="24" r="1.8"/>
+    </g>
+</svg>

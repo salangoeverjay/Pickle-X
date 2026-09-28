@@ -8,11 +8,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /** A player in one open play: a joined member, or a walk-in with just a name. */
 class Participant extends Model
 {
-    protected $fillable = ['open_play_id', 'user_id', 'name', 'left_at'];
+    protected $fillable = ['open_play_id', 'user_id', 'name', 'left_at', 'checked_in_at', 'paid'];
 
     protected function casts(): array
     {
-        return ['left_at' => 'datetime'];
+        return ['left_at' => 'datetime', 'checked_in_at' => 'datetime', 'paid' => 'boolean'];
     }
 
     public function openPlay(): BelongsTo
@@ -33,6 +33,11 @@ class Participant extends Model
     public function initials(): string
     {
         return initials($this->name);
+    }
+
+    public function avatarUrl(): ?string
+    {
+        return $this->user?->avatarUrl();
     }
 
     public function color(): string

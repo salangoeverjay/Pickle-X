@@ -32,7 +32,7 @@ class Rankings extends Component
             'me' => $me,
             'note' => $above
                 ? ($above->pts - $me->pts).' pts behind '.$above->user->firstName().' at #'.$above->rank.'. Every win is worth 13.'
-                : 'Top of the table — keep it up.',
+                : 'Top of the table. Keep it up.',
         ]);
     }
 }

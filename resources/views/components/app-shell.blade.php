@@ -4,13 +4,16 @@
 --}}
 @php
     $user = auth()->user();
-    $nav = match ($user->role) {
+    $mode = $user->mode();
+    // One account, two modes: approved organizers switch between organizer and player.
+    $other = $user->isOrganizer() ? ($mode === 'organizer' ? ['member.dashboard', 'Switch to player mode'] : ['organizer.plays', 'Switch to organizer mode']) : null;
+    $nav = match ($mode) {
         'organizer' => [
             ['organizer.plays', 'Open plays', 'calendar', null],
             ['organizer.board', 'Court board', 'court', $user->openPlays()->status('live')->exists() ? 'LIVE' : null],
         ],
         'admin' => [
-            ['admin.requests', 'Requests', 'shield', \App\Models\User::where('role', 'organizer')->where('organizer_status', 'pending')->count() ?: null],
+            ['admin.requests', 'Requests', 'shield', \App\Models\User::where('organizer_status', 'pending')->count() ?: null],
         ],
         default => [
             ['member.dashboard', 'Home', 'home', null],
@@ -27,7 +30,22 @@
         <a href="{{ route($user->homeRoute()) }}" wire:navigate aria-label="PickleX home" class="self-start px-2 text-ink">
             <x-logo class="text-[27px]" />
         </a>
-        <span class="mx-2 inline-flex h-6.5 items-center self-start rounded-full border border-line bg-surface2 px-2.5 font-mono text-[11px] tracking-[.12em] text-ink2 uppercase">{{ $user->roleLabel() }}</span>
+        @if ($other)
+            <div class="mx-1 flex flex-col gap-1.5">
+                <span id="mode-label" class="px-1 font-mono text-[10px] tracking-[.12em] text-ink3 uppercase">One account · two modes</span>
+                <div role="radiogroup" aria-labelledby="mode-label" class="grid grid-cols-2 rounded-[14px] border border-line bg-surface2 p-1">
+                    @foreach (['organizer' => ['organizer.plays', 'Organizer'], 'member' => ['member.dashboard', 'Player']] as $m => [$route, $label])
+                        <a href="{{ route($route) }}" wire:navigate role="radio" aria-checked="{{ $mode === $m ? 'true' : 'false' }}" @class([
+                            'flex h-9.5 items-center justify-center rounded-[10px] text-[13px] font-bold transition-colors',
+                            'bg-ink text-bg' => $mode === $m,
+                            'text-ink2 hover:text-ink' => $mode !== $m,
+                        ])>{{ $label }}</a>
+                    @endforeach
+                </div>
+            </div>
+        @else
+            <span class="mx-2 inline-flex h-6.5 items-center self-start rounded-full border border-line bg-surface2 px-2.5 font-mono text-[11px] tracking-[.12em] text-ink2 uppercase">{{ $user->roleLabel() }}</span>
+        @endif
 
         <nav aria-label="Main" class="flex flex-col gap-1">
             @foreach ($nav as [$route, $label, $icon, $badge])
@@ -46,7 +64,7 @@
             @endforeach
         </nav>
 
-        @if ($user->isOrganizer())
+        @if ($mode === 'organizer')
             <a href="{{ route('organizer.plays', ['create' => 1]) }}" wire:navigate class="flex h-12 items-center gap-2.5 rounded-[14px] border-[1.5px] border-dashed border-line2 px-3.5 text-sm font-bold text-ink transition hover:bg-surface2 active:scale-97">
                 <x-icon name="plus" />Create open play
             </a>
@@ -73,7 +91,7 @@
         </button>
 
         <div class="flex items-center gap-2.5 rounded-2xl border border-line bg-surface2 p-2.5">
-            <x-avatar :name="$user->name" :color="$user->color()" class="size-9.5 text-[13px]" />
+            <x-avatar :src="$user->avatarUrl()" :name="$user->name" :color="$user->color()" class="size-9.5 text-[13px]" />
             <div class="flex min-w-0 flex-1 flex-col">
                 <span class="truncate text-sm font-bold">{{ $user->name }}</span>
                 <span class="truncate text-xs text-ink3">{{ $user->email }}</span>
@@ -89,10 +107,16 @@
     <header x-data="{ open: false }" x-on:keydown.escape.window="open = false" class="sticky top-0 z-20 flex h-15 shrink-0 items-center justify-between border-b border-line bg-surface pr-2.5 pl-4 lg:hidden">
         <a href="{{ route($user->homeRoute()) }}" wire:navigate aria-label="PickleX home" class="text-ink"><x-logo class="text-2xl" /></a>
         <div class="flex items-center gap-1">
-            <span class="mr-0.5 inline-flex h-6 items-center rounded-full border border-line bg-surface2 px-2 font-mono text-[10px] tracking-widest text-ink2 uppercase">{{ $user->roleLabel() }}</span>
+            @if ($other)
+                <a href="{{ route($other[0]) }}" wire:navigate aria-label="{{ $other[1] }}" class="inline-flex h-10 items-center gap-1.25 rounded-full border border-line bg-surface2 px-2.5 font-mono text-[10px] tracking-widest text-ink uppercase">
+                    {{ $user->roleLabel() }}<x-icon name="swap" :size="14" />
+                </a>
+            @else
+                <span class="mr-0.5 inline-flex h-6 items-center rounded-full border border-line bg-surface2 px-2 font-mono text-[10px] tracking-widest text-ink2 uppercase">{{ $user->roleLabel() }}</span>
+            @endif
             <x-theme-toggle class="border-0 bg-transparent" />
             <button type="button" x-on:click="open = ! open" aria-label="Account menu" x-bind:aria-expanded="open" class="flex size-11 cursor-pointer items-center justify-center rounded-full">
-                <x-avatar :name="$user->name" :color="$user->color()" class="size-8.5 text-xs" />
+                <x-avatar :src="$user->avatarUrl()" :name="$user->name" :color="$user->color()" class="size-8.5 text-xs" />
             </button>
         </div>
 
@@ -101,6 +125,9 @@
                 <span class="font-bold">{{ $user->name }}</span>
                 <span class="text-[13px] text-ink3">{{ $user->email }}</span>
             </div>
+            @if ($other)
+                <a href="{{ route($other[0]) }}" wire:navigate class="flex h-11 items-center gap-2.5 rounded-xl px-2.5 text-sm font-bold text-ink transition hover:bg-surface2"><x-icon name="swap" />{{ $other[1] }}</a>
+            @endif
             <a href="{{ route('settings') }}" wire:navigate class="flex h-11 items-center gap-2.5 rounded-xl px-2.5 text-sm font-bold text-ink transition hover:bg-surface2"><x-icon name="settings" />Account settings</a>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
@@ -109,7 +136,7 @@
         </div>
     </header>
 
-    <main @class(['relative min-w-0 flex-1', 'pb-19 lg:pb-0' => count($nav) > 1])>
+    <main id="main" tabindex="-1" @class(['relative min-w-0 flex-1', 'pb-19 lg:pb-0' => count($nav) > 1])>
         {{ $slot }}
     </main>
 
@@ -122,7 +149,7 @@
                     <span @class(['relative flex h-8 w-14.5 items-center justify-center rounded-full transition-colors', 'bg-lime text-on-lime' => $on])>
                         <x-icon :name="$icon" />
                         @if ($badge)
-                            <span class="absolute -top-1 right-1.5 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-hot px-1.25 text-[10px] text-white">{{ $badge }}</span>
+                            <span class="absolute -top-2 left-9.5 flex h-5 min-w-4.5 items-center justify-center rounded-full border-2 border-surface bg-hot px-1.5 text-[9px] font-extrabold tracking-[.06em] text-white">{{ $badge }}</span>
                         @endif
                     </span>
                     <span class="whitespace-nowrap">{{ $label }}</span>

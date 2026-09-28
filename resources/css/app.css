@@ -34,7 +34,6 @@
     --color-hl-text: #12170F;
     --color-hl-band: #D3F347;
     --color-focus: #2F62AD;
-    --color-grid: rgba(18, 23, 15, .07);
     --color-cta-border: #12170F;
     /* Text on lime stays dark in both themes. */
     --color-on-lime: #12170F;
@@ -86,7 +85,6 @@
     --color-hl-text: #D4F53C;
     --color-hl-band: transparent;
     --color-focus: #D4F53C;
-    --color-grid: rgba(237, 242, 227, .05);
     --color-cta-border: transparent;
     --shadow-card: 0 1px 2px rgba(0, 0, 0, .5), 0 16px 36px -16px rgba(0, 0, 0, .75);
     --shadow-cta: 0 12px 32px -10px rgba(212, 245, 60, .45);
@@ -105,6 +103,19 @@
         display: none !important;
     }
 
+    /* Skip-link target: focusable, but no ring around the whole page. */
+    #main:focus {
+        outline: none;
+    }
+
+    /* Livewire marks the clicked button while its request runs (polls mark the root, so buttons only). */
+    button[data-loading],
+    a[data-loading],
+    form[data-loading] button[type='submit'] {
+        opacity: .6;
+        cursor: progress;
+    }
+
     :focus-visible {
         outline: 2px solid var(--color-focus);
         outline-offset: 2px;
@@ -115,17 +126,6 @@
 @layer components {
     .input {
         @apply h-13 w-full rounded-[14px] border-[1.5px] border-line bg-surface px-4 text-[15px] font-medium text-ink outline-none transition-colors placeholder:text-ink3 focus:border-ink;
-    }
-
-    .court-grid {
-        background-image: linear-gradient(rgba(255, 255, 255, .06) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, .06) 1px, transparent 1px);
-        background-size: 48px 48px;
-    }
-
-    .hero-grid {
-        background-image: linear-gradient(var(--color-grid) 1px, transparent 1px), linear-gradient(90deg, var(--color-grid) 1px, transparent 1px);
-        background-size: 56px 56px;
-        mask-image: radial-gradient(ellipse 70% 65% at 68% 42%, #000 25%, transparent 75%);
     }
 
     .highlight-band {

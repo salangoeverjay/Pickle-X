@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 
 /**
@@ -20,6 +21,8 @@ use InvalidArgumentException;
  * ]
  *
  * A queue entry is one waiting player, or two locked partners who always play together.
+ * Entries may carry 'paused' => true (stepped out / subbed out: keeps its spot, skipped).
+ * Only checked-in participants (participants.checked_in_at) are called to court.
  * ponytail: the board is one JSON column guarded by a row lock; fine for one organizer
  * per session, move queue/courts to tables if many writers ever edit one board at once.
  */
@@ -27,7 +30,8 @@ class OpenPlay extends Model
 {
     protected $fillable = [
         'organizer_id', 'title', 'club', 'venue', 'starts_at', 'ends_at', 'courts', 'cap',
-        'race_to', 'rotation', 'visibility', 'fee', 'status', 'auto_fill', 'board', 'started_at', 'ended_at',
+        'race_to', 'rotation', 'visibility', 'fee', 'status', 'auto_fill', 'board', 'started_at', 'ended_at', 'share_code',
+        'pay_method', 'pay_name', 'pay_number', 'pay_qr_version',
     ];
 
     protected function casts(): array
@@ -43,6 +47,14 @@ class OpenPlay extends Model
     }
 
     private ?Collection $participantCache = null;
+
+    // Payment QR methods: [key => [label, app name used in "Open {app} and scan the QR"]].
+    public const PAY_METHODS = [
+        'gcash' => ['GCash', 'GCash'],
+        'maya' => ['Maya', 'Maya'],
+        'qrph' => ['Bank / QR Ph', 'your bank or e-wallet app'],
+        'other' => ['Other', 'your payment app'],
+    ];
 
     // ---------------------------------------------------------------- relations
 
@@ -99,18 +111,41 @@ class OpenPlay extends Model
         return $this->starts_at->isToday() ? 'Today' : $this->starts_at->format('D, M j');
     }
 
-    /** "6:00 – 10:00 PM", or "11:00 AM – 1:00 PM" across noon. */
+    /** "6:00 - 10:00 PM", "11:00 AM - 1:00 PM" across noon, "8:00 PM - 1:00 AM (next day)" overnight. */
     public function timeRange(): string
     {
         $sameHalf = $this->starts_at->format('A') === $this->ends_at->format('A');
 
-        return $this->starts_at->format($sameHalf ? 'g:i' : 'g:i A').' – '.$this->ends_at->format('g:i A');
+        $range = $this->starts_at->format($sameHalf ? 'g:i' : 'g:i A').' - '.$this->ends_at->format('g:i A');
+
+        return $this->ends_at->isSameDay($this->starts_at) ? $range : $range.' (next day)';
     }
 
     /** Joined players still in the session. Uses withCount('activeParticipants') when loaded. */
     public function playerCount(): int
     {
         return $this->active_participants_count ?? $this->activeParticipants()->count();
+    }
+
+    public function hasPaymentQr(): bool
+    {
+        return (bool) $this->pay_qr_version;
+    }
+
+    public function payMethodLabel(): string
+    {
+        return self::PAY_METHODS[$this->pay_method][0] ?? 'Payment';
+    }
+
+    public function payApp(): string
+    {
+        return self::PAY_METHODS[$this->pay_method][1] ?? 'your payment app';
+    }
+
+    /** The QR image; append ?download=1 to save it. */
+    public function payQrUrl(): ?string
+    {
+        return $this->pay_qr_version ? route('play.pay-qr', ['play' => $this->id, 'version' => $this->pay_qr_version]) : null;
     }
 
     public function spotsLeft(): int
@@ -159,7 +194,42 @@ class OpenPlay extends Model
 
     public function nextUpTeams(): ?array
     {
-        return self::nextUp($this->queue());
+        return self::nextUp($this->queue(), $this->readyIds());
+    }
+
+    /** Checked-in participants still in the session (from the loaded map). */
+    public function readyIds(): array
+    {
+        return $this->participantMap()->filter(fn ($p) => $p->checked_in_at && ! $p->left_at)->keys()->all();
+    }
+
+    /** Everyone on court or in the queue right now. */
+    public function sessionPlayerIds(): array
+    {
+        $ids = collect($this->boardCourts())->filter(fn ($c) => $c['a'])->flatMap(fn ($c) => [...$c['a']['ids'], ...$c['b']['ids']]);
+
+        return $ids->merge(collect($this->queue())->flatMap(fn ($e) => $e['ids']))->all();
+    }
+
+    public function checkedInCount(): int
+    {
+        $ready = $this->readyIds();
+
+        return count(array_intersect($this->sessionPlayerIds(), $ready));
+    }
+
+    /** Players in the queue who can be called now (checked in, not stepped out). */
+    public function readyQueueCount(): int
+    {
+        $ready = $this->readyIds();
+
+        return collect($this->queue())->filter(fn ($e) => self::isAvailable($e, $ready))->sum(fn ($e) => count($e['ids']));
+    }
+
+    /** Public view-mode URL (QR target). */
+    public function shareUrl(): ?string
+    {
+        return $this->share_code ? route('live', $this->share_code) : null;
     }
 
     /** Index of the court that has been playing longest (likely next to open). */
@@ -182,11 +252,39 @@ class OpenPlay extends Model
     }
 
     /**
+     * Tonight's standings: most wins, then fewest losses, then point difference, then points scored.
+     * Each row: participant_id, w, l, g, pf, pa, diff, rank (1-based).
+     */
+    public function standings(): array
+    {
+        $rows = GamePlayer::query()
+            ->join('games', 'games.id', '=', 'game_players.game_id')
+            ->where('games.open_play_id', $this->id)
+            ->selectRaw("participant_id, sum(won) as w, sum(1 - won) as l,
+                sum(case when team = 'a' then score_a else score_b end) as pf,
+                sum(case when team = 'a' then score_b else score_a end) as pa")
+            ->groupBy('participant_id')
+            ->get()
+            ->map(fn ($r) => [
+                'participant_id' => (int) $r->participant_id,
+                'w' => (int) $r->w, 'l' => (int) $r->l, 'g' => (int) $r->w + (int) $r->l,
+                'pf' => (int) $r->pf, 'pa' => (int) $r->pa, 'diff' => (int) $r->pf - (int) $r->pa,
+            ])
+            ->sort(fn ($a, $b) => [$b['w'], $a['l'], $b['diff'], $b['pf'], $a['participant_id']] <=> [$a['w'], $b['l'], $a['diff'], $a['pf'], $b['participant_id']])
+            ->values();
+
+        return $rows->map(fn ($r, $i) => $r + ['rank' => $i + 1])->all();
+    }
+
+    /**
      * Where a member stands in this live session, or null if they are not in it.
      *
      * ['state' => 'court', 'court' => n, 'index' => i, 'partner' => ?, 'opponents' => ..., 'started_at' => unix]
      * ['state' => 'next', 'partner' => ?, 'opponents' => ...]
      * ['state' => 'queued', 'position' => n, 'ahead' => n]
+     * ['state' => 'checkin', 'position' => n]   in line but not checked in yet
+     * ['state' => 'paused', 'position' => n, 'entry' => id]   stepped out / subbed out, keeps the spot
+     * Every state also has 'checked_in_at' (Carbon|null).
      */
     public function statusFor(User $user): ?array
     {
@@ -198,6 +296,14 @@ class OpenPlay extends Model
         if (! $me) {
             return null;
         }
+
+        $place = $this->placeOf($me);
+
+        return $place ? $place + ['checked_in_at' => $me->checked_in_at] : null;
+    }
+
+    private function placeOf(Participant $me): ?array
+    {
 
         foreach ($this->boardCourts() as $i => $court) {
             if (! $court['a']) {
@@ -219,6 +325,12 @@ class OpenPlay extends Model
         $next = $this->nextUpTeams();
         foreach ($this->queue() as $i => $entry) {
             if (in_array($me->id, $entry['ids'])) {
+                if (! $me->checked_in_at) {
+                    return ['state' => 'checkin', 'position' => $i + 1];
+                }
+                if ($entry['paused'] ?? false) {
+                    return ['state' => 'paused', 'position' => $i + 1, 'entry' => $entry['id']];
+                }
                 if ($next && in_array($entry['id'], $next['used'])) {
                     $mine = in_array($me->id, $next['a']['ids']) ? $next['a'] : $next['b'];
                     $opp = $mine === $next['a'] ? $next['b'] : $next['a'];
@@ -240,13 +352,19 @@ class OpenPlay extends Model
 
     // ---------------------------------------------------------------- queue rules
 
+    /** Can this queue entry be called? $ready = checked-in participant ids, null = everyone. */
+    public static function isAvailable(array $entry, ?array $ready): bool
+    {
+        return ! ($entry['paused'] ?? false) && ($ready === null || ! array_diff($entry['ids'], $ready));
+    }
+
     /**
-     * The next two teams from the front of the queue. Locked pairs are a team;
-     * single players pair up in queue order.
+     * The next two teams from the front of the queue, skipping entries that aren't available.
+     * Locked pairs are a team; single players pair up in queue order.
      *
-     * @return array{a: array, b: array, used: int[]}|null
+     * @return array{a: array, b: array, used: int[]}|null each team also has 'eids' (its queue entry ids)
      */
-    public static function nextUp(array $queue): ?array
+    public static function nextUp(array $queue, ?array $ready = null): ?array
     {
         $teams = [];
         $used = [];
@@ -256,11 +374,14 @@ class OpenPlay extends Model
             if (count($teams) === 2) {
                 break;
             }
+            if (! self::isAvailable($entry, $ready)) {
+                continue;
+            }
             if ($entry['locked'] && count($entry['ids']) === 2) {
-                $teams[] = ['ids' => $entry['ids'], 'locked' => true];
+                $teams[] = ['ids' => $entry['ids'], 'locked' => true, 'eids' => [$entry['id']]];
                 $used[] = $entry['id'];
             } elseif ($single) {
-                $teams[] = ['ids' => [$single['ids'][0], $entry['ids'][0]], 'locked' => false];
+                $teams[] = ['ids' => [$single['ids'][0], $entry['ids'][0]], 'locked' => false, 'eids' => [$single['id'], $entry['id']]];
                 array_push($used, $single['id'], $entry['id']);
                 $single = null;
             } else {
@@ -272,11 +393,14 @@ class OpenPlay extends Model
     }
 
     /** The next single team (for winners-stay challengers). */
-    public static function nextTeam(array $queue): ?array
+    public static function nextTeam(array $queue, ?array $ready = null): ?array
     {
         $single = null;
 
         foreach ($queue as $entry) {
+            if (! self::isAvailable($entry, $ready)) {
+                continue;
+            }
             if ($entry['locked'] && count($entry['ids']) === 2) {
                 if (! $single) {
                     return ['team' => ['ids' => $entry['ids'], 'locked' => true], 'used' => [$entry['id']]];
@@ -316,7 +440,7 @@ class OpenPlay extends Model
             foreach ($play->activeParticipants()->orderBy('id')->pluck('id') as $id) {
                 $board['queue'][] = ['id' => ++$board['seq'], 'ids' => [$id], 'locked' => false];
             }
-            $play->forceFill(['status' => 'live', 'started_at' => now(), 'auto_fill' => true]);
+            $play->forceFill(['status' => 'live', 'started_at' => now(), 'auto_fill' => true, 'share_code' => $play->share_code ?? self::makeShareCode($play->club)]);
         });
     }
 
@@ -333,7 +457,7 @@ class OpenPlay extends Model
     /** Put the next two teams on court $n. Returns the teams, or null if fewer than 4 are waiting. */
     public function fillCourt(int $n): ?array
     {
-        return $this->mutate(fn (array &$board) => self::seatNextUp($board, $n));
+        return $this->mutate(fn (array &$board, self $play) => self::seatNextUp($board, $n, $play->checkedInIds()));
     }
 
     /** Log a result on court $n and send players back to the queue per the rotation rule. */
@@ -386,7 +510,7 @@ class OpenPlay extends Model
             if ($play->rotation === 'winners' && $wins < 2) {
                 // Winners stay on (as team A) for up to two straight games.
                 $requeue($lose);
-                if ($challenger = self::nextTeam($board['queue'])) {
+                if ($challenger = self::nextTeam($board['queue'], $play->checkedInIds())) {
                     $board['queue'] = array_values(array_filter($board['queue'], fn ($e) => ! in_array($e['id'], $challenger['used'])));
                     $court = ['n' => $n, 'a' => $win, 'b' => $challenger['team'], 'started_at' => now()->timestamp, 'wins' => $wins];
                 } else {
@@ -451,11 +575,73 @@ class OpenPlay extends Model
     public function addWalkin(string $name): Participant
     {
         return $this->mutate(function (array &$board, self $play) use ($name) {
-            $p = $play->participants()->create(['name' => $name]);
+            $p = $play->participants()->create(['name' => $name, 'checked_in_at' => now()]);
             $board['queue'][] = ['id' => ++$board['seq'], 'ids' => [$p->id], 'locked' => false];
 
             return $p;
         });
+    }
+
+    /** Mark participants as at the courts. Only checked-in players get called to play. */
+    public function checkIn(array $participantIds): void
+    {
+        $this->mutate(function (array &$board, self $play) use ($participantIds) {
+            $play->participants()->whereIn('id', $participantIds)->whereNull('checked_in_at')->update(['checked_in_at' => now()]);
+        });
+    }
+
+    /** Step an entry out (keeps its spot, skipped when calling games) or bring it back. */
+    public function setPaused(int $entryId, bool $paused): void
+    {
+        $this->mutate(function (array &$board) use ($entryId, $paused) {
+            foreach ($board['queue'] as &$e) {
+                if ($e['id'] === $entryId) {
+                    $e['paused'] = $paused;
+                }
+            }
+        });
+    }
+
+    /**
+     * $inId takes $outId's place in line; $outId steps out right behind them and keeps its spot.
+     * Both must be the same shape (single for single, locked pair for locked pair).
+     */
+    public function subIn(int $outId, int $inId): void
+    {
+        $this->mutate(function (array &$board) use ($outId, $inId) {
+            $queue = collect($board['queue']);
+            $out = $queue->firstWhere('id', $outId);
+            $in = $queue->firstWhere('id', $inId);
+            if (! $out || ! $in || $outId === $inId || count($out['ids']) !== count($in['ids'])) {
+                throw new InvalidArgumentException('Pick a waiting player to sub in.');
+            }
+            $queue = $queue->reject(fn ($e) => $e['id'] === $inId)->values();
+            $at = $queue->search(fn ($e) => $e['id'] === $outId);
+            $queue->splice($at, 1, [$in, ['paused' => true] + $out]);
+            $board['queue'] = $queue->all();
+        });
+    }
+
+    /**
+     * Add the organizer's paid list (rows from PaidList::match). Linked members join as themselves,
+     * everyone else as a named guest. Duplicate accounts are added once. Returns [added, linked].
+     */
+    public function addPaidPlayers(array $rows): array
+    {
+        $linked = 0;
+        $added = 0;
+        foreach (collect($rows)->unique(fn ($r) => $r['user']?->id ?? 'guest:'.mb_strtolower($r['line'])) as $row) {
+            if ($row['user']) {
+                $this->participants()->updateOrCreate(['user_id' => $row['user']->id], ['name' => $row['user']->name, 'paid' => true, 'left_at' => null]);
+                $linked++;
+            } else {
+                $this->participants()->create(['name' => $row['line'], 'paid' => true]);
+            }
+            $added++;
+        }
+        $this->participantCache = null;
+
+        return [$added, $linked];
     }
 
     /** A member joins (or rejoins). Live sessions put them at the back of the queue. */
@@ -517,8 +703,9 @@ class OpenPlay extends Model
             $result = $fn($board, $play);
 
             if ($play->status === 'live' && $play->auto_fill) {
+                $ready = $play->checkedInIds();
                 foreach ($board['courts'] as $court) {
-                    if (! $court['a'] && ! self::seatNextUp($board, $court['n'])) {
+                    if (! $court['a'] && ! self::seatNextUp($board, $court['n'], $ready)) {
                         break;
                     }
                 }
@@ -534,9 +721,27 @@ class OpenPlay extends Model
         });
     }
 
-    private static function seatNextUp(array &$board, int $n): ?array
+    /** Fresh from the DB (not the cached map): used inside writes. */
+    private function checkedInIds(): array
     {
-        $next = self::nextUp($board['queue']);
+        return $this->participants()->whereNull('left_at')->whereNotNull('checked_in_at')->pluck('id')->all();
+    }
+
+    /** "PDS-7K2Q": club initials + random suffix. Unguessable enough for a read-only view. */
+    private static function makeShareCode(string $club): string
+    {
+        $prefix = collect(preg_split('/\s+/', strtoupper(preg_replace('/[^A-Za-z ]/', '', $club))))->filter()->map(fn ($w) => $w[0])->take(3)->join('') ?: 'PX';
+
+        do {
+            $code = $prefix.'-'.strtoupper(Str::random(4));
+        } while (self::where('share_code', $code)->exists());
+
+        return $code;
+    }
+
+    private static function seatNextUp(array &$board, int $n, ?array $ready): ?array
+    {
+        $next = self::nextUp($board['queue'], $ready);
         if (! $next) {
             return null;
         }

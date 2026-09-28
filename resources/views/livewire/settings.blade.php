@@ -8,7 +8,7 @@
 @endphp
 
 <x-app-shell>
-    <x-page class="max-w-280">
+    <x-page>
         <x-page-header :eyebrow="$user->roleLabel().' account'" title="Account settings" description="Update your profile, password and notifications, and choose how PickleX looks." />
 
         <div class="grid items-start gap-7 lg:grid-cols-[200px_minmax(0,1fr)]">
@@ -28,21 +28,7 @@
                         <p class="{{ $lede }}">How you appear in queues, on courts and in rankings.</p>
                     </div>
 
-                    <div class="flex flex-wrap items-center gap-4.5">
-                        {{-- Initials follow the name field as you type. --}}
-                        <span x-data x-text="(() => { const p = ($wire.name || '').trim().split(/\s+/); return ((p[0] || '').charAt(0) + (p[1] || '').charAt(0)).toUpperCase() })()"
-                              class="flex size-19 shrink-0 items-center justify-center rounded-full text-[25px] font-extrabold text-on-lime transition-colors duration-250" style="background: {{ $avatar }}">{{ initials($name) }}</span>
-                        <div class="flex min-w-0 flex-col gap-2">
-                            <span id="av-label" class="text-[13px] font-bold text-ink2">Avatar color</span>
-                            <div role="radiogroup" aria-labelledby="av-label" class="flex flex-wrap gap-2">
-                                @foreach (\App\Models\User::AVATARS as $hex => $label)
-                                    <button type="button" role="radio" aria-checked="{{ $avatar === $hex ? 'true' : 'false' }}" aria-label="{{ $label }}" wire:click="$set('avatar', '{{ $hex }}')"
-                                            @class(['size-10 cursor-pointer rounded-full border-3 p-0 shadow-[inset_0_0_0_2px_var(--color-surface)] transition hover:brightness-96 active:scale-97', 'border-ink' => $avatar === $hex, 'border-transparent' => $avatar !== $hex])
-                                            style="background: {{ $hex }}"></button>
-                                @endforeach
-                            </div>
-                        </div>
-                    </div>
+                    <x-settings.avatar-picker :user="$user" :picker="$picker" />
 
                     <div class="grid gap-3.5 lg:grid-cols-2">
                         <x-field label="Full name" id="sf-name" autocomplete="name" wire:model="name" />
@@ -51,9 +37,9 @@
                             <label for="sf-phone" class="text-[13px] font-bold text-ink2">Mobile number <span class="font-medium text-ink3">(for queue alerts)</span></label>
                             <input id="sf-phone" type="tel" autocomplete="tel" placeholder="+63 9XX XXX XXXX" wire:model="phone" class="input">
                         </div>
-                        @if ($user->isMember())
+                        @if ($homeClubEditable)
                             <x-field label="Home club" id="sf-club" placeholder="The club you play with most" wire:model="club" />
-                        @elseif ($user->isOrganizer())
+                        @elseif ($user->club && ! $user->isAdmin())
                             <div class="flex flex-col gap-2">
                                 <label for="sf-org" class="text-[13px] font-bold text-ink2">Club</label>
                                 <input id="sf-org" type="text" value="{{ $user->club }}" disabled aria-describedby="sf-org-hint" class="input border-dashed border-line2 bg-surface2 font-semibold text-ink2">
@@ -62,7 +48,7 @@
                         @endif
                     </div>
 
-                    @if ($message = $firstError(['name', 'email', 'phone', 'club', 'avatar']))
+                    @if ($message = $firstError(['name', 'email', 'phone', 'club']))
                         <x-alert>{{ $message }}</x-alert>
                     @endif
 
@@ -94,7 +80,7 @@
                 </section>
 
                 {{-- Organizer defaults --}}
-                @if ($user->isOrganizer())
+                @if ($mode === 'organizer')
                     <section id="set-club" aria-labelledby="set-club-h" class="{{ $card }} border border-line gap-4.5">
                         <div>
                             <h2 id="set-club-h" class="{{ $h2 }}">Club and session defaults</h2>
@@ -112,6 +98,42 @@
                         <div class="flex justify-end">
                             <button type="button" wire:click="saveDefaults" class="{{ $primary }}">Save defaults</button>
                         </div>
+                    </section>
+                @endif
+
+                {{-- Organize open plays (players; same account, two modes) --}}
+                @if ($mode === 'member')
+                    <section id="set-host" aria-labelledby="set-host-h" class="{{ $card }} border border-line gap-4">
+                        <div>
+                            <h2 id="set-host-h" class="{{ $h2 }}">Organize open plays</h2>
+                            <p class="{{ $lede }}">One account, two modes. Keep your player stats and run sessions for your club.</p>
+                        </div>
+
+                        @if ($user->isOrganizer())
+                            <div class="flex flex-wrap items-center gap-3 rounded-2xl border border-lime bg-lime-soft p-3.5">
+                                <span class="min-w-50 flex-1 text-sm font-semibold">You're an organizer for <strong>{{ $user->club }}</strong>.</span>
+                                <a href="{{ route('organizer.plays') }}" wire:navigate class="inline-flex h-11 items-center rounded-full bg-ink px-4.5 text-sm font-bold text-bg transition hover:brightness-96 active:scale-97">Switch to organizer mode</a>
+                            </div>
+                        @elseif ($user->organizer_status === 'pending')
+                            <div class="flex items-start gap-3 rounded-2xl border border-hot-line bg-hot-soft p-3.5">
+                                <span class="mt-1 size-3 shrink-0 animate-live rounded-full border-[1.5px] border-on-lime bg-lime"></span>
+                                <span class="text-sm leading-[1.45]">Your request for <strong>{{ $user->club }}</strong> is with a PickleX admin. Organizer tools appear here, on this same account, once it's approved.</span>
+                            </div>
+                        @else
+                            @if ($user->organizer_status === 'declined')
+                                <p class="m-0 text-sm font-semibold text-hot">Your last request for {{ $user->club }} wasn't approved. You can apply again below.</p>
+                            @endif
+                            <div class="grid gap-3.5 lg:grid-cols-2">
+                                <x-field label="Club or group name" id="ap-club" placeholder="e.g. Panabo Dink Society" wire:model="applyClub" />
+                                <x-field label="City" id="ap-city" placeholder="e.g. Panabo City" wire:model="applyCity" />
+                            </div>
+                            @if ($applyError)
+                                <x-alert>{{ $applyError }}</x-alert>
+                            @endif
+                            <div class="flex justify-end">
+                                <button type="button" wire:click="requestOrganizer" class="{{ $primary }}">Send organizer request</button>
+                            </div>
+                        @endif
                     </section>
                 @endif
 
@@ -154,8 +176,8 @@
                     </div>
                 </section>
 
-                {{-- Privacy (members) --}}
-                @if ($user->isMember())
+                {{-- Privacy (player mode) --}}
+                @if ($mode === 'member')
                     <section id="set-privacy" aria-labelledby="set-privacy-h" class="{{ $card }} border border-line">
                         <div class="mb-2.5">
                             <h2 id="set-privacy-h" class="{{ $h2 }}">Privacy</h2>

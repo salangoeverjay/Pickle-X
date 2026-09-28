@@ -20,7 +20,7 @@
                 @if ($r = $rows[$i] ?? null)
                     <div wire:key="pod-{{ $period }}-{{ $i }}" class="flex animate-rise flex-col items-center gap-2.5 {{ $pd['delay'] }}">
                         <div class="relative">
-                            <x-avatar :name="$r->user->name" :color="$r->user->color()" :class="$pd['av'].' border-3 '.($r->me ? 'border-lime' : 'border-surface')" />
+                            <x-avatar :src="$r->user->avatarUrl()" :name="$r->user->name" :color="$r->user->color()" :class="$pd['av'].' border-3 '.($r->me ? 'border-lime' : 'border-surface')" />
                             <span class="absolute -right-1 -bottom-1 flex size-7 items-center justify-center rounded-full border-2 border-bg font-mono text-[13px] font-semibold text-on-lime" style="background: {{ $pd['medal'] }}">{{ $r->rank }}</span>
                         </div>
                         <div class="flex flex-col items-center text-center">
@@ -58,16 +58,16 @@
                         @elseif ($r->mv < 0)
                             <x-icon name="arrow-down" :size="14" :stroke="2.4" /><span class="sr-only">Down</span>
                         @endif
-                        {{ $r->mv === 0 ? '–' : abs($r->mv) }}
+                        {{ $r->mv === 0 ? '-' : abs($r->mv) }}
                     </span>
-                    <x-avatar :name="$r->user->name" :color="$r->user->color()" class="size-9.5 text-xs" />
+                    <x-avatar :src="$r->user->avatarUrl()" :name="$r->user->name" :color="$r->user->color()" class="size-9.5 text-xs" />
                     <div class="flex min-w-0 flex-1 items-center gap-2">
                         <span class="truncate font-bold">{{ $r->user->name }}</span>
                         @if ($r->me)
                             <span class="inline-flex h-5.5 shrink-0 items-center rounded-full bg-lime px-2 text-[11px] font-extrabold text-on-lime">YOU</span>
                         @endif
                     </div>
-                    <span class="hidden w-22.5 font-mono text-sm text-ink2 lg:inline">{{ $r->wins }}–{{ $r->losses }}</span>
+                    <span class="hidden w-22.5 font-mono text-sm text-ink2 lg:inline">{{ $r->wins }}-{{ $r->losses }}</span>
                     <span class="hidden w-22.5 font-mono text-sm text-ink2 lg:inline">{{ $r->games }} games</span>
                     <span class="w-12 text-right font-mono text-[15px] font-semibold lg:w-17.5">{{ $r->pts }}</span>
                 </div>

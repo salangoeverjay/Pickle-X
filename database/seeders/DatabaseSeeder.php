@@ -4,9 +4,14 @@ namespace Database\Seeders;
 
 use App\Models\OpenPlay;
 use App\Models\User;
+use App\Support\PaidList;
+use chillerlan\QRCode\Output\QRGdImagePNG;
+use chillerlan\QRCode\QRCode;
+use chillerlan\QRCode\QROptions;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Demo data for the one-tap accounts on the login page (APP_DEMO=true). Every account's password is "password".
@@ -37,6 +42,11 @@ class DatabaseSeeder extends Seeder
         ]));
         $kai = $members[0];
 
+        // A few regulars already picked PickleX avatars, so pictures show up around the app.
+        foreach (['Rico Dizon' => 'paddle', 'Mika Lim' => 'happy', 'Gab Navarro' => 'streak', 'Bea Castillo' => 'night', 'Ria Torres' => 'dill', 'Dana Chua' => 'champ'] as $name => $preset) {
+            $members->firstWhere('name', $name)->update(['avatar' => "preset:{$preset}"]);
+        }
+
         $ely = $this->organizer('Ely Ramos', 'ely@panabodink.ph', self::CLUB, 'Panabo City', 4, 'approved', 'Monday night and Saturday morning open plays.', '-16 days');
         $davao = $this->organizer('Rafa Medina', 'rafa@davaopaddle.ph', 'Davao Paddle Club', 'Davao City', 2, 'approved', 'Weekend beginner clinics.', '-30 days');
         $digos = $this->organizer('Joan Uy', 'joan@digosdinkers.ph', 'Digos Dinkers', 'Digos City', 3, 'approved', 'Midweek mixers for all levels.', '-40 days');
@@ -57,39 +67,54 @@ class DatabaseSeeder extends Seeder
             if ($day->isFuture() || $day->isToday()) {
                 continue;
             }
-            $players = $members->shuffle()->take(mt_rand(12, 18))->push($kai)->unique('id');
+            // Ely organizes and, some nights, plays too (one account, two modes).
+            $players = $members->shuffle()->take(mt_rand(12, 18))->push($kai)->when($i % 3 === 0, fn ($c) => $c->push($ely))->unique('id');
             $this->playSession($ely, $i % 2 ? 'Saturday Sunrise Rally' : 'Monday Night Open Play', $day, $players, mt_rand(14, 22));
         }
 
-        // Tonight: live for 73 minutes, two waiting players locked as partners, Kai just joined the queue.
+        // Tonight: live for 73 minutes. Two late arrivals and Kai are in line but not checked in yet,
+        // and two waiting players are locked as partners.
         Carbon::setTestNow(now()->subMinutes(73));
         $live = $this->play($ely, 'Monday Night Open Play', now(), 4, 24, 11, 'rotate', '₱150');
-        foreach ($members->reject(fn ($m) => $m->is($kai)) as $m) {
-            $live->join($m);
-        }
+        [$early, $late] = $members->reject(fn ($m) => $m->is($kai))->values()->partition(fn ($m, $i) => $i < 17);
+        $this->withJoins($live, $early);
+        $live->participants()->update(['checked_in_at' => now()]);
         $live->start();
         foreach (range(1, 18) as $g) {
             Carbon::setTestNow(now()->addMinutes(4));
             $this->randomResult($live);
         }
-        $live->join($kai);
-        $pair = collect($live->queue())->filter(fn ($e) => ! $e['locked'])->take(2)->pluck('id');
+        $this->withJoins($live, $late->push($kai));
+        $ready = $live->readyIds();
+        $pair = collect($live->queue())->filter(fn ($e) => ! $e['locked'] && OpenPlay::isAvailable($e, $ready))->take(2)->pluck('id');
         if ($pair->count() === 2) {
             $live->lockPartners(...$pair->all());
         }
         Carbon::setTestNow();
+        $this->attachDemoPayQr($live);
 
         // Upcoming.
         $sat = Carbon::today()->next(Carbon::SATURDAY);
-        $this->withJoins($this->play($ely, 'Saturday Sunrise Rally', $sat->copy()->setTime(6, 0), 3, 18, 11, 'winners', '₱120', 3), $members->take(9));
+        $sunrise = $this->play($ely, 'Saturday Sunrise Rally', $sat->copy()->setTime(6, 0), 3, 18, 11, 'winners', '₱120', 3);
+        $this->attachDemoPayQr($sunrise);
+        $sunrise->addPaidPlayers(PaidList::match("Rico Dizon\nmika@picklex.test\nBen Tan\nCarla Mendoza\nPaolo Cruz\nTin Ramos\nGab Navarro\nLiza Uy\nGrace Ong"));
         $this->withJoins($this->play($davao, "Beginners' Open Court", $sat->copy()->addDay()->setTime(16, 0), 2, 12, 11, 'rotate', null, 3), $members->slice(4, 6));
         $this->withJoins($this->play($digos, 'Midweek Mixer', Carbon::today()->next(Carbon::WEDNESDAY)->setTime(19, 0), 3, 16, 15, 'rotate', '₱100', 3), $members->slice(8, 12));
+    }
+
+    /** Demo GCash QR. It encodes a note, not a real payment account. */
+    public function attachDemoPayQr(OpenPlay $play): void
+    {
+        $png = (new QRCode(new QROptions(['outputInterface' => QRGdImagePNG::class, 'outputBase64' => false, 'scale' => 10])))
+            ->render('PickleX demo payment QR. Not a real account.');
+        DB::table('payment_qrs')->updateOrInsert(['open_play_id' => $play->id], ['data' => base64_encode($png), 'created_at' => now(), 'updated_at' => now()]);
+        $play->update(['pay_method' => 'gcash', 'pay_name' => 'Ely Ramos', 'pay_number' => '0917 555 0142', 'pay_qr_version' => substr(sha1($png), 0, 12)]);
     }
 
     private function organizer(string $name, string $email, string $club, string $city, int $courts, string $status, string $note, string $when): User
     {
         return User::factory()->create([
-            'name' => $name, 'email' => $email, 'role' => 'organizer', 'organizer_status' => $status,
+            'name' => $name, 'email' => $email, 'organizer_status' => $status,
             'club' => $club, 'city' => $city, 'courts' => $courts, 'organizer_note' => $note,
             'created_at' => now()->modify($when), 'updated_at' => now()->modify($when),
         ]);
@@ -116,6 +141,7 @@ class DatabaseSeeder extends Seeder
         Carbon::setTestNow($at);
         $play = $this->play($org, $title, $at->copy(), 4, 24, 11, 'rotate', '₱150');
         $this->withJoins($play, $players);
+        $play->participants()->update(['checked_in_at' => now()]);
         $play->start();
         foreach (range(1, $games) as $g) {
             Carbon::setTestNow(now()->addMinutes(9));

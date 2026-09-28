@@ -18,19 +18,16 @@
                 <a href="{{ route(auth()->user()->homeRoute()) }}" wire:navigate class="inline-flex h-11 items-center rounded-full bg-ink px-5 text-sm font-bold text-bg transition hover:brightness-96 active:scale-97">Open PickleX</a>
             @else
                 <a href="{{ route('login') }}" wire:navigate class="inline-flex h-11 items-center rounded-full border border-line2 px-4.5 text-sm font-bold text-ink transition hover:brightness-96 active:scale-97">Log in</a>
-                <a href="{{ route('signup') }}" wire:navigate class="hidden h-11 items-center rounded-full bg-ink px-5 text-sm font-bold text-bg transition hover:brightness-96 active:scale-97 lg:inline-flex">Join free</a>
+                <a href="{{ route('signup') }}" wire:navigate class="hidden h-11 items-center rounded-full bg-ink px-5 text-sm font-bold text-bg transition hover:brightness-96 active:scale-97 lg:inline-flex">Join PickleX</a>
             @endauth
         </div>
     </header>
 
     {{-- ============ HERO ============ --}}
-    <section class="relative grid grid-cols-1 items-center gap-7.5 overflow-hidden px-4 pt-7 pb-11 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.08fr)] lg:gap-12 lg:px-14 lg:pt-14 lg:pb-24">
-        <div aria-hidden="true" class="hero-grid pointer-events-none absolute inset-0"></div>
-
+    <section id="main" tabindex="-1" class="relative grid grid-cols-1 items-center gap-7.5 overflow-hidden px-4 pt-7 pb-11 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.08fr)] lg:gap-12 lg:px-14 lg:pt-14 lg:pb-24">
         <div class="relative flex flex-col gap-5 lg:gap-6.5">
             <div class="inline-flex h-9 animate-rise items-center gap-2.5 self-start rounded-full border border-line bg-surface pr-3.5 pl-3 text-[13px] font-semibold text-ink2">
-                <span class="size-2.25 animate-live rounded-full bg-lime outline-[1.5px] outline-on-lime outline-solid"></span>
-                Open play, organized · No DUPR required
+                Open play, organized. No DUPR required.
             </div>
 
             <h1 class="m-0 animate-rise font-display text-[54px] leading-[.9] font-extrabold tracking-[-0.05em] text-ink [animation-delay:.08s] lg:text-[92px]">
@@ -38,27 +35,19 @@
             </h1>
 
             <p class="m-0 max-w-135 animate-rise text-[17px] leading-[1.55] text-pretty text-ink2 [animation-delay:.16s] lg:text-[19px]">
-                PickleX runs your open play from first check-in to last rally — a fair rotating queue, partner locks, live court boards, and stats built from the games you actually play.
+                PickleX runs your open play: a fair rotating queue, partner locks, live court boards and stats from games you play.
             </p>
 
             <div class="flex animate-rise flex-wrap gap-3 [animation-delay:.24s]">
                 <a href="{{ route('signup') }}" wire:navigate class="inline-flex h-14.5 items-center gap-2.5 rounded-full border-2 border-cta-border bg-lime px-6.5 text-[17px] font-bold text-on-lime shadow-cta transition hover:brightness-96 active:scale-97">
-                    Join PickleX — it's free
+                    Join PickleX
                     <x-icon name="arrow-right" :stroke="2.2" />
                 </a>
                 <a href="{{ route('signup', ['role' => 'organizer']) }}" wire:navigate class="inline-flex h-14.5 items-center rounded-full border-[1.5px] border-line2 bg-surface px-6 text-base font-semibold text-ink transition hover:brightness-96 active:scale-97">
-                    I organize open plays
+                    Host open plays
                 </a>
             </div>
 
-            <div class="flex animate-rise flex-wrap gap-x-5 gap-y-2 [animation-delay:.32s]">
-                @foreach (['No DUPR or self-ratings', 'Fair, rotating queue', 'Made for phones'] as $point)
-                    <span class="inline-flex items-center gap-2 text-sm font-semibold text-ink2">
-                        <x-icon name="check" :size="18" :stroke="2.6" class="text-lime-text" />
-                        {{ $point }}
-                    </span>
-                @endforeach
-            </div>
         </div>
 
         {{-- Hero visual: tilted court with floating cards --}}
@@ -145,27 +134,23 @@
     </div>
 
     {{-- ============ HOW IT WORKS ============ --}}
-    <section id="how" class="flex flex-col gap-7 px-4 pt-18 pb-14 lg:gap-11 lg:px-14 lg:pt-30 lg:pb-24">
-        <div class="flex max-w-195 flex-col gap-3.5">
-            <span class="font-mono text-xs font-medium tracking-[.14em] text-ink3 uppercase">How it works</span>
-            <h2 class="m-0 font-display text-[38px] leading-[.98] font-extrabold tracking-[-0.04em] text-balance lg:text-6xl">From sign-up to game point in three steps.</h2>
-        </div>
-        <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+    <section id="how" class="grid grid-cols-1 gap-8 px-4 pt-18 pb-14 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16 lg:px-14 lg:pt-30 lg:pb-26">
+        <h2 class="m-0 max-w-[14ch] font-display text-[38px] leading-[.98] font-extrabold tracking-[-0.04em] text-balance lg:sticky lg:top-28 lg:self-start lg:text-6xl">From sign-up to game point.</h2>
+        <ol class="m-0 flex list-none flex-col p-0">
             @foreach ([
-                ['calendar', '01', 'An organizer opens a play', 'Venue, time, courts and a player cap. Only admin-approved organizers can host, so every session on PickleX is legit.'],
-                ['rotate', '02', 'Players join the queue', 'Members join from their phone. The queue rotates everyone fairly, and organizers can lock two players to play as partners.'],
-                ['chart', '03', 'Every game counts', 'Winners are logged court-side. Stats, who you played with and rankings update on their own — no DUPR needed.'],
-            ] as [$icon, $num, $heading, $body])
-                <div class="flex flex-col gap-3.5 rounded-[28px] border border-line bg-surface p-7 transition duration-300 ease-[cubic-bezier(.2,.8,.2,1)] hover:-translate-y-1 hover:shadow-card lg:min-h-75">
-                    <div class="flex items-start justify-between">
-                        <span class="flex size-13 items-center justify-center rounded-2xl bg-lime text-on-lime"><x-icon :name="$icon" :size="24" :stroke="1.9" /></span>
-                        <span aria-hidden="true" class="font-mono text-[52px] leading-none font-medium tracking-[-0.05em] text-line2">{{ $num }}</span>
+                ['calendar', 'An organizer opens a play', 'Venue, time, courts and a player cap. Only admin-approved organizers can host, so every session is legit.'],
+                ['rotate', 'Players join and check in', 'Members join from their phone and check in at the courts. The queue rotates everyone fairly.'],
+                ['chart', 'Every game counts', 'Winners are logged court-side. Stats, partners and rankings update on their own. No DUPR needed.'],
+            ] as [$icon, $heading, $body])
+                <li class="flex gap-5 border-t border-line py-7 first:border-t-0 first:pt-0 lg:gap-7 lg:py-9">
+                    <span class="flex size-13 shrink-0 items-center justify-center rounded-2xl bg-lime text-on-lime lg:size-15"><x-icon :name="$icon" :size="24" :stroke="1.9" /></span>
+                    <div class="flex flex-col gap-2 pt-1">
+                        <h3 class="m-0 font-display text-[26px] leading-[1.1] font-bold tracking-[-0.03em] lg:text-[30px]">{{ $heading }}</h3>
+                        <p class="m-0 max-w-[52ch] text-base leading-[1.6] text-ink2 lg:text-[17px]">{{ $body }}</p>
                     </div>
-                    <h3 class="mt-2.5 mb-0 font-display text-[26px] leading-[1.1] font-bold tracking-[-0.03em]">{{ $heading }}</h3>
-                    <p class="m-0 text-base leading-[1.55] text-ink2">{{ $body }}</p>
-                </div>
+                </li>
             @endforeach
-        </div>
+        </ol>
     </section>
 
     {{-- ============ FOR ORGANIZERS ============ --}}
@@ -184,7 +169,7 @@
                         ['lock', 'Partner lock', 'Pair two players so they always queue and play together.'],
                         ['court', 'Live court board', "See who is on, how long they've played, and who's next."],
                         ['rotate', 'Fair rotation', 'Everyone cycles through, so nobody sits out twice in a row.'],
-                        ['user-plus', 'Walk-ins in seconds', "Type a name and they're in line — no account needed."],
+                        ['user-plus', 'Walk-ins in seconds', "Type a name and they're in line. No account needed."],
                     ] as [$icon, $heading, $body])
                         <div class="flex items-start gap-3.5">
                             <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-lime text-on-lime"><x-icon :name="$icon" /></span>
@@ -197,7 +182,7 @@
                 </div>
                 <div>
                     <a href="{{ route('signup', ['role' => 'organizer']) }}" wire:navigate class="inline-flex h-13.5 items-center gap-2.5 rounded-full bg-lime px-6 text-base font-bold text-on-lime transition hover:brightness-96 active:scale-97">
-                        Apply to host open plays
+                        Host open plays
                         <x-icon name="arrow-right" :size="18" :stroke="2.2" />
                     </a>
                 </div>
@@ -281,9 +266,9 @@
             <div class="flex flex-col gap-1">
                 <span class="mb-1.5 font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">Played with most</span>
                 @foreach ([
-                    ['RD', '#CDEBB0', 'Rico Dizon', '11 games · 8–3'],
-                    ['ML', '#FFEFA3', 'Mika Lim', '7 games · 4–3'],
-                    ['BC', '#E2D2FF', 'Bea Castillo', '6 games · 4–2'],
+                    ['RD', '#CDEBB0', 'Rico Dizon', '11 games · 8-3'],
+                    ['ML', '#FFEFA3', 'Mika Lim', '7 games · 4-3'],
+                    ['BC', '#E2D2FF', 'Bea Castillo', '6 games · 4-2'],
                 ] as [$initials, $color, $name, $record])
                     <div @class(['flex items-center gap-3 py-2', 'border-t border-line' => ! $loop->first])>
                         <span class="flex size-8.5 items-center justify-center rounded-full text-xs font-extrabold text-on-lime" style="background: {{ $color }}">{{ $initials }}</span>
@@ -295,10 +280,9 @@
         </div>
 
         <div class="flex flex-col gap-5.5">
-            <span class="font-mono text-xs font-medium tracking-[.14em] text-ink3 uppercase">For players</span>
             <h2 class="m-0 font-display text-[38px] leading-[.98] font-extrabold tracking-[-0.04em] text-balance lg:text-6xl">Rankings without DUPR.</h2>
             <p class="m-0 max-w-130 text-[17px] leading-[1.55] text-pretty text-ink2 lg:text-[19px]">
-                Your PickleX Points come from what happens on court at your club — not a self-rating. See who you play best with, who you can't beat yet, and where you stand this month.
+                PickleX Points come from what happens on court, not a self-rating. See who you play best with and where you stand this month.
             </p>
             <div class="flex flex-wrap gap-2.5">
                 @foreach ([['+10', 'per win'], ['+3', 'per game played'], ['+2', 'per new partner']] as [$points, $label])
@@ -309,7 +293,7 @@
             </div>
             <div>
                 <a href="{{ route('signup') }}" wire:navigate class="inline-flex h-13.5 items-center gap-2.5 rounded-full border-2 border-cta-border bg-lime px-6 text-base font-bold text-on-lime shadow-cta transition hover:brightness-96 active:scale-97">
-                    Create your player account
+                    Join PickleX
                     <x-icon name="arrow-right" :size="18" :stroke="2.2" />
                 </a>
             </div>
@@ -318,17 +302,17 @@
 
     {{-- ============ CTA ============ --}}
     <section class="p-4 lg:px-14 lg:py-6">
-        <div class="relative flex flex-col items-start gap-5.5 overflow-hidden rounded-[28px] bg-ink px-5.5 py-12 text-bg lg:rounded-[36px] lg:px-16 lg:py-20">
+        <div class="relative flex flex-col items-start gap-5.5 overflow-hidden rounded-[28px] border-[1.5px] border-lime bg-lime-soft px-5.5 py-12 text-ink lg:rounded-[36px] lg:px-16 lg:py-20">
             <div aria-hidden="true" class="cta-ball absolute -top-27.5 -right-27.5 size-60 animate-spin-slow rounded-full lg:-top-22.5 lg:-right-22.5 lg:size-90"></div>
             <h2 class="relative m-0 max-w-195 font-display text-[44px] leading-[.95] font-extrabold tracking-[-0.045em] text-balance lg:text-7xl">Your next rally is already in the queue.</h2>
-            <p class="relative m-0 max-w-130 text-[17px] leading-[1.55] opacity-82 lg:text-[19px]">Join as a player in under a minute, or apply to host open plays for your club.</p>
+            <p class="relative m-0 max-w-130 text-[17px] leading-[1.55] text-ink2 lg:text-[19px]">Join as a player in under a minute, or apply to host open plays for your club.</p>
             <div class="relative flex flex-wrap gap-3">
-                <a href="{{ route('signup') }}" wire:navigate class="inline-flex h-14 items-center gap-2.5 rounded-full bg-lime px-6.5 text-base font-bold text-on-lime transition hover:brightness-96 active:scale-97">
+                <a href="{{ route('signup') }}" wire:navigate class="inline-flex h-14 items-center gap-2.5 rounded-full border-2 border-cta-border bg-lime px-6.5 text-base font-bold text-on-lime shadow-cta transition hover:brightness-96 active:scale-97">
                     Join PickleX
                     <x-icon name="arrow-right" :size="18" :stroke="2.2" />
                 </a>
-                <a href="{{ route('signup', ['role' => 'organizer']) }}" wire:navigate class="inline-flex h-14 items-center rounded-full border-[1.5px] border-current px-5.5 text-base font-semibold transition hover:brightness-96 active:scale-97">
-                    Apply as an organizer
+                <a href="{{ route('signup', ['role' => 'organizer']) }}" wire:navigate class="inline-flex h-14 items-center rounded-full border-[1.5px] border-line2 bg-surface px-5.5 text-base font-semibold text-ink transition hover:brightness-96 active:scale-97">
+                    Host open plays
                 </a>
             </div>
         </div>
@@ -340,7 +324,7 @@
         <span class="text-sm text-ink3">© {{ date('Y') }} PickleX · by <strong class="font-bold text-ink2">CreativeX Techlabs Inc.</strong></span>
         <div class="flex gap-1.5">
             <a href="{{ route('login') }}" wire:navigate class="inline-flex h-11 items-center rounded-full px-3.5 text-sm font-semibold text-ink2 transition-colors hover:bg-surface2 hover:text-ink">Log in</a>
-            <a href="{{ route('signup') }}" wire:navigate class="inline-flex h-11 items-center rounded-full px-3.5 text-sm font-semibold text-ink2 transition-colors hover:bg-surface2 hover:text-ink">Create account</a>
+            <a href="{{ route('signup') }}" wire:navigate class="inline-flex h-11 items-center rounded-full px-3.5 text-sm font-semibold text-ink2 transition-colors hover:bg-surface2 hover:text-ink">Join PickleX</a>
         </div>
     </footer>
 

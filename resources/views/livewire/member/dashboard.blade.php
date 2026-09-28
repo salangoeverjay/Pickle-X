@@ -15,6 +15,11 @@
                         <span class="flex items-center gap-2 font-mono text-[11px] tracking-widest uppercase"><span class="size-1.75 animate-live rounded-full bg-lime"></span>Live · {{ $live['title'] }}</span>
                         <span class="font-display text-[22px] leading-[1.1] font-extrabold tracking-[-0.03em]">{{ $live['head'] }}</span>
                         <span class="text-sm opacity-80">{{ $live['sub'] }}@isset($live['timer'])<x-live-timer :start="$live['timer']" />@endisset</span>
+                        @if ($live['standing'])
+                            <span class="mt-1.5 inline-flex min-h-6.5 max-w-full items-center gap-1.5 self-start rounded-full bg-lime px-2.5 py-0.75 text-xs font-extrabold whitespace-nowrap text-on-lime">
+                                <x-icon name="trophy" :size="13" :stroke="2.2" /><span>{{ $live['standing'] }}</span>
+                            </span>
+                        @endif
                     </div>
                     <x-icon name="chevron-right" :size="22" />
                 </a>
@@ -87,9 +92,9 @@
                 </div>
                 @forelse ($stats->partners->sortBy([['games', 'desc'], ['pct', 'desc']])->take(3) as $tp)
                     <div class="flex items-center gap-3 border-t border-line py-3">
-                        <x-avatar :name="$tp->user->name" :color="$tp->user->color()" class="size-10 text-[13px]" />
+                        <x-avatar :src="$tp->user->avatarUrl()" :name="$tp->user->name" :color="$tp->user->color()" class="size-10 text-[13px]" />
                         <div class="flex min-w-0 flex-1 flex-col"><span class="font-bold">{{ $tp->user->name }}</span><span class="text-[13px] text-ink3">{{ $tp->games }} games together</span></div>
-                        <div class="flex flex-col items-end"><span class="font-mono font-semibold">{{ $tp->wins }}–{{ $tp->losses }}</span><span class="text-xs text-ink3">{{ $tp->pct }}% wins</span></div>
+                        <div class="flex flex-col items-end"><span class="font-mono font-semibold">{{ $tp->wins }}-{{ $tp->losses }}</span><span class="text-xs text-ink3">{{ $tp->pct }}% wins</span></div>
                     </div>
                 @empty
                     <p class="m-0 border-t border-line py-3 text-sm text-ink2">Your partners show up here after your first logged game.</p>
@@ -97,7 +102,7 @@
                 @if ($best = $stats->bestPartner())
                     <div class="mt-2 flex items-center gap-3 rounded-2xl border border-lime bg-lime-soft p-3.5">
                         <x-icon name="trophy" :size="22" :stroke="1.9" class="text-lime-text" />
-                        <span class="text-sm leading-[1.4]">Best duo: <strong>{{ $best->user->name }}</strong> — {{ $best->wins }}–{{ $best->losses }} together ({{ $best->pct }}%)</span>
+                        <span class="text-sm leading-[1.4]">Best duo: <strong>{{ $best->user->name }}</strong>, {{ $best->wins }}-{{ $best->losses }} together ({{ $best->pct }}%)</span>
                     </div>
                 @endif
             </div>

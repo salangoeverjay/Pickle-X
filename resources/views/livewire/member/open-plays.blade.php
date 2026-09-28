@@ -8,7 +8,9 @@
                 $play = $my['play'];
                 $head = match ($s['state']) {
                     'court' => "You're on Court {$s['court']}",
-                    'next' => "You're up next!",
+                    'next' => "You're up next",
+                    'checkin' => 'Check in to get on court',
+                    'paused' => 'You stepped out',
                     default => "#{$s['position']} in line",
                 };
                 $courts = count($play->boardCourts());
@@ -25,14 +27,20 @@
                                 {{ $s['partner'] ? "With {$s['partner']} vs " : 'Against ' }}{{ $s['opponents'] }} · <x-live-timer :start="now()->timestamp - $s['started_at']" />
                                 @break
                             @case('next')
-                                {{ $s['partner'] ? "With {$s['partner']} vs " : 'Against ' }}{{ $s['opponents'] }} — grab your paddle.
+                                {{ $s['partner'] ? "With {$s['partner']} vs " : 'Against ' }}{{ $s['opponents'] }}. Grab your paddle.
+                                @break
+                            @case('checkin')
+                                You're #{{ $s['position'] }} in line. Organizers only call players who are checked in, so tap Check in when you reach the courts.
+                                @break
+                            @case('paused')
+                                Someone subbed in for you. Tap I'm back when you're ready. You kept your spot at #{{ $s['position'] }}.
                                 @break
                             @default
                                 {{ $s['ahead'] }} {{ $s['ahead'] === 1 ? 'player' : 'players' }} ahead of you · {{ $play->busyCourtCount() }} of {{ $courts }} courts in play
                         @endswitch
                     </p>
 
-                    @if ($s['state'] === 'queued')
+                    @if ($s['state'] === 'queued' && $s['checked_in_at'])
                         <div aria-hidden="true" class="mt-0.5 flex flex-wrap items-center gap-1.5">
                             @for ($i = 0; $i < min($s['ahead'], 16); $i++)
                                 <span class="size-3.5 rounded-full bg-line2"></span>
@@ -41,8 +49,26 @@
                         </div>
                     @endif
 
+                    @if ($s['checked_in_at'])
+                        <span class="inline-flex h-7.5 items-center gap-1.5 self-start rounded-full bg-lime-soft px-3 text-[13px] font-bold text-lime-text">
+                            <x-icon name="check" :size="16" />Checked in {{ $s['checked_in_at']->format('g:i A') }}
+                        </span>
+                    @endif
+
                     <div class="mt-1 flex flex-wrap gap-2">
-                        <button type="button" wire:click="leave({{ $play->id }})" class="h-11 cursor-pointer rounded-full border-[1.5px] border-line2 bg-transparent px-4.5 text-sm font-bold text-ink transition hover:brightness-96 active:scale-97">Leave open play</button>
+                        @if ($s['state'] === 'checkin')
+                            <button type="button" wire:click="checkInPlay({{ $play->id }})" class="inline-flex h-12.5 cursor-pointer items-center gap-2 rounded-full border-2 border-cta-border bg-lime px-5 text-[15px] font-extrabold text-on-lime shadow-cta transition hover:brightness-96 active:scale-97">
+                                <x-icon name="pin" :size="18" />I'm at the courts
+                            </button>
+                        @elseif ($s['state'] === 'paused')
+                            <button type="button" wire:click="stepBackIn({{ $play->id }})" class="h-12.5 cursor-pointer rounded-full border-0 bg-lime px-5 text-[15px] font-extrabold text-on-lime transition hover:brightness-96 active:scale-97">I'm back</button>
+                        @endif
+                        @if ($play->share_code)
+                            <a href="{{ route('live', $play->share_code) }}" wire:navigate class="inline-flex h-11 items-center gap-2 rounded-full border-[1.5px] border-line2 px-4 text-sm font-bold text-ink transition hover:brightness-96 active:scale-97">
+                                <x-icon name="eye" :size="18" />Live board
+                            </a>
+                        @endif
+                        <button type="button" wire:click="leavePlay({{ $play->id }})" class="h-11 cursor-pointer rounded-full border-0 bg-transparent px-3.5 text-sm font-semibold text-ink2 underline underline-offset-3 transition hover:brightness-96 active:scale-97">Leave open play</button>
                     </div>
                 </div>
 
@@ -66,7 +92,7 @@
             @endif
             <div class="grid gap-3.5 lg:grid-cols-2">
                 @foreach ($live as $p)
-                    <x-plays.card :play="$p" :joined="in_array($p->id, $joined)" wire:key="live-{{ $p->id }}" />
+                    <x-plays.card :play="$p" :joined="in_array($p->id, $joined)" :paid="in_array($p->id, $paidIds)" :claimed="in_array($p->id, $claimedIds)" wire:key="live-{{ $p->id }}" />
                 @endforeach
             </div>
         </section>
@@ -75,9 +101,81 @@
             <h2 class="m-0 font-display text-[22px] font-bold tracking-[-0.02em]">Upcoming</h2>
             <div class="grid gap-3.5 lg:grid-cols-2">
                 @foreach ($upcoming as $p)
-                    <x-plays.card :play="$p" :joined="in_array($p->id, $joined)" wire:key="up-{{ $p->id }}" />
+                    <x-plays.card :play="$p" :joined="in_array($p->id, $joined)" :paid="in_array($p->id, $paidIds)" :claimed="in_array($p->id, $claimedIds)" wire:key="up-{{ $p->id }}" />
                 @endforeach
             </div>
         </section>
     </x-page>
+
+    {{-- Pay for an open play: bottom sheet on mobile, centered on desktop. --}}
+    @if ($payPlay)
+        @php($sent = in_array($payPlay->id, $claimedIds))
+        <div wire:key="pay-{{ $payPlay->id }}" x-data x-on:keydown.escape.window="$wire.closePay()" class="fixed inset-0 z-66 flex items-end justify-center lg:items-center lg:p-6">
+            <button type="button" wire:click="closePay" aria-label="Close payment" class="absolute inset-0 animate-fade cursor-pointer bg-[rgba(18,23,15,.45)] dark:bg-black/62"></button>
+            <div role="dialog" aria-modal="true" aria-labelledby="pay-title" x-trap.noscroll="true" class="relative flex max-h-full w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] lg:w-170 lg:rounded-[28px]">
+                <div class="flex shrink-0 items-center justify-between gap-3 border-b border-line pt-5 pr-5 pb-4 pl-6">
+                    <div class="flex min-w-0 flex-col gap-0.5">
+                        <span class="truncate font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">{{ $payPlay->title }}</span>
+                        <h2 id="pay-title" class="m-0 font-display text-[26px] font-extrabold tracking-[-0.03em]">Pay with {{ $payPlay->payMethodLabel() }}</h2>
+                    </div>
+                    <button type="button" wire:click="closePay" aria-label="Close" class="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-line bg-surface text-ink transition hover:brightness-96 active:scale-97"><x-icon name="x" :size="18" /></button>
+                </div>
+
+                <div class="flex min-h-0 flex-1 flex-col gap-4.5 overflow-y-auto px-6 pt-5 pb-5.5">
+                    <div class="flex flex-col items-center gap-5.5 lg:flex-row">
+                        <div class="flex shrink-0 flex-col items-center gap-2 rounded-3xl border border-[#DEDCD0] bg-white px-3.5 pt-3.5 pb-3 shadow-[0_16px_36px_-18px_rgba(0,0,0,.35)]">
+                            <img src="{{ $payPlay->payQrUrl() }}" alt="Payment QR for {{ $payPlay->pay_name }} on {{ $payPlay->payMethodLabel() }}" class="block size-55 object-contain">
+                            <span class="font-mono text-[11px] font-semibold tracking-[.14em] text-on-lime uppercase">{{ $payPlay->payMethodLabel() }}</span>
+                        </div>
+                        <div class="flex w-full min-w-0 flex-1 flex-col gap-3.5">
+                            <div class="flex flex-col gap-0.5">
+                                <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">Amount</span>
+                                <span class="font-display text-[44px] leading-none font-extrabold tracking-[-0.04em]">{{ $payPlay->feeLabel() }}</span>
+                                <span class="text-[13px] text-ink3">per player · {{ $payPlay->whenLabel() }} · {{ $payPlay->timeRange() }}</span>
+                            </div>
+                            <dl class="m-0 flex flex-col overflow-hidden rounded-2xl border border-line bg-surface">
+                                <div class="flex items-center justify-between gap-3 border-b border-line px-3.5 py-2.75"><dt class="text-[13px] text-ink3">Send to</dt><dd class="m-0 text-right text-sm font-bold">{{ $payPlay->pay_name }}</dd></div>
+                                @if ($payPlay->pay_number)
+                                    <div class="flex items-center justify-between gap-3 border-b border-line py-1.75 pr-2 pl-3.5">
+                                        <dt class="text-[13px] text-ink3">Number</dt>
+                                        <dd class="m-0 flex items-center gap-2">
+                                            <span class="font-mono text-sm font-semibold">{{ $payPlay->pay_number }}</span>
+                                            <button type="button" x-on:click="navigator.clipboard?.writeText(@js($payPlay->pay_number)).catch(() => {}); $dispatch('toast', { message: 'Number copied' })" class="h-8 cursor-pointer rounded-full border-[1.5px] border-line2 px-3 text-xs font-bold text-ink transition hover:brightness-96 active:scale-97">Copy</button>
+                                        </dd>
+                                    </div>
+                                @endif
+                                <div class="flex items-center justify-between gap-3 px-3.5 py-2.75"><dt class="text-[13px] text-ink3">Club</dt><dd class="m-0 text-right text-sm font-bold">{{ $payPlay->club }}</dd></div>
+                            </dl>
+                        </div>
+                    </div>
+
+                    <ol class="m-0 flex list-none flex-col gap-2.5 p-0">
+                        @foreach ([
+                            "Open {$payPlay->payApp()} and scan the QR. On your phone, save the image and upload it from your gallery.",
+                            'Send <strong>'.e($payPlay->feeLabel()).'</strong> and check the name reads <strong>'.e($payPlay->pay_name).'</strong> before you confirm.',
+                            'Keep the receipt. The organizer marks you as paid, and you can show it at check-in if needed.',
+                        ] as $step)
+                            <li class="flex items-start gap-3 text-sm leading-[1.45]">
+                                <span aria-hidden="true" class="flex size-6 shrink-0 items-center justify-center rounded-full bg-lime text-xs font-extrabold text-on-lime">{{ $loop->iteration }}</span>
+                                <span>{!! $step !!}</span>
+                            </li>
+                        @endforeach
+                    </ol>
+
+                    @if ($sent)
+                        <div role="status" class="flex items-start gap-2.5 rounded-[14px] border border-lime bg-lime-soft px-3.5 py-3 text-sm leading-[1.45] font-semibold"><x-icon name="check" :size="18" :stroke="2.4" class="mt-px" />You told the organizer you've paid. You'll show as paid once they confirm it.</div>
+                    @endif
+                </div>
+
+                <div class="flex shrink-0 flex-wrap gap-2.5 border-t border-line bg-bg px-6 pt-3.5 pb-5.5">
+                    <a href="{{ $payPlay->payQrUrl() }}?download=1" class="inline-flex h-13 items-center justify-center gap-2 rounded-full border-[1.5px] border-line2 px-4.5 text-[15px] font-bold text-ink transition hover:brightness-96 active:scale-97"><x-icon name="download" :size="18" />Save QR</a>
+                    @if ($sent)
+                        <button type="button" wire:click="closePay" class="h-13 min-w-45 flex-1 cursor-pointer rounded-full bg-ink text-[15px] font-extrabold text-bg transition hover:brightness-96 active:scale-97">Done</button>
+                    @else
+                        <button type="button" wire:click="claimPayment({{ $payPlay->id }})" class="h-13 min-w-45 flex-1 cursor-pointer rounded-full border-2 border-cta-border bg-lime text-[15px] font-extrabold text-on-lime shadow-cta transition hover:brightness-96 active:scale-97">I've sent the payment</button>
+                    @endif
+                </div>
+            </div>
+        </div>
+    @endif
 </x-app-shell>

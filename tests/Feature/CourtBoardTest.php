@@ -14,12 +14,13 @@ class CourtBoardTest extends TestCase
 
     private function play(int $players, array $attrs = []): OpenPlay
     {
-        $org = User::factory()->create(['role' => 'organizer', 'organizer_status' => 'approved']);
+        $org = User::factory()->create(['organizer_status' => 'approved']);
         $play = OpenPlay::create($attrs + [
             'organizer_id' => $org->id, 'title' => 'Test', 'club' => 'Club', 'venue' => 'Venue',
             'starts_at' => now(), 'ends_at' => now()->addHours(3), 'courts' => 2, 'cap' => 24,
         ]);
         User::factory($players)->create()->each(fn ($u) => $play->join($u));
+        $play->participants()->update(['checked_in_at' => now()]); // everyone is at the courts
 
         return $play;
     }
@@ -87,11 +88,44 @@ class CourtBoardTest extends TestCase
         $play->join($late);
 
         $this->assertSame('court', $play->statusFor($play->participants()->first()->user)['state']);
-        $this->assertSame('queued', $play->statusFor($late)['state']);
+        $this->assertSame('checkin', $play->statusFor($late)['state']);
+
+        $play->checkIn([$play->participants()->where('user_id', $late->id)->value('id')]);
+        $this->assertSame('queued', $play->fresh()->statusFor($late)['state']);
 
         $play->leave($late);
         $this->assertNull($play->statusFor($late));
         $this->assertSame(0, $play->queuedPlayerCount());
+    }
+
+    public function test_only_checked_in_and_present_players_are_called(): void
+    {
+        $play = $this->play(4, ['courts' => 1]);
+        $play->participants()->limit(1)->update(['checked_in_at' => null]);
+        $play->start();
+
+        // One of the four hasn't arrived: nobody can be called yet.
+        $this->assertSame(0, $play->busyCourtCount());
+
+        $play->checkIn($play->participants()->pluck('id')->all());
+        $this->assertSame(1, $play->busyCourtCount(), 'auto-fill runs once everyone is checked in');
+    }
+
+    public function test_sub_in_takes_the_spot_and_the_subbed_out_player_steps_out(): void
+    {
+        $play = $this->play(7, ['courts' => 1]);
+        $play->start();
+        [$first, $second, $third] = collect($play->queue())->pluck('id')->all();
+
+        $play->subIn($first, $third);
+
+        $queue = collect($play->queue());
+        $this->assertSame([$third, $first, $second], $queue->pluck('id')->all());
+        $this->assertTrue($queue->firstWhere('id', $first)['paused']);
+        $this->assertNotContains($first, $play->nextUpTeams()['used'] ?? [], 'stepped-out entries are skipped');
+
+        $play->setPaused($first, false);
+        $this->assertFalse(collect($play->queue())->firstWhere('id', $first)['paused']);
     }
 
     public function test_full_open_play_rejects_joins(): void

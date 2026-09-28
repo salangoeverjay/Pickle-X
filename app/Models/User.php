@@ -11,17 +11,27 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'role', 'organizer_status', 'club', 'city', 'courts', 'organizer_note', 'phone', 'avatar_color', 'preferences'])]
+#[Fillable(['name', 'email', 'password', 'role', 'organizer_status', 'club', 'city', 'courts', 'organizer_note', 'phone', 'avatar_color', 'avatar', 'preferences'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    // Mirror the column default so new, unsaved-refresh models know they're players.
+    protected $attributes = ['role' => 'member'];
+
     // Avatar palette offered in settings, [hex => label].
     public const AVATARS = [
         '#FFD3A3' => 'Peach', '#CDEBB0' => 'Mint', '#BCD9F7' => 'Sky', '#F7C9DB' => 'Rose',
         '#E2D2FF' => 'Lilac', '#FFEFA3' => 'Butter', '#BDEBE3' => 'Seafoam', '#FFCBBB' => 'Coral',
+    ];
+
+    // PickleX avatars (public/avatars/presets/{id}.svg), [id => label].
+    public const AVATAR_PRESETS = [
+        'paddle' => 'Paddle', 'ball' => 'Pickleball', 'happy' => 'Happy ball', 'dill' => 'Big dill',
+        'dink' => 'Dink shot', 'kitchen' => 'Kitchen', 'doubles' => 'Doubles', 'ace' => 'Ace',
+        'champ' => 'Champion', 'streak' => 'Hot streak', 'shoes' => 'Court shoes', 'night' => 'Night owl',
     ];
 
     public const DEFAULT_PREFERENCES = [
@@ -58,14 +68,16 @@ class User extends Authenticatable
         return $this->hasMany(Participant::class);
     }
 
+    /** Players. Organizers are members too: one account, two modes. */
     public function isMember(): bool
     {
         return $this->role === 'member';
     }
 
+    /** Has approved organizer access (can host open plays). */
     public function isOrganizer(): bool
     {
-        return $this->role === 'organizer';
+        return $this->isMember() && $this->organizer_status === 'approved';
     }
 
     public function isAdmin(): bool
@@ -73,10 +85,23 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
-    /** Route name of the screen this user lands on after logging in. */
+    /**
+     * The mode the app is showing: admin, organizer or member (player).
+     * Approved organizers default to organizer mode; routes set it via EnsureRole.
+     */
+    public function mode(): string
+    {
+        if ($this->isAdmin()) {
+            return 'admin';
+        }
+
+        return $this->isOrganizer() && session('mode', 'organizer') === 'organizer' ? 'organizer' : 'member';
+    }
+
+    /** Route name of the home screen for the current mode. */
     public function homeRoute(): string
     {
-        return match ($this->role) {
+        return match ($this->mode()) {
             'admin' => 'admin.requests',
             'organizer' => 'organizer.plays',
             default => 'member.dashboard',
@@ -85,7 +110,7 @@ class User extends Authenticatable
 
     public function roleLabel(): string
     {
-        return ucfirst($this->role);
+        return ucfirst($this->mode());
     }
 
     public function firstName(): string
@@ -100,10 +125,30 @@ class User extends Authenticatable
 
     public function color(): string
     {
-        return $this->avatar_color ?? match ($this->role) {
-            'organizer' => '#FFD3A3',
-            'admin' => '#E2D2FF',
-            default => '#BCD9F7',
+        return $this->avatar_color ?? ($this->isAdmin() ? '#E2D2FF' : ($this->organizer_status ? '#FFD3A3' : '#BCD9F7'));
+    }
+
+    /** Profile picture URL, or null when showing initials on color(). */
+    public function avatarUrl(): ?string
+    {
+        [$kind, $value] = explode(':', (string) $this->avatar, 2) + [null, null];
+
+        return match ($kind) {
+            'preset' => isset(self::AVATAR_PRESETS[$value]) ? asset("avatars/presets/{$value}.svg") : null,
+            'photo' => route('avatar.photo', ['user' => $this->id, 'version' => $value]),
+            default => null,
+        };
+    }
+
+    /** "Your photo", "PickleX avatar · Dink shot", or null for initials. */
+    public function avatarLabel(): ?string
+    {
+        [$kind, $value] = explode(':', (string) $this->avatar, 2) + [null, null];
+
+        return match ($kind) {
+            'preset' => 'PickleX avatar · '.(self::AVATAR_PRESETS[$value] ?? 'Avatar'),
+            'photo' => 'Your photo',
+            default => null,
         };
     }
 

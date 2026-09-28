@@ -19,7 +19,7 @@ class OpenPlaysTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->org = User::factory()->create(['role' => 'organizer', 'organizer_status' => 'approved', 'club' => 'Dink Club']);
+        $this->org = User::factory()->create(['organizer_status' => 'approved', 'club' => 'Dink Club']);
     }
 
     private function play(array $attrs = []): OpenPlay
@@ -38,14 +38,14 @@ class OpenPlaysTest extends TestCase
         $this->actingAs($member)->get(route('member.plays'))->assertOk()->assertSee('Find your next game')->assertSee('Friday Rally');
         $this->actingAs($member)->get(route('organizer.plays'))->assertForbidden();
         $this->actingAs($this->org)->get(route('organizer.plays'))->assertOk()->assertSee('Your open plays')->assertSee('Friday Rally');
-        $this->actingAs($this->org)->get(route('member.plays'))->assertForbidden();
+        $this->actingAs($this->org)->get(route('member.plays'))->assertOk(); // player mode, same account
     }
 
     public function test_seeded_demo_data_renders(): void
     {
         $this->seed();
 
-        $this->actingAs(User::where('email', 'kai@picklex.app')->first())->get(route('member.plays'))->assertOk()->assertSee('Leave open play');
+        $this->actingAs(User::where('email', 'kai@picklex.app')->first())->get(route('member.plays'))->assertOk()->assertSee('Check in to get on court')->assertSee('Leave open play');
         $this->actingAs(User::where('email', 'ely@panabodink.ph')->first())->get(route('organizer.plays'))->assertOk()->assertSee('LIVE NOW')->assertSee('Past sessions');
     }
 
@@ -55,10 +55,10 @@ class OpenPlaysTest extends TestCase
         $play = $this->play();
 
         Livewire::actingAs($member)->test(MemberPlays::class)
-            ->call('join', $play->id)
-            ->assertDispatched('toast', message: "You're in! See you {$play->whenLabel()}")
+            ->call('joinPlay', $play->id)
+            ->assertDispatched('toast', message: "You're in. See you {$play->whenLabel()}.")
             ->assertSee("You're in · Leave", false)
-            ->call('leave', $play->id)
+            ->call('leavePlay', $play->id)
             ->assertDispatched('toast', message: 'You left Friday Rally');
 
         $this->assertSame(0, $play->playerCount());
@@ -68,28 +68,64 @@ class OpenPlaysTest extends TestCase
     {
         $member = User::factory()->create(['role' => 'member']);
 
-        Livewire::actingAs($member)->test(MemberPlays::class)->call('join', $this->play(['visibility' => 'invite'])->id)->assertNotFound();
-        Livewire::actingAs($member)->test(MemberPlays::class)->call('join', $this->play(['status' => 'done'])->id)->assertNotFound();
+        Livewire::actingAs($member)->test(MemberPlays::class)->call('joinPlay', $this->play(['visibility' => 'invite'])->id)->assertNotFound();
+        Livewire::actingAs($member)->test(MemberPlays::class)->call('joinPlay', $this->play(['status' => 'done'])->id)->assertNotFound();
     }
 
     public function test_member_sees_their_status_in_a_live_play(): void
     {
+        $this->freezeTime();
         $play = $this->play();
-        User::factory(4)->create()->each(fn ($u) => $play->join($u));
-        $play->start(); // 4 on the only court, queue empty
+        $first = User::factory(4)->create()->map(fn ($u) => $play->join($u));
+        $play->start();
+        $play->checkIn($first->pluck('id')->all()); // 4 on the only court, queue empty
         $member = User::factory()->create(['role' => 'member']);
 
-        Livewire::actingAs($member)->test(MemberPlays::class)
-            ->call('join', $play->id)
-            ->assertDispatched('toast', message: "You're in — added to the queue")
+        $screen = Livewire::actingAs($member)->test(MemberPlays::class)
+            ->call('joinPlay', $play->id)
+            ->assertDispatched('toast', message: "You're in the queue. Check in when you reach the courts.")
+            ->assertSee('Check in to get on court')
+            ->assertSee("You're #1 in line. Organizers only call players who are checked in", false)
+            ->assertSee('Live board')
+            ->assertSee('Leave open play')
+            ->call('checkInPlay', $play->id)
+            ->assertDispatched('toast', message: 'Checked in at '.now()->format('g:i A').". You're in the rotation.")
             ->assertSee('#1 in line')
             ->assertSee('0 players ahead of you · 1 of 1 courts in play')
-            ->assertSee('Leave open play');
+            ->assertSee('Checked in '.now()->format('g:i A'));
 
-        // Three more behind make a full next game.
-        User::factory(3)->create()->each(fn ($u) => $play->join($u));
+        // Stepped out (e.g. subbed out by the organizer), then back.
+        $play->refresh()->setPaused($play->queue()[0]['id'], true);
+        $screen->call('$refresh')
+            ->assertSee('You stepped out')
+            ->assertSee('You kept your spot at #1', false)
+            ->call('stepBackIn', $play->id)
+            ->assertDispatched('toast', message: "You're back in the rotation")
+            ->assertSee('#1 in line');
 
-        Livewire::actingAs($member)->test(MemberPlays::class)->assertSee("You're up next!");
+        // Three more checked-in players behind make a full next game.
+        $more = User::factory(3)->create()->map(fn ($u) => $play->join($u));
+        $play->checkIn($more->pluck('id')->all());
+
+        Livewire::actingAs($member)->test(MemberPlays::class)->assertSee("You're up next");
+    }
+
+    public function test_member_can_only_check_in_to_plays_they_joined(): void
+    {
+        $play = $this->play(['status' => 'upcoming']);
+        $play->start();
+
+        Livewire::actingAs(User::factory()->create())->test(MemberPlays::class)->call('checkInPlay', $play->id)->assertNotFound();
+        Livewire::actingAs(User::factory()->create())->test(MemberPlays::class)->call('stepBackIn', $play->id)->assertNotFound();
+    }
+
+    public function test_live_cards_link_to_the_public_view(): void
+    {
+        $play = $this->play(['status' => 'upcoming']);
+        $play->start();
+
+        Livewire::actingAs(User::factory()->create())->test(MemberPlays::class)
+            ->assertSee('Watch live')->assertSee(route('live', $play->fresh()->share_code));
     }
 
     public function test_organizer_publishes_an_open_play(): void
@@ -105,22 +141,37 @@ class OpenPlaysTest extends TestCase
             ->assertSet('error', 'Add a title and a venue so members know where to go.')
             ->set('title', 'Sunrise Rally')
             ->set('venue', 'Court B')
-            ->set('ends', '17:00')
+            ->set('ends', '18:00')
             ->call('publish')
-            ->assertSet('error', 'The session has to end after it starts.')
+            ->assertSet('error', 'The session has to end after it starts. Pick a later end time.')
+            ->set('ends', '17:00') // would be 23 hours overnight
+            ->call('publish')
+            ->assertSet('error', 'Open plays can run up to 12 hours. Check the end time.')
             ->set('ends', '21:00')
             ->set('date', now()->subDay()->format('Y-m-d'))
             ->call('publish')
-            ->assertSet('error', 'Pick a date from today on.')
+            ->assertSet('error', 'Pick a date from today onward.')
             ->set('date', now()->addDays(2)->format('Y-m-d'))
             ->set('raceTo', 15)
             ->call('publish')
             ->assertSet('create', false)
-            ->assertDispatched('toast', message: 'Open play published — members can join now');
+            ->assertDispatched('toast', message: 'Open play published. Members can join now.');
 
         $play = OpenPlay::where('title', 'Sunrise Rally')->firstOrFail();
         $this->assertSame(['Dink Club', 'upcoming', 3, 16, 15], [$play->club, $play->status, $play->courts, $play->cap, $play->race_to]);
         $this->assertSame('18:00', $play->starts_at->format('H:i'));
+    }
+
+    public function test_overnight_sessions_end_the_next_day(): void
+    {
+        Livewire::actingAs($this->org)->test(OrganizerPlays::class)
+            ->set(['title' => 'Late Night Dinks', 'venue' => 'Court B', 'date' => now()->addDay()->format('Y-m-d'), 'starts' => '20:00', 'ends' => '01:00', 'fee' => '150'])
+            ->call('publish')->assertSet('error', null);
+
+        $play = OpenPlay::firstWhere('title', 'Late Night Dinks');
+        $this->assertSame(300, (int) $play->starts_at->diffInMinutes($play->ends_at));
+        $this->assertStringEndsWith('(next day)', $play->timeRange());
+        $this->assertSame('₱150', $play->fee, 'a bare number gets the peso sign');
     }
 
     public function test_organizer_starts_one_session_at_a_time(): void
@@ -132,7 +183,7 @@ class OpenPlaysTest extends TestCase
             ->call('startSession', $first->id)
             ->assertRedirect(route('organizer.board'));
         $this->assertSame('live', $first->fresh()->status);
-        $this->assertSame('Friday Rally is live — courts filled from the queue', session('toast'));
+        $this->assertSame('Friday Rally is live. Courts filled from the queue.', session('toast'));
 
         Livewire::actingAs($this->org)->test(OrganizerPlays::class)
             ->assertSee('LIVE NOW')
@@ -143,7 +194,7 @@ class OpenPlaysTest extends TestCase
 
     public function test_organizer_cannot_start_someone_elses_play(): void
     {
-        $other = User::factory()->create(['role' => 'organizer', 'organizer_status' => 'approved']);
+        $other = User::factory()->create(['organizer_status' => 'approved']);
 
         Livewire::actingAs($other)->test(OrganizerPlays::class)->call('startSession', $this->play()->id)->assertForbidden();
     }
