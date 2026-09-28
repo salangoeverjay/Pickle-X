@@ -1,0 +1,205 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+    --font-mono: 'Geist Mono', ui-monospace, monospace;
+
+    /* Light theme tokens; dark overrides below. */
+    --color-bg: #F3F2EA;
+    --color-bg2: #E9E8DD;
+    --color-surface: #FFFFFF;
+    --color-surface2: #F6F5EE;
+    --color-line: #DEDCD0;
+    --color-line2: #C8C6B8;
+    --color-ink: #12170F;
+    --color-ink2: #464D42;
+    --color-ink3: #5B6257;
+    --color-lime: #D3F347;
+    --color-lime-text: #496800;
+    --color-lime-soft: #F0FAC8;
+    --color-lime-on-ink: #D3F347;
+    --color-court: #2F62AD;
+    --color-court-in: #3B72C2;
+    --color-court-out: #2E6B4C;
+    --color-hot: #B23A0A;
+    --color-hot-soft: #FDE9DA;
+    --color-hot-line: #F2B791;
+    --color-glass: rgba(243, 242, 234, .84);
+    --color-hl-text: #12170F;
+    --color-hl-band: #D3F347;
+    --color-focus: #2F62AD;
+    --color-grid: rgba(18, 23, 15, .07);
+    --color-cta-border: #12170F;
+    /* Text on lime stays dark in both themes. */
+    --color-on-lime: #12170F;
+
+    --shadow-card: 0 1px 2px rgba(18, 23, 15, .05), 0 12px 32px -14px rgba(18, 23, 15, .22);
+    --shadow-cta: 4px 4px 0 #12170F;
+
+    --animate-rise: rise .9s cubic-bezier(.2, .8, .2, 1) both;
+    --animate-float: float 5.5s ease-in-out infinite;
+    --animate-marquee: marquee 30s linear infinite;
+    --animate-ticker: ticker 14s linear infinite;
+    --animate-live: live 1.6s ease-out infinite;
+    --animate-spin-slow: spin 18s linear infinite;
+    --animate-screen: screen .5s cubic-bezier(.2, .8, .2, 1) both;
+    --animate-fade: fade .3s ease both;
+    --animate-snap: snap .65s cubic-bezier(.2, 1.4, .4, 1) both;
+
+    @keyframes rise { from { opacity: 0; transform: translateY(28px) } to { opacity: 1; transform: none } }
+    @keyframes float { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-10px) } }
+    @keyframes marquee { from { transform: translateX(0) } to { transform: translateX(-50%) } }
+    @keyframes ticker { from { transform: translateY(0) } to { transform: translateY(-50%) } }
+    @keyframes screen { from { opacity: 0; transform: translateY(12px) } to { opacity: 1; transform: none } }
+    @keyframes fade { from { opacity: 0 } to { opacity: 1 } }
+    @keyframes snap { 0% { transform: scale(.92) } 55% { transform: scale(1.035) } 100% { transform: scale(1) } }
+    @keyframes live { 0% { box-shadow: 0 0 0 0 rgba(221, 248, 78, .8) } 100% { box-shadow: 0 0 0 10px rgba(221, 248, 78, 0) } }
+}
+
+[data-theme=dark] {
+    --color-bg: #0A0E0B;
+    --color-bg2: #0E140F;
+    --color-surface: #131A15;
+    --color-surface2: #1A221C;
+    --color-line: #26312A;
+    --color-line2: #36433B;
+    --color-ink: #EDF2E3;
+    --color-ink2: #B1BBAA;
+    --color-ink3: #8E988B;
+    --color-lime: #D4F53C;
+    --color-lime-text: #D4F53C;
+    --color-lime-soft: rgba(212, 245, 60, .10);
+    --color-lime-on-ink: #4A6A00;
+    --color-court: #244C86;
+    --color-court-in: #2C5898;
+    --color-court-out: #1C4632;
+    --color-hot: #FF9152;
+    --color-hot-soft: rgba(255, 145, 82, .12);
+    --color-hot-line: rgba(255, 145, 82, .42);
+    --color-glass: rgba(10, 14, 11, .8);
+    --color-hl-text: #D4F53C;
+    --color-hl-band: transparent;
+    --color-focus: #D4F53C;
+    --color-grid: rgba(237, 242, 227, .05);
+    --color-cta-border: transparent;
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, .5), 0 16px 36px -16px rgba(0, 0, 0, .75);
+    --shadow-cta: 0 12px 32px -10px rgba(212, 245, 60, .45);
+}
+
+@layer base {
+    html {
+        scroll-behavior: smooth;
+    }
+
+    body {
+        @apply bg-bg text-ink font-sans text-[15px] leading-normal antialiased transition-colors duration-[450ms];
+    }
+
+    [x-cloak] {
+        display: none !important;
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--color-focus);
+        outline-offset: 2px;
+    }
+}
+
+/* Backgrounds and multi-step animations too long for utility classes. */
+@layer components {
+    .input {
+        @apply h-13 w-full rounded-[14px] border-[1.5px] border-line bg-surface px-4 text-[15px] font-medium text-ink outline-none transition-colors placeholder:text-ink3 focus:border-ink;
+    }
+
+    .court-grid {
+        background-image: linear-gradient(rgba(255, 255, 255, .06) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, .06) 1px, transparent 1px);
+        background-size: 48px 48px;
+    }
+
+    .hero-grid {
+        background-image: linear-gradient(var(--color-grid) 1px, transparent 1px), linear-gradient(90deg, var(--color-grid) 1px, transparent 1px);
+        background-size: 56px 56px;
+        mask-image: radial-gradient(ellipse 70% 65% at 68% 42%, #000 25%, transparent 75%);
+    }
+
+    .highlight-band {
+        background: linear-gradient(transparent 58%, var(--color-hl-band) 58%);
+    }
+
+    .fade-y {
+        mask-image: linear-gradient(transparent, #000 16%, #000 84%, transparent);
+    }
+
+    .court-player {
+        transform: translate(-50%, -50%);
+        animation: bob 1.2s ease-in-out infinite, ring 2.8s ease-out infinite;
+    }
+
+    .ball {
+        position: absolute;
+        animation: ball-x 1.4s ease-in-out infinite alternate, ball-y 2.1s ease-in-out infinite alternate;
+    }
+
+    .ball-body {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        margin: -10px 0 0 -10px;
+        border-radius: 50%;
+        background:
+            radial-gradient(circle at 32% 34%, rgba(0, 0, 0, .3) 0 1px, transparent 1.6px),
+            radial-gradient(circle at 67% 30%, rgba(0, 0, 0, .3) 0 1px, transparent 1.6px),
+            radial-gradient(circle at 52% 68%, rgba(0, 0, 0, .3) 0 1px, transparent 1.6px),
+            radial-gradient(circle at 30% 66%, rgba(0, 0, 0, .22) 0 .8px, transparent 1.4px),
+            #DDF84E;
+        box-shadow: inset -2px -2px 0 rgba(0, 0, 0, .16), 0 0 0 1px rgba(0, 0, 0, .15);
+        animation: ball-z .7s ease-in-out infinite alternate;
+    }
+
+    .ball-shadow {
+        position: absolute;
+        width: 14px;
+        height: 6px;
+        margin: -2px 0 0 -7px;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, .4);
+        filter: blur(1.5px);
+        animation: ball-s .7s ease-in-out infinite alternate;
+    }
+
+    .cta-ball {
+        background:
+            radial-gradient(circle at 50% 20%, rgba(0, 0, 0, .25) 0 7px, transparent 8px),
+            radial-gradient(circle at 50% 80%, rgba(0, 0, 0, .25) 0 7px, transparent 8px),
+            radial-gradient(circle at 20% 50%, rgba(0, 0, 0, .25) 0 7px, transparent 8px),
+            radial-gradient(circle at 80% 50%, rgba(0, 0, 0, .25) 0 7px, transparent 8px),
+            radial-gradient(circle at 30% 30%, rgba(0, 0, 0, .18) 0 5px, transparent 6px),
+            radial-gradient(circle at 70% 70%, rgba(0, 0, 0, .18) 0 5px, transparent 6px),
+            radial-gradient(circle at 70% 30%, rgba(0, 0, 0, .18) 0 5px, transparent 6px),
+            radial-gradient(circle at 30% 70%, rgba(0, 0, 0, .18) 0 5px, transparent 6px),
+            var(--color-lime);
+        box-shadow: inset -18px -18px 0 rgba(0, 0, 0, .12);
+    }
+}
+
+@keyframes bob { 0%, 100% { transform: translate(-50%, -50%) } 50% { transform: translate(-50%, -57%) } }
+@keyframes ring { 0% { box-shadow: 0 0 0 0 rgba(221, 248, 78, .95), 0 3px 8px rgba(0, 0, 0, .35) } 24%, 100% { box-shadow: 0 0 0 13px rgba(221, 248, 78, 0), 0 3px 8px rgba(0, 0, 0, .35) } }
+@keyframes ball-x { from { left: 27% } to { left: 73% } }
+@keyframes ball-y { from { top: 35% } to { top: 65% } }
+@keyframes ball-z { from { transform: translateY(0) scale(1) } to { transform: translateY(-18px) scale(1.5) } }
+@keyframes ball-s { from { transform: scale(1); opacity: .9 } to { transform: scale(.55); opacity: .3 } }
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: .001s !important;
+        animation-iteration-count: 1 !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+    }
+}
