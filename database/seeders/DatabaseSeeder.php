@@ -49,11 +49,11 @@ class DatabaseSeeder extends Seeder
 
         // Some regulars dressed up their avatar (border) and queue spot (background).
         $looks = [
-            'Rico Dizon' => ['gold', null], 'Ben Tan' => ['lime', 'shimmer'], 'Mika Lim' => ['spin', null], 'Gab Navarro' => ['fire', null], 'Ria Torres' => ['kitchen', 'confetti'],
+            'Ben Tan' => ['lime', 'shimmer'], 'Gab Navarro' => ['fire', null], 'Ria Torres' => ['kitchen', 'confetti'],
             // Collections: Shinobi, Demon Hunter, Pirate, Spirit Beasts, Fireworks.
             'Jojo Bautista' => ['nj-flame', 'nj-flame'], 'Paolo Cruz' => ['nj-storm', null], 'Tin Ramos' => ['nj-sakura', 'nj-sakura'], 'Nico Garcia' => ['nj-tidal', null],
             'Carla Mendoza' => ['dh-ember', null], 'Liza Uy' => ['dh-oni', null], 'Enzo Aquino' => ['pr-roger', 'flow'], 'Marco Rivera' => ['pr-wheel', 'waves'],
-            'Sam Flores' => ['pr-kraken', null], 'Joy Villanueva' => ['sb-phoenix', null], 'Ana Reyes' => ['fw-rainbow', 'dh-lantern'],
+            'Sam Flores' => ['pr-kraken', null], 'Rico Dizon' => ['fl-blaze', 'fl-inferno'], 'Mika Lim' => ['fl-blue', null], 'Joy Villanueva' => ['sb-phoenix', null], 'Ana Reyes' => ['fw-rainbow', 'dh-lantern'],
         ];
         foreach ($looks as $name => [$frame, $bg]) {
             $members->firstWhere('name', $name)->forceFill(['frame' => $frame, 'queue_bg' => $bg])->save();

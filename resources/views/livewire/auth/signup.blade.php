@@ -130,7 +130,7 @@
                     </li>
                     <li class="flex gap-3.5">
                         <div class="flex flex-col items-center">
-                            <span class="size-6.5 animate-live rounded-full border-2 border-on-lime bg-lime"></span>
+                            <span class="size-6.5 animate-live rounded-full bg-lime outline-2 -outline-offset-2 outline-on-lime"></span>
                             <span class="min-h-5.5 w-0.5 flex-1 bg-line2"></span>
                         </div>
                         <div class="pb-4"><div class="font-bold">Admin review</div><div class="text-[13px] text-ink3">In progress</div></div>

@@ -48,6 +48,10 @@ class Looks
             'fw-rainbow' => 'Rainbow burst', 'fw-willow' => 'Golden willow', 'fw-neon' => 'Neon peony', 'fw-cross' => 'Crossette', 'fw-sparkler' => 'Sparkler',
             'fw-rocket' => 'Rocket launch', 'fw-heart' => 'Heart burst', 'fw-star' => 'Star burst', 'fw-mum' => 'Chrysanthemum', 'fw-finale' => 'Grand finale',
         ]],
+        'fl' => ['Fire', 'Blazing rings, blue and soul flames, embers, fireballs, molten lava and a flaming pickleball.', 'M12 21.5c-4 0-6.8-2.7-6.8-6.4 0-3.3 2.2-5.3 3.4-7.6.5 1.6 1.3 2.7 2.4 3.3-.2-3.4 1.2-6.4 3.8-8.3-.1 3.1 1.2 5 2.6 6.9 1.2 1.6 2.2 3.3 2.2 5.7 0 3.7-3.4 6.4-7.6 6.4ZM12 21.5c-1.9 0-3.2-1.2-3.2-3 0-1.6 1.1-2.6 1.9-3.8.3.8.7 1.3 1.3 1.6 0-1.4.6-2.6 1.6-3.4.1 1.4.6 2.3 1.2 3.1.5.7.9 1.4.9 2.5 0 1.8-1.6 3-3.7 3Z', '#FF5A1F', [
+            'fl-blaze' => 'Blaze', 'fl-blue' => 'Blue flame', 'fl-inferno' => 'Inferno', 'fl-embers' => 'Ember storm', 'fl-fireball' => 'Fireball',
+            'fl-crown' => 'Flame crown', 'fl-lava' => 'Molten lava', 'fl-violet' => 'Soul flame', 'fl-emerald' => 'Emerald flame', 'fl-streak' => 'Hot streak',
+        ]],
     ];
 
     /** Collection key a look belongs to, or null. */

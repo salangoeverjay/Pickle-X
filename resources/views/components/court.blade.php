@@ -22,11 +22,15 @@
 
     @foreach ($players as $i => $player)
         @php([$initials, $color, $ring, $src, $frame] = $player + [2 => '#FFFFFF', 3 => null, 4 => ''])
-        <div class="court-player absolute flex items-center justify-center rounded-full border-[3px] font-extrabold text-on-lime {{ $playerClass }} {{ $frame }}"
-             style="left: {{ $spots[$i][0] }}; top: {{ $spots[$i][1] }}; background: {{ $src ? "url('{$src}') center / cover no-repeat, " : '' }}{{ $color }}; border-color: {{ $ring }}; animation-delay: {{ $spots[$i][2] + $delay }}s, {{ $spots[$i][3] }}s">{{ $src ? '' : $initials }}</div>
+        {{-- The spot bobs and the ring pings as separate layers, so both run on the compositor. --}}
+        <div class="court-spot absolute" style="left: {{ $spots[$i][0] }}; top: {{ $spots[$i][1] }}; animation-delay: {{ $spots[$i][2] + $delay }}s">
+            <span class="court-ring" style="animation-delay: {{ $spots[$i][3] }}s"></span>
+            <div class="court-player relative flex items-center justify-center rounded-full border-[3px] font-extrabold text-on-lime {{ $playerClass }} {{ $frame }}"
+                 style="background: {{ $src ? "url('{$src}') center / cover no-repeat, " : '' }}{{ $color }}; border-color: {{ $ring }}">{{ $src ? '' : $initials }}</div>
+        </div>
     @endforeach
 
     @if ($players)
-        <div class="ball" style="animation-delay: {{ $delay }}s"><div class="ball-shadow"></div><div class="ball-body"></div></div>
+        <div class="ball-x" style="animation-delay: {{ $delay }}s"><div class="ball" style="animation-delay: {{ $delay }}s"><div class="ball-shadow"></div><div class="ball-body"></div></div></div>
     @endif
 </div>

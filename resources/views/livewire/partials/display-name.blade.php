@@ -6,7 +6,7 @@
         get full() { return ($wire.name || '').trim() },
         get useD() { return $wire.showAs === 'display' && this.d !== '' },
         get shown() { return this.useD ? this.d : (this.full || 'Your name') },
-        get init() { const p = this.shown.split(/\s+/); return ((p[0] || '?').charAt(0) + (p[1] || '').charAt(0)).toUpperCase() },
+        get letters() { const p = this.shown.split(/\s+/); return ((p[0] || '?').charAt(0) + (p[1] || '').charAt(0)).toUpperCase() },
         pick(o) {
             if (o === 'display' && ! this.d) { document.getElementById('sf-dname')?.focus(); $dispatch('toast', { message: 'Type a display name first' }); return }
             $wire.$set('showAs', o, false)
@@ -39,7 +39,7 @@
         @if ($url)
             <x-avatar :src="$url" :frame="$user->frameClass()" :name="$user->name" :color="$user->color()" class="size-10" aria-hidden="true" />
         @else
-            <span aria-hidden="true" class="flex size-10 shrink-0 items-center justify-center rounded-full text-[13px] font-extrabold text-on-lime {{ $user->frameClass() }}" style="background: {{ $user->color() }}" x-text="init"></span>
+            <span aria-hidden="true" class="flex size-10 shrink-0 items-center justify-center rounded-full text-[13px] font-extrabold text-on-lime {{ $user->frameClass() }}" style="background: {{ $user->color() }}" x-text="letters"></span>
         @endif
         <span class="flex min-w-0 flex-1 flex-col gap-0.5">
             <span class="font-mono text-[11px] tracking-widest text-ink3 uppercase">Others see you as</span>

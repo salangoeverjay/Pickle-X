@@ -135,7 +135,7 @@
                             </div>
                         @elseif ($user->organizer_status === 'pending')
                             <div class="flex items-start gap-3 rounded-2xl border border-hot-line bg-hot-soft p-3.5">
-                                <span class="mt-1 size-3 shrink-0 animate-live rounded-full border-[1.5px] border-on-lime bg-lime"></span>
+                                <span class="mt-1 size-3 shrink-0 animate-live rounded-full bg-lime outline-[1.5px] -outline-offset-[1.5px] outline-on-lime"></span>
                                 <span class="text-sm leading-[1.45]">Your request for <strong>{{ $user->club }}</strong> is with a PickleX admin. Organizer tools appear here, on this same account, once it's approved.</span>
                             </div>
                         @else

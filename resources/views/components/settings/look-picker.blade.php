@@ -34,7 +34,7 @@
     $pvFr = $user->frameClass();
 @endphp
 
-<div id="set-style" class="flex flex-col gap-4.5 rounded-[22px] border border-line bg-bg p-3.5 lg:p-5">
+<div id="set-style" data-looks-all class="flex flex-col gap-4.5 rounded-[22px] border border-line bg-bg p-3.5 lg:p-5">
     <div class="flex flex-wrap items-end justify-between gap-3">
         <div class="flex min-w-0 flex-col gap-0.75">
             <h3 class="m-0 font-display text-lg font-bold tracking-[-0.02em]">Your look</h3>

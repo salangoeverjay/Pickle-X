@@ -35,6 +35,8 @@
         let theme;
         try { theme = localStorage.getItem('theme'); } catch {}
         document.documentElement.dataset.theme = theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        // Reduced motion: every avatar border and queue background shows its static version (looks.css).
+        document.documentElement.classList.toggle('px-still', matchMedia('(prefers-reduced-motion: reduce)').matches);
     };
     applyTheme();
     if ('serviceWorker' in navigator && ! window.swRegistered) {

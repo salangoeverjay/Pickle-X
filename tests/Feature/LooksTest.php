@@ -32,7 +32,7 @@ class LooksTest extends TestCase
     {
         $css = file_get_contents(resource_path('css/looks.css'));
         $ids = collect(Looks::COLLECTIONS)->flatMap(fn ($c) => array_keys($c[4]));
-        $this->assertCount(44, $ids);
+        $this->assertCount(54, $ids);
         foreach ($ids as $id) {
             $this->assertStringContainsString(".px-fr-{$id}{", $css, "border {$id}");
             $this->assertStringContainsString(".px-qb-{$id}{", $css, "queue {$id}");
@@ -40,13 +40,26 @@ class LooksTest extends TestCase
 
         $kai = User::factory()->create();
         Livewire::actingAs($kai)->test(Settings::class)
-            ->assertSee('Collections')->assertSee('44 animated looks')->assertSee('Shinobi flame')
+            ->assertSee('Collections')->assertSee('54 animated looks')->assertSee('Shinobi flame')
             ->set('lookCol', 'pr')->assertSee('Pirate · Jolly Rogers')->assertSee('Kraken')
             ->call('setLook', 'frame', 'pr-kraken')->assertDispatched('toast', message: 'Avatar border: Kraken')
             ->set('lookCol', '')->assertSee('Pirate collection, has your pick')->assertSee('Kraken · Pirate')
             ->set('lookTab', 'queue')->call('setLook', 'queue', 'sb-dragon')->assertDispatched('toast', message: 'Queue background: Jade dragon');
 
         $this->assertSame(['px-fr px-fr-pr-kraken', 'px-qb px-qb-sb-dragon'], [$kai->fresh()->frameClass(), $kai->fresh()->queueBgClass()]);
+    }
+
+    public function test_every_animated_svg_look_has_a_still_version(): void
+    {
+        // resources/js/looks.js swaps in .px-still off screen, past the animation cap, and for reduced motion.
+        // Designs ship these as @media (prefers-reduced-motion) blocks; they must be rewritten as .px-still rules.
+        $css = file_get_contents(resource_path('css/looks.css'));
+        $ids = collect(Looks::COLLECTIONS)->flatMap(fn ($c) => array_keys($c[4]))->merge(array_keys(Looks::EXCLUSIVE));
+        foreach ($ids as $id) {
+            $this->assertMatchesRegularExpression('/\.px-fr-'.preg_quote($id).':is\(\.px-still,\.px-still \*\)/', $css, "still border {$id}");
+            $this->assertMatchesRegularExpression('/\.px-qb-'.preg_quote($id).':is\(\.px-still,\.px-still \*\)/', $css, "still queue {$id}");
+        }
+        $this->assertSame(1, substr_count($css, 'prefers-reduced-motion'), 'only the generic CSS-animation stop stays a media query');
     }
 
     public function test_members_pick_a_border_and_background_that_save_right_away(): void
