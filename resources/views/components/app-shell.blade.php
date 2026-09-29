@@ -75,6 +75,10 @@
         <div class="flex-1"></div>
 
         @php($on = request()->routeIs('settings'))
+        <a href="{{ route('about') }}" wire:navigate class="flex h-12 items-center gap-3 rounded-[14px] px-3 text-[15px] font-bold text-ink2 transition hover:bg-surface2 hover:text-ink">
+            <x-icon name="love" /><span class="flex-1">Meet the developer</span>
+        </a>
+
         <a href="{{ route('settings') }}" wire:navigate @if ($on) aria-current="page" @endif @class([
             'flex h-12 items-center gap-3 rounded-[14px] px-3 text-[15px] font-bold transition active:scale-97',
             'bg-lime text-on-lime' => $on,
@@ -131,6 +135,7 @@
                 <a href="{{ route($other[0]) }}" wire:navigate class="flex h-11 items-center gap-2.5 rounded-xl px-2.5 text-sm font-bold text-ink transition hover:bg-surface2"><x-icon name="swap" />{{ $other[1] }}</a>
             @endif
             <a href="{{ route('settings') }}" wire:navigate class="flex h-11 items-center gap-2.5 rounded-xl px-2.5 text-sm font-bold text-ink transition hover:bg-surface2"><x-icon name="settings" />Account settings</a>
+            <a href="{{ route('about') }}" wire:navigate class="flex h-11 items-center gap-2.5 rounded-xl px-2.5 text-sm font-bold text-ink transition hover:bg-surface2"><x-icon name="love" />Meet the developer</a>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
                 <button type="submit" class="flex h-11 w-full cursor-pointer items-center gap-2.5 rounded-xl bg-surface2 px-2.5 text-sm font-bold text-ink"><x-icon name="logout" />Log out</button>

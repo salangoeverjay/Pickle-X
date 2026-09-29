@@ -44,11 +44,11 @@
                     @yield('body')
                 </div>
 
-                <p class="m-0 pt-1 pb-1.5 text-center text-xs text-ink3 lg:hidden">PickleX is made by <strong class="text-ink2">CreativeX Techlabs Inc.</strong></p>
+                <p class="m-0 pt-1 pb-1.5 text-center text-xs text-ink3 lg:hidden"><x-credit /></p>
             </main>
 
             <footer class="relative hidden shrink-0 items-center justify-between gap-x-4 gap-y-1.5 px-12 pt-3.5 pb-6.5 text-xs text-ink3 lg:flex 2xl:px-16 2xl:pt-4 2xl:pb-7">
-                <span>PickleX is made by <strong class="text-ink2">CreativeX Techlabs Inc.</strong></span>
+                <x-credit />
                 <span class="font-mono">@yield('foot')</span>
             </footer>
         </div>

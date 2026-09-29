@@ -131,6 +131,51 @@
 
 /* Backgrounds and multi-step animations too long for utility classes. */
 @layer components {
+    /* Footer credit link and its beating heart. */
+    .px-credit {
+        color: var(--color-ink2);
+        font-weight: 700;
+        text-decoration: underline;
+        text-decoration-color: var(--color-line2);
+        text-decoration-thickness: 1.5px;
+        text-underline-offset: 3px;
+        border-radius: 4px;
+        transition: color .2s ease, text-decoration-color .2s ease;
+    }
+
+    .px-credit:hover {
+        color: var(--color-ink);
+        text-decoration-color: currentColor;
+    }
+
+    .px-heart {
+        transform-origin: 50% 60%;
+        animation: px-heart 1.8s ease-in-out infinite;
+    }
+
+    @keyframes px-heart { 0%, 42%, 100% { transform: scale(1) } 14% { transform: scale(1.22) } 28% { transform: scale(1.06) } }
+
+    @media (prefers-reduced-motion: reduce) {
+        .px-heart { animation: none }
+    }
+
+    /* Meet the developer: grid behind the hero, and the outlined pickleball. */
+    .about-grid {
+        background-image: linear-gradient(var(--color-line) 1px, transparent 1px), linear-gradient(90deg, var(--color-line) 1px, transparent 1px);
+        background-size: 56px 56px;
+        mask-image: radial-gradient(ellipse 70% 70% at 72% 45%, #000 20%, transparent 75%);
+    }
+
+    .about-ball {
+        background:
+            radial-gradient(circle at 50% 20%, rgba(0, 0, 0, .22) 0 7px, transparent 8px),
+            radial-gradient(circle at 50% 80%, rgba(0, 0, 0, .22) 0 7px, transparent 8px),
+            radial-gradient(circle at 20% 50%, rgba(0, 0, 0, .22) 0 7px, transparent 8px),
+            radial-gradient(circle at 80% 50%, rgba(0, 0, 0, .22) 0 7px, transparent 8px),
+            radial-gradient(circle at 50% 50%, rgba(0, 0, 0, .22) 0 7px, transparent 8px),
+            radial-gradient(circle at 30% 30%, #E6FF6A, #C4E62E 60%, #A8C91E);
+    }
+
     .input {
         @apply h-13 w-full rounded-[14px] border-[1.5px] border-line bg-surface px-4 text-[15px] font-medium text-ink outline-none transition-colors placeholder:text-ink3 focus:border-ink;
     }

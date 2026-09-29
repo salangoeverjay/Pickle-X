@@ -321,8 +321,9 @@
     {{-- ============ FOOTER ============ --}}
     <footer class="flex flex-col items-start justify-between gap-4 border-t border-line px-4 pt-7 pb-9 lg:flex-row lg:items-center lg:px-14 lg:pt-10 lg:pb-12">
         <x-logo class="text-[22px]" role="img" aria-label="PickleX" />
-        <span class="text-sm text-ink3">© {{ date('Y') }} PickleX · by <strong class="font-bold text-ink2">CreativeX Techlabs Inc.</strong></span>
-        <div class="flex gap-1.5">
+        <x-credit class="text-sm text-ink3" />
+        <div class="flex flex-wrap gap-1.5">
+            <a href="{{ route('about') }}" wire:navigate class="inline-flex h-11 items-center rounded-full px-3.5 text-sm font-semibold text-ink2 transition-colors hover:bg-surface2 hover:text-ink">Meet the developer</a>
             <a href="{{ route('login') }}" wire:navigate class="inline-flex h-11 items-center rounded-full px-3.5 text-sm font-semibold text-ink2 transition-colors hover:bg-surface2 hover:text-ink">Log in</a>
             <a href="{{ route('signup') }}" wire:navigate class="inline-flex h-11 items-center rounded-full px-3.5 text-sm font-semibold text-ink2 transition-colors hover:bg-surface2 hover:text-ink">Join PickleX</a>
         </div>

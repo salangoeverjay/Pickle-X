@@ -17,6 +17,6 @@
 
         {{ $slot }}
 
-        <p class="m-0 shrink-0 px-4 pb-5.5 text-center text-xs text-ink3">PickleX is made by <strong class="font-bold text-ink2">CreativeX Techlabs Inc.</strong></p>
+        <p class="m-0 shrink-0 px-4 pb-5.5 text-center text-xs text-ink3"><x-credit /></p>
     </div>
 </div>

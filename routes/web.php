@@ -1,5 +1,6 @@
 <?php
 
+use App\Livewire\About;
 use App\Livewire\Admin;
 use App\Livewire\Auth\ForgotPassword;
 use App\Livewire\Auth\Login;
@@ -18,6 +19,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
 Route::livewire('/', Home::class)->name('home');
+Route::livewire('/about', About::class)->name('about');
 
 Route::middleware('guest')->group(function () {
     Route::livewire('/login', Login::class)->name('login');
