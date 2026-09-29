@@ -15,7 +15,7 @@
             </td>
             <td style="padding: 14px 16px;">
                 <p class="em-ink" style="margin: 0; font-weight: 700; font-size: 16px; color: #12170F;">{{ $user->club }}</p>
-                <p class="em-ink3" style="margin: 0; font-size: 13px; color: #5B6257;">{{ collect([$user->city, $user->courts ? $user->courts.' courts' : null])->filter()->join(' · ') }}</p>
+                <p class="em-ink3" style="margin: 0; font-size: 13px; color: #5B6257;">{{ collect([$user->city, $user->courts ? $user->courts.' '.Str::plural('court', $user->courts) : null])->filter()->join(' · ') }}</p>
             </td>
             <td align="right" class="em-ink3" style="padding: 14px 16px; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-size-adjust: 0.58; font-variant-numeric: tabular-nums; font-size: 12px; color: #5B6257; white-space: nowrap;">{{ now()->format('M j') }}</td>
         </tr>

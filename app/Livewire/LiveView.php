@@ -102,7 +102,7 @@ class LiveView extends Component
             },
             'busy' => $play->busyCourtCount().' of '.count($courts).' courts in play',
             'here' => $play->checkedInCount().' of '.count($play->sessionPlayerIds()).' checked in',
-            'ago' => ago(now()->timestamp - ($play->started_at ?? now())->timestamp),
+            'started' => ($s = now()->timestamp - ($play->started_at ?? now())->timestamp) < 60 ? 'Started just now' : 'Started '.ago($s).' ago',
         ])->title("{$play->title} · Live · PickleX");
     }
 }

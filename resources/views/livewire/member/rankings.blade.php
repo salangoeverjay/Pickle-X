@@ -37,9 +37,9 @@
         </div>
 
         <div class="flex items-center gap-3.5 rounded-[22px] bg-ink px-4.5 py-4 text-bg">
-            <span class="shrink-0 font-display text-[34px] font-extrabold tracking-[-0.04em] text-lime-on-ink">#{{ $me->rank }}</span>
+            <span class="shrink-0 font-display text-[34px] font-extrabold tracking-[-0.04em] text-lime-on-ink">{{ $me ? '#'.$me->rank : '-' }}</span>
             <div class="flex flex-1 flex-col">
-                <span class="text-base font-bold">That's you, {{ $user->firstName() }} · {{ $me->pts }} pts</span>
+                <span class="text-base font-bold">@if ($me)That's you, {{ $user->firstName() }} · {{ $me->pts }} pts @else{{ $user->firstName() }}, you're not ranked yet @endif</span>
                 <span class="text-sm opacity-80">{{ $note }}</span>
             </div>
         </div>
@@ -79,6 +79,9 @@
                     <span class="w-12 text-right font-mono text-[15px] font-semibold lg:w-17.5">{{ $r->pts }}</span>
                 </div>
             @endforeach
+            @if ($rows->isEmpty())
+                <p class="m-0 px-6 py-7 text-ink2">No games logged {{ $period === 'all' ? 'yet' : 'this month yet' }}{{ $user->club ? ' in '.$user->club : '' }}. Rankings fill in after the first scores.</p>
+            @endif
         </div>
 
         <div class="flex flex-wrap items-center gap-2.5 rounded-[20px] border-[1.5px] border-dashed border-line2 px-4.5 py-4">

@@ -38,7 +38,7 @@
     <div class="flex flex-col gap-2 text-sm text-ink2">
         <span class="flex items-center gap-2"><x-icon name="pin" :size="17" :stroke="1.9" />{{ $play->venue }}</span>
         <span class="flex items-center gap-2"><x-icon name="clock" :size="17" :stroke="1.9" />{{ $play->isLive() ? $play->whenLabel().' · ' : '' }}{{ $play->timeRange() }}</span>
-        <span class="flex items-center gap-2"><x-icon name="court" :size="17" :stroke="1.9" />{{ $play->courts }} courts · Race to {{ $play->race_to }} · {{ $play->feeLabel() }}</span>
+        <span class="flex items-center gap-2"><x-icon name="court" :size="17" :stroke="1.9" />{{ $play->courts }} {{ Str::plural('court', $play->courts) }} · Race to {{ $play->race_to }} · {{ $play->feeLabel() }}</span>
     </div>
 
     <div class="flex flex-col gap-2">

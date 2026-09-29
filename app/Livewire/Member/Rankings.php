@@ -24,15 +24,17 @@ class Rankings extends Component
         $rows->each(fn ($r) => $r->mv = isset($before[$r->user->id]) ? $before[$r->user->id] - $r->rank : 0);
 
         $me = $rows->firstWhere('me', true);
-        $above = $me->rank > 1 ? $rows[$me->rank - 2] : null;
+        $above = $me && $me->rank > 1 ? $rows[$me->rank - 2] : null;
 
         return view('livewire.member.rankings', [
             'user' => $user,
             'rows' => $rows,
             'me' => $me,
-            'note' => $above
-                ? ($above->pts - $me->pts).' pts behind '.$above->user->shownFirst().' at #'.$above->rank.'. Every win is worth 13.'
-                : 'Top of the table. Keep it up.',
+            'note' => match (true) {
+                ! $me => ($this->period === 'all' ? 'Play your first game at an open play to get on the board.' : 'No games this month yet. Play at an open play to get on the board.').' Every win is worth 13.',
+                (bool) $above => ($above->pts - $me->pts).' pts behind '.$above->user->shownFirst().' at #'.$above->rank.'. Every win is worth 13.',
+                default => 'Top of the table. Keep it up.',
+            },
         ]);
     }
 }

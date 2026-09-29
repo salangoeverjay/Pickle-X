@@ -167,7 +167,8 @@ class MemberStats
 
     /**
      * Members of the viewer's club (all members when the viewer has no club) with games in the window,
-     * minus those who opted out of rankings. The viewer is always included.
+     * minus those who opted out of rankings (the viewer always sees their own row). A viewer with no
+     * games in the window isn't ranked: no row, and rankOf() is null.
      *
      * @return Collection<int, object{user: User, games: int, wins: int, losses: int, pts: int, me: bool, rank: int}>
      */
@@ -188,7 +189,7 @@ class MemberStats
             ->selectRaw('gp.user_id, count(distinct p.user_id) as n')
             ->pluck('n', 'user_id');
 
-        return User::whereIn('id', $totals->keys()->push($viewer->id))->get()
+        return User::whereIn('id', $totals->keys())->get()
             ->filter(fn ($u) => $u->is($viewer) || $u->pref('privacy.ranked'))
             ->map(function ($u) use ($totals, $partners, $viewer) {
                 $g = (int) ($totals[$u->id]->games ?? 0);
@@ -201,8 +202,8 @@ class MemberStats
             ->each(fn ($r, $i) => $r->rank = $i + 1);
     }
 
-    public static function rankOf(User $viewer, ?CarbonInterface $since = null): int
+    public static function rankOf(User $viewer, ?CarbonInterface $since = null): ?int
     {
-        return self::ranking($viewer, $since)->firstWhere('me', true)->rank;
+        return self::ranking($viewer, $since)->firstWhere('me', true)?->rank;
     }
 }

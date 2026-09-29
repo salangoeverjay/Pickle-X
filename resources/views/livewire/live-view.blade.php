@@ -37,7 +37,7 @@
                 <h1 class="m-0 font-display text-[28px] leading-[1.02] font-extrabold tracking-[-0.04em] lg:text-[40px]">{{ $play->title }}</h1>
                 <span class="text-sm text-ink2">{{ $play->club }} · {{ $play->venue }} · Race to {{ $play->race_to }} · {{ $play->rotationLabel() }}</span>
                 <div class="mt-0.5 flex flex-wrap gap-2">
-                    @foreach ([$busy, $here, "Started {$ago} ago"] as $chip)
+                    @foreach ([$busy, $here, $started] as $chip)
                         <span class="inline-flex h-7.5 items-center rounded-full border border-line bg-surface px-3 text-[13px] font-bold">{{ $chip }}</span>
                     @endforeach
                 </div>

@@ -127,4 +127,53 @@ class MemberStatsTest extends TestCase
         $this->actingAs($kai)->get(route('member.rankings'))->assertOk()->assertSee('Panabo Dink Society');
         $this->actingAs($kai)->get(route('member.played-with'))->assertOk()->assertSee('partners ·', false);
     }
+
+    public function test_members_without_a_club_join_the_club_of_their_first_open_play(): void
+    {
+        $org = User::factory()->create(['organizer_status' => 'approved', 'club' => 'Dink Club']);
+        $play = OpenPlay::create([
+            'organizer_id' => $org->id, 'title' => 'Club night', 'club' => 'Dink Club', 'venue' => 'Venue',
+            'starts_at' => now(), 'ends_at' => now()->addHours(3), 'courts' => 1, 'cap' => 8,
+        ]);
+        $regular = User::factory()->create(['club' => 'Dink Club']);
+        $nora = User::factory()->create(['name' => 'Nora Villar']);
+        $visitor = User::factory()->create(['club' => 'Samal Dinkers']);
+        $others = User::factory(2)->create(['club' => 'Dink Club']);
+        foreach ([$regular, $nora, ...$others] as $u) {
+            $play->join($u);
+        }
+        $play->participants()->update(['checked_in_at' => now()]);
+        $play->start();
+        $play->fillCourt(1);
+        $play->recordScore(1, 11, 5);
+        $play->join($visitor);
+
+        $this->assertSame('Dink Club', $nora->fresh()->club);
+        $this->assertSame('Samal Dinkers', $visitor->fresh()->club, 'a home club is never overwritten');
+        $this->assertContains('Nora Villar', MemberStats::ranking($regular->fresh())->pluck('user.name'));
+        $this->assertContains($nora->id, MemberStats::ranking($nora->fresh())->pluck('user.id'));
+    }
+
+    public function test_fresh_accounts_are_not_ranked_until_they_play(): void
+    {
+        [$kai, $ben, $mika, $rico] = User::factory(4)->create(['club' => 'Panabo']);
+        $this->game([$ben, $mika], [$kai, $rico], true);
+        $lia = User::factory()->create(['name' => 'Lia Fresh', 'club' => 'Panabo']);
+
+        $this->assertNotContains($lia->id, MemberStats::ranking($lia)->pluck('user.id'));
+        $this->assertNull(MemberStats::rankOf($lia));
+        $this->assertSame(4, MemberStats::ranking($kai)->count(), 'fresh accounts do not pad the table');
+
+        Livewire::actingAs($lia)->test(Rankings::class)
+            ->assertSee("Lia, you're not ranked yet", false)->assertSee('No games this month yet')->assertDontSee('>YOU</span>', false)
+            ->set('period', 'all')->assertSee('Play your first game at an open play');
+        Livewire::actingAs($lia)->test(PlayedWith::class)->assertSee('No partners yet')->assertDontSee('No one matches')
+            ->set('tab', 'opponents')->assertSee('No opponents yet')
+            ->set('search', 'zz')->assertSee('No one matches that search yet.');
+        $this->actingAs($lia)->get(route('member.dashboard'))->assertOk()->assertSee('Not ranked yet')->assertDontSee('>0%</span>', false);
+
+        // A club where nobody has played: nobody on the podium, and an empty-table note.
+        $solo = User::factory()->create(['club' => 'Brand New Club']);
+        Livewire::actingAs($solo)->test(Rankings::class)->assertSee('No games logged this month yet in Brand New Club')->assertDontSee('Top of the table');
+    }
 }

@@ -31,7 +31,7 @@
                 <span class="flex size-13 shrink-0 items-center justify-center rounded-2xl bg-surface2 text-ink"><x-icon name="users" :size="22" :stroke="1.9" /></span>
                 <div class="flex flex-col">
                     <span class="font-mono text-[11px] tracking-widest text-ink3 uppercase">Different players</span>
-                    <span class="font-display text-[22px] font-extrabold tracking-[-0.03em]">{{ $stats->partners->count() }} partners · {{ $stats->opponents->count() }} opponents</span>
+                    <span class="font-display text-[22px] font-extrabold tracking-[-0.03em]">{{ $stats->partners->count() }} {{ Str::plural('partner', $stats->partners->count()) }} · {{ $stats->opponents->count() }} {{ Str::plural('opponent', $stats->opponents->count()) }}</span>
                 </div>
             </div>
         </div>
@@ -100,7 +100,7 @@
             </div>
 
             @if ($rows->isEmpty())
-                <p class="m-0 px-6 py-7 text-ink2">No one matches that search yet.</p>
+                <p class="m-0 px-6 py-7 text-ink2">{{ trim($search) !== '' ? 'No one matches that search yet.' : ($tab === 'opponents' ? 'No opponents yet. Everyone you face in a logged game shows up here.' : 'No partners yet. Everyone you team up with in a logged game shows up here.') }}</p>
             @endif
         </div>
     </x-page>

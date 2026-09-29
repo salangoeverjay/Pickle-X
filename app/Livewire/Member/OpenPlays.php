@@ -39,6 +39,8 @@ class OpenPlays extends Component
     public function joinPlay(int $id): void
     {
         $play = $this->joinable($id);
+        // Leaving keeps the participant row, so a rejoin has one: skip the emails, they went out the first time.
+        $rejoin = $play->participants()->where('user_id', auth()->id())->whereNotNull('left_at')->exists();
 
         try {
             $play->join(auth()->user());
@@ -50,6 +52,9 @@ class OpenPlays extends Component
 
         $this->dispatch('toast', message: $play->isLive() ? "You're in the queue. Check in when you reach the courts." : "You're in. See you {$play->whenLabel()}.");
 
+        if ($rejoin) {
+            return;
+        }
         $user = auth()->user();
         Emails::send($user, Emails::joined($play, $user));
         $organizer = $play->organizer;

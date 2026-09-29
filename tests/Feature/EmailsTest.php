@@ -66,7 +66,7 @@ class EmailsTest extends TestCase
         $pia = User::factory()->create(['name' => 'Pia Lacson', 'organizer_status' => 'pending', 'club' => 'Samal Dinkers', 'city' => 'Samal', 'courts' => 2]);
 
         Livewire::actingAs($admin)->test(Requests::class)->call('approve', $pia->id)->call('approve', $pia->id);
-        Mail::assertSent(PickleXMail::class, fn ($m) => $m->template === 'organizer-approved', 1);
+        $this->assertCount(1, Mail::sent(PickleXMail::class, fn ($m) => $m->template === 'organizer-approved'));
         $this->assertStringContainsString("You're approved, Pia.", html_entity_decode($this->sent('organizer-approved', $pia)->render(), ENT_QUOTES));
 
         Livewire::actingAs($admin)->test(Requests::class)->call('decline', $pia->id)->call('reopen', $pia->id);
@@ -89,6 +89,19 @@ class EmailsTest extends TestCase
         $this->assertSame('Kai Santos joined Friday Rally', $alert->heading);
         $this->assertStringContainsString("1 of 8 spots filled. Kai hasn't paid yet.", $alert->preheader);
         $alert->render();
+    }
+
+    public function test_leaving_and_rejoining_sends_the_join_emails_once(): void
+    {
+        $play = $this->play();
+        $kai = User::factory()->create();
+
+        Livewire::actingAs($kai)->test(MemberPlays::class)
+            ->call('joinPlay', $play->id)->call('leavePlay', $play->id)->call('joinPlay', $play->id);
+
+        $this->assertTrue($play->activeParticipants()->where('user_id', $kai->id)->exists());
+        $this->assertCount(1, Mail::sent(PickleXMail::class, fn ($m) => $m->template === 'player-joined'));
+        $this->assertCount(1, Mail::sent(PickleXMail::class, fn ($m) => $m->template === 'joined'));
     }
 
     public function test_organizers_can_turn_off_join_alerts(): void

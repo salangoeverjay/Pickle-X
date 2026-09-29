@@ -50,7 +50,7 @@
                         </div>
                         <div class="flex min-w-0 flex-1 flex-col gap-1.5">
                             <span class="font-display text-[21px] leading-[1.2] font-bold tracking-[-0.02em]">{{ $play->title }}</span>
-                            <span class="text-sm leading-[1.45] text-ink2">{{ $play->timeRange() }} · {{ $play->venue }} · {{ $play->courts }} courts</span>
+                            <span class="text-sm leading-[1.45] text-ink2">{{ $play->timeRange() }} · {{ $play->venue }} · {{ $play->courts }} {{ Str::plural('court', $play->courts) }}</span>
                         </div>
                         <div class="hidden shrink-0 items-center gap-2 lg:flex">
                             <button type="button" wire:click="edit({{ $play->id }})" aria-label="Edit {{ $play->title }}" class="inline-flex h-11.5 cursor-pointer items-center gap-2 rounded-full border-[1.5px] border-line2 bg-transparent px-4.5 text-sm font-bold text-ink transition hover:brightness-96 active:scale-97"><x-icon name="edit" :size="17" />Edit</button>
@@ -135,7 +135,7 @@
                                 <x-date-tile :date="$play->starts_at" />
                                 <div class="flex min-w-0 flex-1 flex-col gap-1">
                                     <span class="font-display text-lg leading-[1.2] font-bold tracking-[-0.02em]">{{ $play->title }}</span>
-                                    <span class="text-[13px] leading-[1.4] text-ink3">{{ $play->timeRange() }} · {{ $players }} players · {{ $play->games_count }} {{ Str::plural('game', $play->games_count) }} · {{ $play->courts }} courts</span>
+                                    <span class="text-[13px] leading-[1.4] text-ink3">{{ $play->timeRange() }} · {{ $players }} {{ Str::plural('player', $players) }} · {{ $play->games_count }} {{ Str::plural('game', $play->games_count) }} · {{ $play->courts }} {{ Str::plural('court', $play->courts) }}</span>
                                 </div>
                             </div>
                             <div class="flex flex-auto flex-wrap items-center justify-between gap-x-4 gap-y-2.5 lg:justify-end">

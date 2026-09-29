@@ -57,6 +57,25 @@ class CourtBoardTest extends TestCase
         $this->assertNotContains($winners[0], $play->boardCourts()[0]['a']['ids']);
     }
 
+    public function test_everyone_rotates_sits_out_players_who_played_the_most(): void
+    {
+        // 6 players, 1 court: two sit each game. Nobody should play three straight.
+        $play = $this->play(6, ['courts' => 1]);
+        $play->start();
+
+        $played = [];
+        foreach ([[11, 7], [9, 11], [11, 4]] as [$a, $b]) {
+            foreach (collect($play->boardCourts()[0])->only(['a', 'b'])->flatMap(fn ($t) => $t['ids']) as $id) {
+                $played[$id] = ($played[$id] ?? 0) + 1;
+            }
+            $play->recordScore(1, $a, $b);
+        }
+
+        $this->assertSame(12, array_sum($played));
+        $this->assertLessThanOrEqual(2, max($played), 'someone played every game while others sat');
+        $this->assertCount(6, $played);
+    }
+
     public function test_locked_partners_play_together(): void
     {
         $play = $this->play(6, ['courts' => 1]);

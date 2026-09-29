@@ -34,7 +34,7 @@
             </div>
             <div class="flex flex-col gap-2.5 rounded-[22px] border border-line bg-surface p-4 lg:p-5">
                 <span class="font-mono text-[11px] tracking-widest text-ink3 uppercase">Win rate</span>
-                <span class="font-display text-[32px] leading-none font-extrabold tracking-[-0.04em] lg:text-[42px]">{{ $stats->rate() }}%</span>
+                <span class="font-display text-[32px] leading-none font-extrabold tracking-[-0.04em] lg:text-[42px]">{{ $stats->count() ? $stats->rate().'%' : '-' }}</span>
                 <div class="mt-1.25 h-1.5 overflow-hidden rounded-[3px] bg-surface2"><div class="h-full rounded-[3px] bg-ink" style="width: {{ $stats->rate() }}%"></div></div>
             </div>
             <div class="flex flex-col gap-2.5 rounded-[22px] border border-line bg-surface p-4 lg:p-5">
@@ -45,7 +45,7 @@
             <div class="flex flex-col gap-2.5 rounded-[22px] bg-lime p-4 text-on-lime lg:p-5">
                 <span class="font-mono text-[11px] tracking-widest uppercase">PickleX points</span>
                 <span class="font-display text-[32px] leading-none font-extrabold tracking-[-0.04em] lg:text-[42px]">{{ $stats->points() }}</span>
-                <span class="text-[13px] font-semibold">#{{ $rankMonth }} this month · #{{ $rankAll }} all-time</span>
+                <span class="text-[13px] font-semibold">{{ $rankAll ? ($rankMonth ? "#{$rankMonth} this month" : 'Not ranked this month').' · #'.$rankAll.' all-time' : 'Not ranked yet' }}</span>
             </div>
         </div>
 

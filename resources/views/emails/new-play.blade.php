@@ -29,7 +29,7 @@
 
     @include('emails.partials.details', ['rows' => array_filter([
         ['Where', $play->venue],
-        ['Format', $play->courts.' courts · race to '.$play->race_to.' · '.($play->rotation === 'winners' ? 'winners stay on' : 'everyone rotates')],
+        ['Format', $play->courts.' '.Str::plural('court', $play->courts).' · race to '.$play->race_to.' · '.($play->rotation === 'winners' ? 'winners stay on' : 'everyone rotates')],
         ['Fee', $play->feeLabel().($play->hasPaymentQr() ? " · pay with the club's {$play->payMethodLabel()} QR" : '')],
         ['Host', $play->organizer?->name],
     ], fn ($r) => filled($r[1]))])

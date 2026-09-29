@@ -184,7 +184,8 @@ class OpenPlay extends Model
     /** First names joined with "&": "Ben & Mika". */
     public function names(array $ids): string
     {
-        return collect($ids)->map(fn ($id) => $this->participant($id)?->firstName() ?? 'Guest')->join(' & ');
+        // "Kai", "Kai & Rico", "Kai, Rico & Ana".
+        return collect($ids)->map(fn ($id) => $this->participant($id)?->firstName() ?? 'Guest')->join(', ', ' & ');
     }
 
     public function queue(): array
@@ -579,8 +580,15 @@ class OpenPlay extends Model
                     $requeue($win);
                 }
             } else {
+                // Everyone goes to the back, fewest games tonight first, so with a short queue the
+                // same four don't keep playing (winners first used to keep winners on every game).
+                $from = count($board['queue']);
                 $requeue($win);
                 $requeue($lose);
+                $played = $play->gamesTonight();
+                $back = array_slice($board['queue'], $from);
+                usort($back, fn ($x, $y) => max(array_map(fn ($id) => $played[$id] ?? 0, $x['ids'])) <=> max(array_map(fn ($id) => $played[$id] ?? 0, $y['ids'])));
+                array_splice($board['queue'], $from, count($back), $back);
             }
 
             $board['courts'][$i] = $court;
@@ -703,6 +711,7 @@ class OpenPlay extends Model
                 // Members who already joined in the app keep that; everyone else came from the list.
                 $p = $this->participants()->firstOrNew(['user_id' => $row['user']->id], ['from_list' => true]);
                 $p->fill(['name' => $row['user']->name, 'paid' => true, 'left_at' => null])->save();
+                $this->adoptClub($row['user']);
                 $linked++;
             } else {
                 $this->participants()->create(['name' => $row['line'], 'paid' => true, 'from_list' => true]);
@@ -729,12 +738,21 @@ class OpenPlay extends Model
                 throw new InvalidArgumentException('This open play is full.');
             }
             $p->fill(['name' => $user->name, 'left_at' => null])->save();
+            $play->adoptClub($user);
             if ($play->isLive()) {
                 $board['queue'][] = ['id' => ++$board['seq'], 'ids' => [$p->id], 'locked' => false];
             }
 
             return $p;
         });
+    }
+
+    /** Members without a home club get this open play's club, so they show in its rankings (MemberStats::ranking). */
+    protected function adoptClub(User $user): void
+    {
+        if (! $user->club && $this->club) {
+            $user->update(['club' => $this->club]);
+        }
     }
 
     /** A member leaves. They drop out of the queue; if on court they finish the game first. */

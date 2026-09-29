@@ -11,7 +11,7 @@
     @include('emails.partials.details', ['rows' => [
         ['When', $play->starts_at->format('D, M j').' · '.$play->timeRange()],
         ['Where', $play->venue],
-        ['Format', $play->courts.' courts · race to '.$play->race_to.' · '.($play->rotation === 'winners' ? 'winners stay on' : 'everyone rotates')],
+        ['Format', $play->courts.' '.Str::plural('court', $play->courts).' · race to '.$play->race_to.' · '.($play->rotation === 'winners' ? 'winners stay on' : 'everyone rotates')],
         ['Organizer', collect([$play->organizer?->name, $play->club])->filter()->join(' · ')],
     ]])
 

@@ -76,4 +76,18 @@ class LiveViewTest extends TestCase
 
         $this->get(route('live', $play->share_code))->assertOk()->assertSee($play->title)->assertSee('Latest results');
     }
+
+    public function test_a_session_that_just_started_reads_started_just_now(): void
+    {
+        $this->seed();
+        $play = OpenPlay::status('live')->firstOrFail();
+        $play->update(['started_at' => now()]);
+
+        $this->get(route('live', $play->share_code))->assertSee('Started just now')->assertDontSee('just now ago');
+
+        $ids = $play->participants()->limit(3)->pluck('id')->all();
+        $first = fn ($i) => $play->participant($ids[$i])->firstName();
+        $this->assertSame("{$first(0)}, {$first(1)} & {$first(2)}", $play->names($ids));
+        $this->assertSame("{$first(0)} & {$first(1)}", $play->names(array_slice($ids, 0, 2)));
+    }
 }

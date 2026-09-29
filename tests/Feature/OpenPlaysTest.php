@@ -35,7 +35,8 @@ class OpenPlaysTest extends TestCase
         $member = User::factory()->create(['role' => 'member']);
         $this->play();
 
-        $this->actingAs($member)->get(route('member.plays'))->assertOk()->assertSee('Find your next game')->assertSee('Friday Rally');
+        $this->actingAs($member)->get(route('member.plays'))->assertOk()->assertSee('Find your next game')->assertSee('Friday Rally')
+            ->assertSee('1 court · Race to')->assertDontSee('1 courts');
         $this->actingAs($member)->get(route('organizer.plays'))->assertForbidden();
         $this->actingAs($this->org)->get(route('organizer.plays'))->assertOk()->assertSee('Your open plays')->assertSee('Friday Rally');
         $this->actingAs($this->org)->get(route('member.plays'))->assertOk(); // player mode, same account
