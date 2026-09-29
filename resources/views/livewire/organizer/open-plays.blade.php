@@ -1,10 +1,40 @@
 <x-app-shell>
     <x-page>
         <x-page-header :eyebrow="$club" title="Your open plays">
-            <button type="button" wire:click="openCreate" class="inline-flex h-12.5 cursor-pointer items-center gap-2 rounded-full border-2 border-cta-border bg-lime px-5.5 text-[15px] font-extrabold text-on-lime shadow-cta transition hover:brightness-96 active:scale-97">
-                <x-icon name="plus" :size="18" :stroke="2.4" />Create open play
-            </button>
+            @if ($hasPlays)
+                <button type="button" wire:click="openCreate" class="inline-flex h-12.5 cursor-pointer items-center gap-2 rounded-full border-2 border-cta-border bg-lime px-5.5 text-[15px] font-extrabold text-on-lime shadow-cta transition hover:brightness-96 active:scale-97">
+                    <x-icon name="plus" :size="18" :stroke="2.4" />Create open play
+                </button>
+            @endif
         </x-page-header>
+
+        @unless ($hasPlays)
+            <section aria-labelledby="ow-h" class="grid animate-rise items-center gap-7 rounded-[28px] bg-ink p-5.5 text-bg lg:grid-cols-2 lg:p-9">
+                <div class="flex min-w-0 flex-col items-start gap-3.5">
+                    <span class="inline-flex h-7 items-center gap-2 rounded-full bg-lime px-3 font-mono text-xs tracking-[.08em] text-on-lime uppercase"><x-icon name="check" :size="14" :stroke="2.6" />Organizer approved</span>
+                    <h2 id="ow-h" class="m-0 font-display text-[32px] leading-none font-extrabold tracking-[-0.04em] lg:text-[44px]">Welcome, {{ auth()->user()->firstName() }}. Let's run your first open play.</h2>
+                    <p class="m-0 max-w-130 text-base leading-normal opacity-82">{{ $club }} is set up on PickleX. Create an open play and members can find it, join and pay before they arrive.</p>
+                    <button type="button" wire:click="openCreate" class="mt-1 inline-flex h-13 cursor-pointer items-center gap-2 rounded-full bg-lime px-6 text-[15px] font-extrabold text-on-lime transition hover:brightness-96 active:scale-97">
+                        <x-icon name="plus" :size="18" :stroke="2.4" />Create your first open play
+                    </button>
+                </div>
+                <ol aria-label="Getting started" class="m-0 flex min-w-0 list-none flex-col gap-2.5 p-0">
+                    @foreach ([
+                        ['Create your first open play', 'Pick the date, time, courts, player cap and fee. It shows up in every member\'s Open plays right away.'],
+                        ['Add a payment QR (optional)', 'Upload your GCash or Maya QR while you create it, so players can pay the fee before they arrive.'],
+                        ['Run it on the day', 'Start the session from Your open plays. Check-ins, the queue, courts and scores all run from the court board.'],
+                    ] as $i => [$t, $d])
+                        <li class="flex items-start gap-3.5 rounded-[20px] bg-[rgba(127,127,127,.12)] px-4.5 py-4">
+                            <span aria-hidden="true" class="flex size-8 shrink-0 items-center justify-center rounded-full border-2 border-lime-on-ink font-mono text-base font-bold text-lime-on-ink">{{ $i + 1 }}</span>
+                            <div class="flex min-w-0 flex-col gap-0.75">
+                                <span class="text-[15px] font-extrabold">{{ $t }}</span>
+                                <span class="text-sm leading-[1.45] opacity-78">{{ $d }}</span>
+                            </div>
+                        </li>
+                    @endforeach
+                </ol>
+            </section>
+        @endunless
 
         @foreach ($live as $play)
             @php($longest = $play->longestCourtIndex())
@@ -35,82 +65,84 @@
             </div>
         @endforeach
 
-        <section class="flex flex-col gap-3">
-            <h2 class="m-0 font-display text-[22px] font-bold tracking-[-0.02em]">Upcoming</h2>
-            @forelse ($upcoming as $play)
-                @php($today = $play->starts_at->isToday())
-                <div wire:key="up-{{ $play->id }}" class="flex flex-col gap-4.5 rounded-3xl border border-line bg-surface p-4.5 transition duration-300 hover:-translate-y-1 hover:shadow-card lg:px-6 lg:py-5.5">
-                    <div class="flex items-center gap-3.5 lg:gap-5">
-                        <div class="flex h-16.5 w-14.5 shrink-0 flex-col items-center justify-center gap-0.75 rounded-[18px] border border-line bg-surface2 lg:h-20 lg:w-18">
-                            <span class="font-mono text-[11px] tracking-widest text-ink3 uppercase">{{ $today ? 'Today' : $play->starts_at->format('M') }}</span>
-                            @unless ($today)
-                                <span class="font-display text-[28px] leading-none font-extrabold tracking-[-0.04em]">{{ $play->starts_at->format('j') }}</span>
-                                <span class="text-[11px] text-ink3">{{ $play->starts_at->format('D') }}</span>
-                            @endunless
+        @if ($hasPlays)
+            <section class="flex flex-col gap-3">
+                <h2 class="m-0 font-display text-[22px] font-bold tracking-[-0.02em]">Upcoming</h2>
+                @forelse ($upcoming as $play)
+                    @php($today = $play->starts_at->isToday())
+                    <div wire:key="up-{{ $play->id }}" class="flex flex-col gap-4.5 rounded-3xl border border-line bg-surface p-4.5 transition duration-300 hover:-translate-y-1 hover:shadow-card lg:px-6 lg:py-5.5">
+                        <div class="flex items-center gap-3.5 lg:gap-5">
+                            <div class="flex h-16.5 w-14.5 shrink-0 flex-col items-center justify-center gap-0.75 rounded-[18px] border border-line bg-surface2 lg:h-20 lg:w-18">
+                                <span class="font-mono text-[11px] tracking-widest text-ink3 uppercase">{{ $today ? 'Today' : $play->starts_at->format('M') }}</span>
+                                @unless ($today)
+                                    <span class="font-display text-[28px] leading-none font-extrabold tracking-[-0.04em]">{{ $play->starts_at->format('j') }}</span>
+                                    <span class="text-[11px] text-ink3">{{ $play->starts_at->format('D') }}</span>
+                                @endunless
+                            </div>
+                            <div class="flex min-w-0 flex-1 flex-col gap-1.5">
+                                <span class="font-display text-[21px] leading-[1.2] font-bold tracking-[-0.02em]">{{ $play->title }}</span>
+                                <span class="text-sm leading-[1.45] text-ink2">{{ $play->timeRange() }} · {{ $play->venue }} · {{ $play->courts }} {{ Str::plural('court', $play->courts) }}</span>
+                            </div>
+                            <div class="hidden shrink-0 items-center gap-2 lg:flex">
+                                <button type="button" wire:click="edit({{ $play->id }})" aria-label="Edit {{ $play->title }}" class="inline-flex h-11.5 cursor-pointer items-center gap-2 rounded-full border-[1.5px] border-line2 bg-transparent px-4.5 text-sm font-bold text-ink transition hover:brightness-96 active:scale-97"><x-icon name="edit" :size="17" />Edit</button>
+                                <button type="button" wire:click="askDelete({{ $play->id }})" aria-label="Delete {{ $play->title }}" title="Delete" class="flex size-11.5 cursor-pointer items-center justify-center rounded-full border-[1.5px] border-hot-line bg-transparent text-hot transition hover:brightness-96 active:scale-97"><x-icon name="trash" :size="18" /></button>
+                                <button type="button" wire:click="startSession({{ $play->id }})" class="inline-flex h-11.5 cursor-pointer items-center gap-2 rounded-full bg-ink px-5 text-sm font-bold text-bg transition hover:brightness-96 active:scale-97">
+                                    <x-icon name="court" :size="16" />Start session
+                                </button>
+                            </div>
                         </div>
-                        <div class="flex min-w-0 flex-1 flex-col gap-1.5">
-                            <span class="font-display text-[21px] leading-[1.2] font-bold tracking-[-0.02em]">{{ $play->title }}</span>
-                            <span class="text-sm leading-[1.45] text-ink2">{{ $play->timeRange() }} · {{ $play->venue }} · {{ $play->courts }} {{ Str::plural('court', $play->courts) }}</span>
-                        </div>
-                        <div class="hidden shrink-0 items-center gap-2 lg:flex">
-                            <button type="button" wire:click="edit({{ $play->id }})" aria-label="Edit {{ $play->title }}" class="inline-flex h-11.5 cursor-pointer items-center gap-2 rounded-full border-[1.5px] border-line2 bg-transparent px-4.5 text-sm font-bold text-ink transition hover:brightness-96 active:scale-97"><x-icon name="edit" :size="17" />Edit</button>
-                            <button type="button" wire:click="askDelete({{ $play->id }})" aria-label="Delete {{ $play->title }}" title="Delete" class="flex size-11.5 cursor-pointer items-center justify-center rounded-full border-[1.5px] border-hot-line bg-transparent text-hot transition hover:brightness-96 active:scale-97"><x-icon name="trash" :size="18" /></button>
-                            <button type="button" wire:click="startSession({{ $play->id }})" class="inline-flex h-11.5 cursor-pointer items-center gap-2 rounded-full bg-ink px-5 text-sm font-bold text-bg transition hover:brightness-96 active:scale-97">
-                                <x-icon name="court" :size="16" />Start session
+                        <div class="flex flex-col gap-3.5 lg:pl-23">
+                            <div class="flex max-w-105 items-center gap-3">
+                                <div class="h-1.5 flex-1 overflow-hidden rounded-[3px] bg-surface2">
+                                    <div class="h-full rounded-[3px] bg-ink" style="width: {{ min(100, round($play->playerCount() / max(1, $play->cap) * 100)) }}%"></div>
+                                </div>
+                                <span class="shrink-0 font-mono text-xs text-ink3">{{ $play->playerCount() }}/{{ $play->cap }} joined</span>
+                            </div>
+                            @if ($play->paid_count || $play->hasPaymentQr())
+                                <div class="flex flex-wrap gap-2">
+                                    @if ($play->paid_count)
+                                        @php($guests = $play->paid_count - $play->paid_linked_count)
+                                        <span class="inline-flex h-6.5 items-center gap-1.5 rounded-full bg-lime-soft px-2.5 text-xs font-bold text-lime-text">
+                                            <x-icon name="check" :size="14" :stroke="2.4" />{{ $play->paid_count }} paid · {{ $play->paid_linked_count }} linked · {{ $guests }} {{ Str::plural('guest', $guests) }}
+                                        </span>
+                                    @endif
+                                    @if ($play->hasPaymentQr())
+                                        <span class="inline-flex h-6.5 items-center gap-1.5 rounded-full border border-line bg-surface2 px-2.5 text-xs font-bold text-ink2">
+                                            <x-icon name="qr" :size="14" />{{ $play->payMethodLabel() }} QR · {{ $play->feeLabel() }}
+                                        </span>
+                                    @endif
+                                </div>
+                            @endif
+                            @php($n = $play->playerCount())
+                            <button type="button" wire:click="openRoster({{ $play->id }})" aria-label="See the {{ $n }} {{ Str::plural('player', $n) }} who joined {{ $play->title }}"
+                                    class="inline-flex min-h-11.5 cursor-pointer items-center gap-2.5 self-stretch rounded-full border-[1.5px] border-line2 bg-bg py-1.25 pr-4 pl-1.5 text-ink transition hover:brightness-96 active:scale-97 lg:self-start">
+                                @if ($n)
+                                    <span aria-hidden="true" class="flex pr-0.5">
+                                        @foreach ($play->activeParticipants->take(5) as $p)
+                                            <x-avatar :src="$p->avatarUrl()" :frame="$p->frameClass()" :name="$p->name" :color="$p->user ? $p->color() : '#E6E3D6'" class="-mr-2.25 size-8.5 border-2 border-bg text-[11px]" />
+                                        @endforeach
+                                        @if ($n > 5)
+                                            <span class="flex h-8.5 min-w-8.5 items-center justify-center rounded-full border-2 border-bg bg-ink px-1.5 font-mono text-[11px] font-semibold text-bg">+{{ $n - 5 }}</span>
+                                        @endif
+                                    </span>
+                                @endif
+                                <span class="ml-1.5 flex-1 text-left text-sm font-bold whitespace-nowrap">{{ $n ? "See who's in" : 'No one yet' }}</span>
+                                <x-icon name="chevron-right" :size="18" />
                             </button>
                         </div>
-                    </div>
-                    <div class="flex flex-col gap-3.5 lg:pl-23">
-                        <div class="flex max-w-105 items-center gap-3">
-                            <div class="h-1.5 flex-1 overflow-hidden rounded-[3px] bg-surface2">
-                                <div class="h-full rounded-[3px] bg-ink" style="width: {{ min(100, round($play->playerCount() / max(1, $play->cap) * 100)) }}%"></div>
-                            </div>
-                            <span class="shrink-0 font-mono text-xs text-ink3">{{ $play->playerCount() }}/{{ $play->cap }} joined</span>
+                        <div class="flex items-center gap-2 lg:hidden">
+                            <button type="button" wire:click="startSession({{ $play->id }})" class="flex h-12 min-w-0 flex-1 cursor-pointer items-center justify-center gap-2 rounded-full bg-ink px-4 text-[15px] font-bold text-bg transition hover:brightness-96 active:scale-97">
+                                <x-icon name="court" :size="16" />Start session
+                            </button>
+                            <button type="button" wire:click="edit({{ $play->id }})" aria-label="Edit {{ $play->title }}" title="Edit" class="flex size-12 shrink-0 cursor-pointer items-center justify-center rounded-full border-[1.5px] border-line2 bg-transparent text-ink transition hover:brightness-96 active:scale-97"><x-icon name="edit" :size="17" /></button>
+                            <button type="button" wire:click="askDelete({{ $play->id }})" aria-label="Delete {{ $play->title }}" title="Delete" class="flex size-12 shrink-0 cursor-pointer items-center justify-center rounded-full border-[1.5px] border-hot-line bg-transparent text-hot transition hover:brightness-96 active:scale-97"><x-icon name="trash" :size="18" /></button>
                         </div>
-                        @if ($play->paid_count || $play->hasPaymentQr())
-                            <div class="flex flex-wrap gap-2">
-                                @if ($play->paid_count)
-                                    @php($guests = $play->paid_count - $play->paid_linked_count)
-                                    <span class="inline-flex h-6.5 items-center gap-1.5 rounded-full bg-lime-soft px-2.5 text-xs font-bold text-lime-text">
-                                        <x-icon name="check" :size="14" :stroke="2.4" />{{ $play->paid_count }} paid · {{ $play->paid_linked_count }} linked · {{ $guests }} {{ Str::plural('guest', $guests) }}
-                                    </span>
-                                @endif
-                                @if ($play->hasPaymentQr())
-                                    <span class="inline-flex h-6.5 items-center gap-1.5 rounded-full border border-line bg-surface2 px-2.5 text-xs font-bold text-ink2">
-                                        <x-icon name="qr" :size="14" />{{ $play->payMethodLabel() }} QR · {{ $play->feeLabel() }}
-                                    </span>
-                                @endif
-                            </div>
-                        @endif
-                        @php($n = $play->playerCount())
-                        <button type="button" wire:click="openRoster({{ $play->id }})" aria-label="See the {{ $n }} {{ Str::plural('player', $n) }} who joined {{ $play->title }}"
-                                class="inline-flex min-h-11.5 cursor-pointer items-center gap-2.5 self-stretch rounded-full border-[1.5px] border-line2 bg-bg py-1.25 pr-4 pl-1.5 text-ink transition hover:brightness-96 active:scale-97 lg:self-start">
-                            @if ($n)
-                                <span aria-hidden="true" class="flex pr-0.5">
-                                    @foreach ($play->activeParticipants->take(5) as $p)
-                                        <x-avatar :src="$p->avatarUrl()" :frame="$p->frameClass()" :name="$p->name" :color="$p->user ? $p->color() : '#E6E3D6'" class="-mr-2.25 size-8.5 border-2 border-bg text-[11px]" />
-                                    @endforeach
-                                    @if ($n > 5)
-                                        <span class="flex h-8.5 min-w-8.5 items-center justify-center rounded-full border-2 border-bg bg-ink px-1.5 font-mono text-[11px] font-semibold text-bg">+{{ $n - 5 }}</span>
-                                    @endif
-                                </span>
-                            @endif
-                            <span class="ml-1.5 flex-1 text-left text-sm font-bold whitespace-nowrap">{{ $n ? "See who's in" : 'No one yet' }}</span>
-                            <x-icon name="chevron-right" :size="18" />
-                        </button>
                     </div>
-                    <div class="flex items-center gap-2 lg:hidden">
-                        <button type="button" wire:click="startSession({{ $play->id }})" class="flex h-12 min-w-0 flex-1 cursor-pointer items-center justify-center gap-2 rounded-full bg-ink px-4 text-[15px] font-bold text-bg transition hover:brightness-96 active:scale-97">
-                            <x-icon name="court" :size="16" />Start session
-                        </button>
-                        <button type="button" wire:click="edit({{ $play->id }})" aria-label="Edit {{ $play->title }}" title="Edit" class="flex size-12 shrink-0 cursor-pointer items-center justify-center rounded-full border-[1.5px] border-line2 bg-transparent text-ink transition hover:brightness-96 active:scale-97"><x-icon name="edit" :size="17" /></button>
-                        <button type="button" wire:click="askDelete({{ $play->id }})" aria-label="Delete {{ $play->title }}" title="Delete" class="flex size-12 shrink-0 cursor-pointer items-center justify-center rounded-full border-[1.5px] border-hot-line bg-transparent text-hot transition hover:brightness-96 active:scale-97"><x-icon name="trash" :size="18" /></button>
-                    </div>
-                </div>
-            @empty
-                <p class="m-0 rounded-[20px] border-[1.5px] border-dashed border-line2 p-5 text-ink2">No upcoming open plays. Create one and members can start joining.</p>
-            @endforelse
-        </section>
+                @empty
+                    <p class="m-0 rounded-[20px] border-[1.5px] border-dashed border-line2 p-5 text-ink2">No upcoming open plays. Create one and members can start joining.</p>
+                @endforelse
+            </section>
+        @endif
 
         @if ($past->isNotEmpty())
             @php($medals = App\Support\Results::MEDALS)

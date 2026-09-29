@@ -2,6 +2,16 @@
     <x-page wire:poll.10s>
         <x-page-header eyebrow="Open plays" title="Find your next game" description="Join a session and the organizer's queue handles the rest. You'll see here when you're up." />
 
+        @if ($firstTime)
+            <div class="flex animate-rise flex-wrap items-center gap-x-4.5 gap-y-3.5 rounded-[22px] border-[1.5px] border-lime bg-lime-soft px-5 py-4">
+                <span aria-hidden="true" class="flex size-11 shrink-0 items-center justify-center rounded-[14px] bg-lime text-on-lime"><x-icon name="calendar" :size="22" :stroke="2" /></span>
+                <div class="flex min-w-0 flex-[1_1_280px] flex-col gap-0.5">
+                    <span class="text-base font-extrabold">New here? Join any open play below.</span>
+                    <span class="text-sm leading-[1.45] text-ink2">Pay by QR if there's a fee, tap Check in when you reach the courts, and the organizer's queue calls you up. Your first game puts you on the rankings.</span>
+                </div>
+            </div>
+        @endif
+
         @if ($my)
             @php
                 $s = $my['status'];

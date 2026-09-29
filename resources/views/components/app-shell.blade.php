@@ -5,6 +5,11 @@
 @php
     $user = auth()->user();
     $mode = $user->mode();
+    // The page's route, also during Livewire updates (those hit the livewire.update route, which would drop the highlight).
+    $page = Livewire::isLivewireRequest()
+        ? rescue(fn () => app('router')->getRoutes()->match(\Illuminate\Http\Request::create(Livewire::originalUrl()))->getName(), null, false)
+        : Route::currentRouteName();
+    $isPage = fn (string $name) => Str::is($name, (string) $page);
     // One account, two modes: approved organizers switch between organizer and player.
     $other = $user->isOrganizer() ? ($mode === 'organizer' ? ['member.dashboard', 'Switch to player mode'] : ['organizer.plays', 'Switch to organizer mode']) : null;
     $nav = match ($mode) {
@@ -51,7 +56,7 @@
 
         <nav aria-label="Main" class="flex flex-col gap-1">
             @foreach ($nav as [$route, $label, $icon, $badge])
-                @php($on = request()->routeIs($route))
+                @php($on = $isPage($route))
                 <a href="{{ route($route) }}" wire:navigate @if ($on) aria-current="page" @endif @class([
                     'flex h-12 items-center gap-3 rounded-[14px] px-3 text-[15px] font-bold transition active:scale-97',
                     'bg-lime text-on-lime' => $on,
@@ -74,7 +79,7 @@
 
         <div class="flex-1"></div>
 
-        @php($on = request()->routeIs('settings'))
+        @php($on = $isPage('settings'))
         <a href="{{ route('about') }}" wire:navigate class="flex h-12 items-center gap-3 rounded-[14px] px-3 text-[15px] font-bold text-ink2 transition hover:bg-surface2 hover:text-ink">
             <x-icon name="love" /><span class="flex-1">Meet the developer</span>
         </a>
@@ -102,7 +107,7 @@
                 <span class="truncate text-sm font-bold">{{ $user->name }}</span>
                 <span class="truncate text-xs text-ink3">{{ $user->email }}</span>
             </div>
-            <form method="POST" action="{{ route('logout') }}">
+            <form method="POST" action="{{ route('logout') }}" x-data x-on:submit="$dispatch('px-loading', { kind: 'logout', first: @js($user->firstName()) })">
                 @csrf
                 <button type="submit" aria-label="Log out" class="flex size-9.5 cursor-pointer items-center justify-center rounded-xl text-ink2 transition hover:bg-surface active:scale-97"><x-icon name="logout" /></button>
             </form>
@@ -136,7 +141,7 @@
             @endif
             <a href="{{ route('settings') }}" wire:navigate class="flex h-11 items-center gap-2.5 rounded-xl px-2.5 text-sm font-bold text-ink transition hover:bg-surface2"><x-icon name="settings" />Account settings</a>
             <a href="{{ route('about') }}" wire:navigate class="flex h-11 items-center gap-2.5 rounded-xl px-2.5 text-sm font-bold text-ink transition hover:bg-surface2"><x-icon name="love" />Meet the developer</a>
-            <form method="POST" action="{{ route('logout') }}">
+            <form method="POST" action="{{ route('logout') }}" x-data x-on:submit="$dispatch('px-loading', { kind: 'logout', first: @js($user->firstName()) })">
                 @csrf
                 <button type="submit" class="flex h-11 w-full cursor-pointer items-center gap-2.5 rounded-xl bg-surface2 px-2.5 text-sm font-bold text-ink"><x-icon name="logout" />Log out</button>
             </form>
@@ -151,7 +156,7 @@
     @if (count($nav) > 1)
         <nav aria-label="Main" class="fixed inset-x-0 bottom-0 z-20 flex h-19 border-t border-line bg-surface px-1.5 pt-1.5 pb-3.5 lg:hidden">
             @foreach ($nav as [$route, $label, $icon, $badge])
-                @php($on = request()->routeIs($route))
+                @php($on = $isPage($route))
                 <a href="{{ route($route) }}" wire:navigate @if ($on) aria-current="page" @endif @class(['flex min-w-0 flex-1 flex-col items-center justify-center gap-1 text-[11px] font-bold', 'text-ink' => $on, 'text-ink3' => ! $on])>
                     <span @class(['relative flex h-8 w-14.5 items-center justify-center rounded-full transition-colors', 'bg-lime text-on-lime' => $on])>
                         <x-icon :name="$icon" />

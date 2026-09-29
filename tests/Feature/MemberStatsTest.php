@@ -32,18 +32,19 @@ class MemberStatsTest extends TestCase
     }
 
     /** Log a game; players are Users or walk-in names. */
-    private function game(array $a, array $b, bool $aWon, string $ago = '1 hour'): void
+    private function game(array $a, array $b, bool $aWon, string $ago = '1 hour', ?OpenPlay $play = null): void
     {
+        $play ??= $this->play;
         $at = now()->sub($ago);
         $game = Game::create([
-            'open_play_id' => $this->play->id, 'court' => 1, 'score_a' => $aWon ? 11 : 6, 'score_b' => $aWon ? 6 : 11,
+            'open_play_id' => $play->id, 'court' => 1, 'score_a' => $aWon ? 11 : 6, 'score_b' => $aWon ? 6 : 11,
             'winner' => $aWon ? 'a' : 'b', 'started_at' => $at, 'played_at' => $at,
         ]);
         foreach (['a' => $a, 'b' => $b] as $team => $players) {
             foreach ($players as $p) {
                 $part = $p instanceof User
-                    ? Participant::firstOrCreate(['open_play_id' => $this->play->id, 'user_id' => $p->id], ['name' => $p->name])
-                    : Participant::create(['open_play_id' => $this->play->id, 'name' => $p]);
+                    ? Participant::firstOrCreate(['open_play_id' => $play->id, 'user_id' => $p->id], ['name' => $p->name])
+                    : Participant::create(['open_play_id' => $play->id, 'name' => $p]);
                 GamePlayer::create(['game_id' => $game->id, 'participant_id' => $part->id, 'user_id' => $part->user_id, 'team' => $team, 'won' => ($team === 'a') === $aWon]);
             }
         }
@@ -83,26 +84,34 @@ class MemberStatsTest extends TestCase
         $this->assertSame('This wk', $s->weeks()[7]->label);
     }
 
-    public function test_ranking_filters_club_and_privacy_and_sorts(): void
+    public function test_rankings_have_a_table_per_club_played_plus_all_clubs(): void
     {
-        [$kai, $ben, $mika, $rico] = User::factory(4)->create(['club' => 'Panabo', 'role' => 'member']);
+        [$kai, $ben, $mika, $rico] = User::factory(4)->create(['club' => 'Club', 'role' => 'member']);
         $outsider = User::factory()->create(['club' => 'Davao']);
         $rico->setPref('privacy.ranked', false);
         $rico->save();
+        $davao = OpenPlay::create(['organizer_id' => $this->play->organizer_id, 'title' => 'Davao night', 'club' => 'Davao', 'venue' => 'Venue',
+            'starts_at' => now(), 'ends_at' => now()->addHours(3), 'courts' => 1, 'cap' => 8, 'status' => 'done']);
         $this->game([$ben, $mika], [$kai, $rico], true);
         $this->game([$ben, $outsider], [$kai, $mika], true);
+        $this->game([$kai, $outsider], ['Walk-in A', 'Walk-in B'], true, '1 hour', $davao);
 
-        $rows = MemberStats::ranking($kai);
-        $this->assertSame([$ben->id, $mika->id, $kai->id], $rows->pluck('user.id')->all());
-        $this->assertSame(2 * 10 + 2 * 3 + 2 * 2, $rows[0]->pts); // the outsider still counts as a partner
-        $this->assertSame(3, MemberStats::rankOf($kai));
+        // A club table counts everyone who played at that club's open plays, whatever their home club.
+        $rows = MemberStats::ranking($kai, null, null, 'Club');
+        $this->assertSame([$ben->id, $mika->id, $outsider->id, $kai->id], $rows->pluck('user.id')->all());
+        $this->assertSame(2 * 10 + 2 * 3 + 2 * 2, $rows[0]->pts);
+        $this->assertSame(4, MemberStats::rankOf($kai, null, 'Club'));
+        $this->assertEqualsCanonicalizing([$outsider->id, $kai->id], MemberStats::ranking($kai, null, null, 'Davao')->pluck('user.id')->all());
+        $this->assertSame(['Club', 'Davao'], MemberStats::clubsOf($kai)->pluck('name')->all(), 'home club first');
+        $this->assertSame('Davao', MemberStats::homeTable($outsider));
 
         Livewire::actingAs($kai)->test(Rankings::class)
-            ->assertSee("That's you", false)
-            ->assertSee('pts behind')
-            ->set('period', 'all')
+            ->assertSee('Club · This month')->assertSee('Home club')->assertSee('1 open play')->assertSee('All clubs')
+            ->assertSee('Players at Club open plays, this month.')->assertSee("That's you", false)->assertSee('pts behind')
             ->assertDontSee($rico->name)
-            ->assertDontSee($outsider->name);
+            ->set('club', 'Davao')->assertSee('Davao · This month')->assertSee($outsider->name)
+            ->set('club', 'all')->assertSee('All clubs · All time')->assertSee('Every PickleX player, all clubs added up, all time.')
+            ->set('club', 'Nowhere')->assertSee('Club · This month');
     }
 
     public function test_played_with_tabs_search_and_sort(): void
@@ -163,17 +172,38 @@ class MemberStatsTest extends TestCase
         $this->assertNotContains($lia->id, MemberStats::ranking($lia)->pluck('user.id'));
         $this->assertNull(MemberStats::rankOf($lia));
         $this->assertSame(4, MemberStats::ranking($kai)->count(), 'fresh accounts do not pad the table');
+        $this->assertNull(MemberStats::homeTable($lia), 'no clubs until she joins an open play');
 
+        // No clubs yet: only the All clubs table.
         Livewire::actingAs($lia)->test(Rankings::class)
-            ->assertSee("Lia, you're not ranked yet", false)->assertSee('No games this month yet')->assertDontSee('>YOU</span>', false)
-            ->set('period', 'all')->assertSee('Play your first game at an open play');
-        Livewire::actingAs($lia)->test(PlayedWith::class)->assertSee('No partners yet')->assertDontSee('No one matches')
-            ->set('tab', 'opponents')->assertSee('No opponents yet')
-            ->set('search', 'zz')->assertSee('No one matches that search yet.');
+            ->assertSee('All clubs · All time')->assertSee('Join an open play and its club gets its own table here.')
+            ->assertSee("You're not ranked yet", false)->assertSee('Not ranked yet · 0 games all time')
+            ->assertSee('Your first game at any PickleX open play puts you on the table.')
+            ->assertSee('Up to 15 pts')->assertSee('Top 10 · all clubs')->assertSee('fewer than 10 players are ranked')->assertSee('You, not ranked yet')
+            ->assertDontSee("That's you", false);
+        // Nothing logged: a guide replaces the empty tiles, tabs and table.
+        Livewire::actingAs($lia)->test(PlayedWith::class)->assertSee('No logged games yet')->assertSee('Your people show up here')
+            ->assertSee('Find an open play')->assertSee('Play 5 games with the same partner')->assertSee('How this page fills up')
+            ->assertSee('Pick one on Open plays and tap Join.')->assertDontSee('Best partner</span><span', false)->assertDontSee('Search players');
+        $soon = OpenPlay::create(['organizer_id' => $this->play->organizer_id, 'title' => 'Friday Rally', 'club' => 'Club', 'venue' => 'Venue',
+            'starts_at' => now()->addDays(2), 'ends_at' => now()->addDays(2)->addHours(3), 'courts' => 1, 'cap' => 8]);
+        $soon->join($lia);
+        Livewire::actingAs($lia)->test(PlayedWith::class)->assertSee("You're in · first game coming up")
+            ->assertSee('Your first game at Friday Rally adds a partner and two opponents.')->assertSee('See your open play')->assertSee('Done');
+        $soon->leave($lia);
         $this->actingAs($lia)->get(route('member.dashboard'))->assertOk()->assertSee('Not ranked yet')->assertDontSee('>0%</span>', false);
 
-        // A club where nobody has played: nobody on the podium, and an empty-table note.
-        $solo = User::factory()->create(['club' => 'Brand New Club']);
-        Livewire::actingAs($solo)->test(Rankings::class)->assertSee('No games logged this month yet in Brand New Club')->assertDontSee('Top of the table');
+        // Joined a club's open play where nobody has played yet: an empty-table note, nobody on the podium.
+        $quiet = OpenPlay::create(['organizer_id' => $this->play->organizer_id, 'title' => 'Quiet', 'club' => 'Quiet Club', 'venue' => 'Venue',
+            'starts_at' => now()->addDay(), 'ends_at' => now()->addDay()->addHours(3), 'courts' => 1, 'cap' => 8]);
+        $quiet->join($solo = User::factory()->create());
+        Livewire::actingAs($solo)->test(Rankings::class)->assertSee('Quiet Club · This month')
+            ->assertSee('No games logged this month yet at Quiet Club.')->assertDontSee('Top of the table');
+
+        // Played at a club before, just not this month.
+        $this->game([$lia, $ben], [$mika, $rico], true, '2 months');
+        Livewire::actingAs($lia)->test(Rankings::class)->assertSee('Club · This month')
+            ->assertSee('No games at Club open plays this month yet. Your next game there puts you on this table.')
+            ->set('period', 'all')->assertSee("That's you", false);
     }
 }

@@ -126,6 +126,8 @@ class OpenPlays extends Component
 
         return view('livewire.member.open-plays', [
             'my' => $my,
+            // Never joined an open play: a short how-it-works banner above the list.
+            'firstTime' => ! $user->participations()->exists(),
             'live' => $plays->where('status', 'live'),
             'upcoming' => $plays->where('status', 'upcoming'),
             'joined' => $joined,

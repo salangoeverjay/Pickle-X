@@ -54,13 +54,15 @@ class Dashboard extends Component
     public function render()
     {
         $user = auth()->user();
+        // Headline ranks come from the member's home club table (Rankings has one table per club).
+        $club = MemberStats::homeTable($user);
 
         return view('livewire.member.dashboard', [
             'user' => $user,
             'stats' => new MemberStats($user),
             'live' => self::liveStatus($user),
-            'rankMonth' => MemberStats::rankOf($user, now()->startOfMonth()),
-            'rankAll' => MemberStats::rankOf($user),
+            'rankMonth' => $club ? MemberStats::rankOf($user, now()->startOfMonth(), $club) : null,
+            'rankAll' => $club ? MemberStats::rankOf($user, null, $club) : null,
         ]);
     }
 }

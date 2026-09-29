@@ -12,7 +12,7 @@
             <div class="flex flex-col items-start gap-3.5 rounded-[28px] border-[1.5px] border-dashed border-line2 bg-surface p-8">
                 <span class="flex size-14 items-center justify-center rounded-[18px] bg-surface2"><x-icon name="court" :size="26" :stroke="1.9" /></span>
                 <h1 class="m-0 font-display text-[32px] leading-none font-extrabold tracking-[-0.04em] lg:text-[44px]">No live session</h1>
-                <p class="m-0 text-ink2">Start one from your open plays when players arrive, and the court board opens here.</p>
+                <p class="m-0 text-ink2">{{ auth()->user()->openPlays()->exists() ? 'Start one from your open plays when players arrive, and the court board opens here.' : 'Your first live session opens here. Create an open play, then start it on the day when players arrive.' }}</p>
                 <a href="{{ route('organizer.plays') }}" wire:navigate class="inline-flex h-12 items-center rounded-full bg-ink px-5 font-bold text-bg transition hover:brightness-96 active:scale-97">Go to open plays</a>
             </div>
         @else

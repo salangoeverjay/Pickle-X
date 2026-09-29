@@ -40,6 +40,7 @@ Route::post('/demo-login', function (Request $request) {
     Auth::login(User::where('email', $email)->firstOrFail());
     $request->session()->regenerate();
     $request->session()->forget('mode');
+    $request->session()->flash('loader', ['kind' => 'login']);
 
     return redirect()->route(Auth::user()->homeRoute());
 })->name('demo-login');
@@ -110,9 +111,11 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::post('/logout', function () {
+    $first = Auth::user()->firstName();
     Auth::logout();
     request()->session()->invalidate();
     request()->session()->regenerateToken();
+    request()->session()->flash('loader', ['kind' => 'logout', 'first' => $first]);
 
     return redirect()->route('home');
 })->middleware('auth')->name('logout');

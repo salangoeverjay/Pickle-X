@@ -56,6 +56,7 @@ class Login extends Component
 
         session()->regenerate();
         session()->forget('mode');
+        session()->flash('loader', ['kind' => 'login']);
         if ($toast) {
             session()->flash('toast', $toast);
         }

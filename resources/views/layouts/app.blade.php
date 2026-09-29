@@ -10,6 +10,8 @@
 
         {{ $slot }}
 
+        <x-loader />
+
         @livewireScripts
     </body>
 </html>

@@ -39,7 +39,7 @@
                     <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">Or try a demo account</span>
                     <span class="h-px flex-1 bg-line"></span>
                 </div>
-                <form method="POST" action="{{ route('demo-login') }}" class="grid grid-cols-3 gap-2">
+                <form method="POST" action="{{ route('demo-login') }}" x-data x-on:submit="$dispatch('px-loading', { kind: 'login' })" class="grid grid-cols-3 gap-2">
                     @csrf
                     @foreach (['member' => ['Member', 'users'], 'organizer' => ['Organizer', 'court'], 'admin' => ['Admin', 'shield']] as $role => [$label, $icon])
                         <button type="submit" name="role" value="{{ $role }}" class="flex h-19 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl border-[1.5px] border-line bg-surface text-[13px] font-bold text-ink transition hover:brightness-96 active:scale-97">

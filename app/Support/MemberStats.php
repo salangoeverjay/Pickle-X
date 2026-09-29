@@ -166,19 +166,19 @@ class MemberStats
     }
 
     /**
-     * Members of the viewer's club (all members when the viewer has no club) with games in the window,
+     * One ranking table: members with games at $club's open plays (every club when null) in the window,
      * minus those who opted out of rankings (the viewer always sees their own row). A viewer with no
-     * games in the window isn't ranked: no row, and rankOf() is null.
+     * games in the table isn't ranked: no row, and rankOf() is null.
      *
      * @return Collection<int, object{user: User, games: int, wins: int, losses: int, pts: int, me: bool, rank: int}>
      */
-    public static function ranking(User $viewer, ?CarbonInterface $since = null, ?CarbonInterface $until = null): Collection
+    public static function ranking(User $viewer, ?CarbonInterface $since = null, ?CarbonInterface $until = null, ?string $club = null): Collection
     {
         $base = fn () => DB::table('game_players as gp')
             ->join('games as g', 'g.id', '=', 'gp.game_id')
             ->join('users as u', 'u.id', '=', 'gp.user_id')
             ->where('u.role', 'member')
-            ->when($viewer->club, fn ($q, $club) => $q->where('u.club', $club))
+            ->when($club, fn ($q) => $q->join('open_plays as op', 'op.id', '=', 'g.open_play_id')->where('op.club', $club))
             ->when($since, fn ($q) => $q->where('g.played_at', '>=', $since))
             ->when($until, fn ($q) => $q->where('g.played_at', '<=', $until))
             ->groupBy('gp.user_id');
@@ -202,8 +202,29 @@ class MemberStats
             ->each(fn ($r, $i) => $r->rank = $i + 1);
     }
 
-    public static function rankOf(User $viewer, ?CarbonInterface $since = null): ?int
+    public static function rankOf(User $viewer, ?CarbonInterface $since = null, ?string $club = null): ?int
     {
-        return self::ranking($viewer, $since)->firstWhere('me', true)?->rank;
+        return self::ranking($viewer, $since, null, $club)->firstWhere('me', true)?->rank;
+    }
+
+    /**
+     * Clubs whose open plays the member joined (or played at before leaving), home club first:
+     * [{name, plays}]. Each gets its own ranking table.
+     */
+    public static function clubsOf(User $user): Collection
+    {
+        return DB::table('participants as pa')
+            ->join('open_plays as op', 'op.id', '=', 'pa.open_play_id')
+            ->where('pa.user_id', $user->id)->whereNotNull('op.club')
+            ->where(fn ($q) => $q->whereNull('pa.left_at')->orWhereExists(fn ($g) => $g->from('game_players')->whereColumn('game_players.participant_id', 'pa.id')))
+            ->selectRaw('op.club as name, count(distinct op.id) as plays')->groupBy('op.club')->get()
+            ->sortBy([fn ($a, $b) => ($b->name === $user->club) <=> ($a->name === $user->club), ['plays', 'desc'], ['name', 'asc']])
+            ->values();
+    }
+
+    /** The table a member's headline rank comes from: their home club's, else their first club's. Null: no clubs yet. */
+    public static function homeTable(User $user): ?string
+    {
+        return self::clubsOf($user)->first()?->name;
     }
 }

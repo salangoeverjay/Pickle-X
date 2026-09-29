@@ -738,6 +738,8 @@ class OpenPlays extends Component
 
         return view('livewire.organizer.open-plays', [
             'club' => auth()->user()->club ?? 'Your club',
+            // A just-approved organizer with no open plays gets a welcome with first steps instead of empty lists.
+            'hasPlays' => auth()->user()->openPlays()->exists(),
             'live' => $plays->where('status', 'live'),
             'upcoming' => $plays->where('status', 'upcoming'),
             // Recent history only; the totals cover every concluded session.

@@ -86,9 +86,12 @@ class Signup extends Component
             // Shown after "Start playing" (a plain link: this guest-only page can't run actions once signed in).
             session()->flash('toast', "You're in as a player. Organizer tools unlock once you're approved.");
             $this->sent = true;
+            $this->dispatch('px-loading', kind: 'signup-org', first: $user->firstName());
 
             return;
         }
+
+        session()->flash('loader', ['kind' => 'signup', 'first' => $user->firstName()]);
 
         return $this->redirect(route('member.dashboard'), navigate: true);
     }

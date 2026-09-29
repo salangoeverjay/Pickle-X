@@ -173,6 +173,89 @@
             radial-gradient(circle at 30% 30%, #E6FF6A, #C4E62E 60%, #A8C91E);
     }
 
+    /* Loading screen (x-loader): fades in, steps appear one by one and their spinners turn into checks. */
+    .px-ld {
+        animation: px-ld-fade .22s ease both;
+    }
+
+    .px-ld.px-ld-out {
+        animation: px-ld-out .3s ease both;
+        pointer-events: none;
+    }
+
+    .px-ld-grid {
+        background-image: linear-gradient(rgba(18, 23, 15, .07) 1px, transparent 1px), linear-gradient(90deg, rgba(18, 23, 15, .07) 1px, transparent 1px);
+        background-size: 56px 56px;
+        mask-image: radial-gradient(ellipse 55% 55% at 50% 45%, #000 20%, transparent 75%);
+    }
+
+    [data-theme=dark] .px-ld-grid {
+        background-image: linear-gradient(rgba(237, 242, 227, .06) 1px, transparent 1px), linear-gradient(90deg, rgba(237, 242, 227, .06) 1px, transparent 1px);
+    }
+
+    .px-ld-spin {
+        transform-origin: 50% 50%;
+        animation: px-ld-spin 1.1s linear infinite;
+    }
+
+    .px-ld-breathe {
+        animation: px-ld-breathe 1.6s ease-in-out infinite;
+    }
+
+    .px-ld-step {
+        animation: px-ld-in .35s ease both;
+    }
+
+    .px-ld-ring {
+        animation: px-ld-spin .8s linear infinite;
+    }
+
+    .px-ld-ringw {
+        animation: px-ld-hide .2s ease both;
+    }
+
+    .px-ld-check {
+        animation: px-ld-pop .32s cubic-bezier(.2, .9, .3, 1.3) both;
+    }
+
+    .px-ld-bar {
+        transform-origin: 0 50%;
+        animation: px-ld-bar 1.6s cubic-bezier(.4, 0, .2, 1) both;
+    }
+
+    @keyframes px-ld-fade { from { opacity: 0 } to { opacity: 1 } }
+    @keyframes px-ld-out { to { opacity: 0 } }
+    @keyframes px-ld-spin { to { transform: rotate(360deg) } }
+    @keyframes px-ld-breathe { 0%, 100% { transform: scale(1) } 50% { transform: scale(.9) } }
+    @keyframes px-ld-in { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: none } }
+    @keyframes px-ld-hide { from { opacity: 1 } to { opacity: 0 } }
+    @keyframes px-ld-pop { from { opacity: 0; transform: scale(.4) } to { opacity: 1; transform: scale(1) } }
+    @keyframes px-ld-bar { from { transform: scaleX(0) } to { transform: scaleX(1) } }
+
+    /* Played with guide: the empty partner and opponent spots pulse gently. */
+    .px-pwn-q {
+        animation: px-pwn-q 2.6s ease-in-out infinite;
+    }
+
+    @keyframes px-pwn-q { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0) } 50% { box-shadow: 0 0 0 6px rgba(255, 255, 255, .14) } }
+
+    /* Toast: slides up in, and down out before it unmounts; -b replays the entrance for a new message. */
+    .px-toast {
+        animation: px-toast .42s cubic-bezier(.2, .9, .3, 1.2) both;
+    }
+
+    .px-toast.px-toast-b {
+        animation-name: px-toast-b;
+    }
+
+    .px-toast.px-toast-out {
+        animation: px-toast-out .3s cubic-bezier(.4, 0, .9, .5) both;
+    }
+
+    @keyframes px-toast { from { opacity: 0; transform: translateY(18px) scale(.96) } to { opacity: 1; transform: none } }
+    @keyframes px-toast-b { from { opacity: 0; transform: translateY(18px) scale(.96) } to { opacity: 1; transform: none } }
+    @keyframes px-toast-out { from { opacity: 1; transform: none } to { opacity: 0; transform: translateY(16px) scale(.94) } }
+
     .input {
         @apply h-13 w-full rounded-[14px] border-[1.5px] border-line bg-surface px-4 text-[15px] font-medium text-ink outline-none transition-colors placeholder:text-ink3 focus:border-ink;
     }

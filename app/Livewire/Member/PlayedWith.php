@@ -30,7 +30,13 @@ class PlayedWith extends Component
             ->sortBy($this->sort === 'rate' ? [['pct', 'desc'], ['games', 'desc']] : [['games', 'desc'], ['pct', 'desc']])
             ->values();
 
+        // Nothing logged yet: a guide to how the page fills up replaces the empty tiles, tabs and table.
+        $guide = $stats->partners->isEmpty() && $stats->opponents->isEmpty()
+            ? ['joined' => auth()->user()->participations()->whereNull('left_at')->whereHas('openPlay', fn ($q) => $q->where('status', '!=', 'done'))->with('openPlay')->first()?->openPlay]
+            : null;
+
         return view('livewire.member.played-with', [
+            'guide' => $guide,
             'stats' => $stats,
             'rows' => $rows,
             'best' => $stats->bestPartner(),
