@@ -99,7 +99,10 @@ class OpenPlays extends Component
         $joined = $user->participations()->whereNull('left_at')->pluck('open_play_id')->all();
 
         $plays = OpenPlay::public()->whereIn('status', ['live', 'upcoming'])
-            ->withCount('activeParticipants')->orderBy('starts_at')->get();
+            ->withCount('activeParticipants')->orderBy('starts_at')
+            // "Hosted by": the organizer and how many open plays they've run.
+            ->with(['organizer' => fn ($q) => $q->withCount(['openPlays as hosted_count' => fn ($q) => $q->where('status', 'done')])])
+            ->get();
 
         // "My status": the first live session (public or not) the member is standing in.
         $my = null;

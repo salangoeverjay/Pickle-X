@@ -45,7 +45,10 @@ class OpenPlaysTest extends TestCase
     {
         $this->seed();
 
-        $this->actingAs(User::where('email', 'kai@picklex.app')->first())->get(route('member.plays'))->assertOk()->assertSee('Check in to get on court')->assertSee('Leave open play');
+        $this->actingAs(User::where('email', 'kai@picklex.app')->first())->get(route('member.plays'))->assertOk()->assertSee('Check in to get on court')->assertSee('Leave open play')
+            ->assertSee('Hosted by')->assertSee('Ely Ramos')->assertSee('Approved organizer · ');
+        // An organizer in player mode sees their own sessions as hosted by them.
+        $this->actingAs(User::where('email', 'ely@panabodink.ph')->first())->get(route('member.plays'))->assertOk()->assertSee("You're the organizer · ")->assertSee('Hosted by');
         $this->actingAs(User::where('email', 'ely@panabodink.ph')->first())->get(route('organizer.plays'))->assertOk()->assertSee('LIVE NOW')->assertSee('Concluded open plays');
     }
 

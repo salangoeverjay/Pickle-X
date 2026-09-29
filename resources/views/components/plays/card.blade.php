@@ -22,6 +22,19 @@
 
     <h3 class="m-0 font-display text-[23px] leading-[1.1] font-bold tracking-[-0.03em]">{{ $play->title }}</h3>
 
+    @if ($host = $play->organizer)
+        @php($mine = $host->is(auth()->user()))
+        @php($n = (int) ($host->hosted_count ?? $host->openPlays()->status('done')->count()))
+        @php($hosted = $n ? $n.' '.Str::plural('open play', $n).' hosted' : 'New organizer')
+        <div role="group" aria-label="Hosted by {{ $mine ? 'you' : $host->shownName() }}, approved organizer, {{ $hosted }}" class="flex min-w-0 items-center gap-2.75">
+            <x-avatar :src="$host->avatarUrl()" :frame="$host->frameClass()" :name="$host->shownName()" :color="$host->color()" class="ml-0.5 size-9 text-xs" aria-hidden="true" />
+            <div class="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span class="truncate text-sm text-ink2">Hosted by <strong class="font-bold text-ink">{{ $mine ? 'you' : $host->shownName() }}</strong></span>
+                <span class="flex min-w-0 items-center gap-1.25 text-xs text-ink3"><svg class="shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.8l2.3 1.7 2.9.1.9 2.7 2.3 1.8-.8 2.8.8 2.8-2.3 1.8-.9 2.7-2.9.1L12 21.2l-2.3-1.7-2.9-.1-.9-2.7-2.3-1.8.8-2.8-.8-2.8 2.3-1.8.9-2.7 2.9-.1Z" fill="var(--color-lime)" stroke="var(--color-cta-border)" stroke-width="1.6" /><path d="M8.4 12.2l2.4 2.4 4.8-4.9" stroke="#12170F" stroke-width="2.6" /></svg><span class="truncate">{{ $mine ? "You're the organizer · {$hosted}" : "Approved organizer · {$hosted}" }}</span></span>
+            </div>
+        </div>
+    @endif
+
     <div class="flex flex-col gap-2 text-sm text-ink2">
         <span class="flex items-center gap-2"><x-icon name="pin" :size="17" :stroke="1.9" />{{ $play->venue }}</span>
         <span class="flex items-center gap-2"><x-icon name="clock" :size="17" :stroke="1.9" />{{ $play->isLive() ? $play->whenLabel().' · ' : '' }}{{ $play->timeRange() }}</span>
