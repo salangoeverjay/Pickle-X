@@ -20,7 +20,7 @@
             </button>
         </div>
 
-        <div class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 pt-5 pb-6">
+        <div class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 pt-5 pb-6 [&>*]:shrink-0">
             <div class="grid grid-cols-3 gap-2.5">
                 @php($tiles = [['Joined', $c['all'].'/'.$play->cap, $left ? $left.'<span class="lg:hidden"> left</span><span class="hidden lg:inline"> '.Str::plural('spot', $left).' left</span>' : 'Full']])
                 @if ($roster['free'])

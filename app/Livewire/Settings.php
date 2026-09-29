@@ -179,8 +179,9 @@ class Settings extends Component
         if ($id !== '' && ! Looks::valid($kind, $id)) {
             return;
         }
-        if (isset(Looks::EXCLUSIVE[$id]) && ! $user->is_developer) {
-            $this->dispatch('toast', message: 'Developer accounts only · an admin unlocks this');
+        $unlock = Looks::EXCLUSIVE[$id][1] ?? null;
+        if ($unlock && ! Looks::unlocked($unlock, (bool) $user->is_developer, $user->sponsor_tier)) {
+            $this->dispatch('toast', message: Looks::onlyFor($unlock).' · an admin unlocks this');
 
             return;
         }

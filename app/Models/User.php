@@ -177,13 +177,13 @@ class User extends Authenticatable
     /** Avatar border classes (resources/css/looks.css), or '' for none. */
     public function frameClass(): string
     {
-        return Looks::cls('frame', $this->frame, (bool) $this->is_developer);
+        return Looks::cls('frame', $this->frame, (bool) $this->is_developer, $this->sponsor_tier);
     }
 
     /** Queue background classes for this member's spot in line, or '' for none. */
     public function queueBgClass(): string
     {
-        return Looks::cls('queue', $this->queue_bg, (bool) $this->is_developer);
+        return Looks::cls('queue', $this->queue_bg, (bool) $this->is_developer, $this->sponsor_tier);
     }
 
     /** Profile picture URL, or null when showing initials on color(). */

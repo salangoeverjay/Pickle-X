@@ -24,8 +24,15 @@ class Looks
         'mint' => ['Mint', false], 'checker' => ['Checker', false], 'confetti' => ['Confetti', false], 'night' => ['Night sky', false], 'lemon' => ['Lemonade', false],
     ];
 
-    /** Developer accounts only (both kinds). */
-    public const EXCLUSIVE = ['dev' => 'Developer'];
+    /** Exclusive looks (both kinds), id => [label, unlock]: "dev" for developer accounts, or a sponsor tier. */
+    public const EXCLUSIVE = [
+        'dev' => ['Developer', 'dev'],
+        'sp-gold' => ['Gold sponsor', 'gold'],
+        'sp-silver' => ['Silver sponsor', 'silver'],
+        'sp-bronze' => ['Bronze sponsor', 'bronze'],
+    ];
+
+    public const TIERS = ['gold' => 'Gold', 'silver' => 'Silver', 'bronze' => 'Bronze'];
 
     /** kind: "frame" or "queue". */
     public static function list(string $kind): array
@@ -40,13 +47,47 @@ class Looks
 
     public static function label(string $kind, ?string $id): ?string
     {
-        return self::list($kind)[$id][0] ?? self::EXCLUSIVE[$id] ?? null;
+        return self::list($kind)[$id][0] ?? self::EXCLUSIVE[$id][0] ?? null;
     }
 
-    /** CSS classes for a worn look, or '' (none, unknown, or exclusive on a non-developer). */
-    public static function cls(string $kind, ?string $id, bool $developer): string
+    /** Whether an exclusive unlock ("dev" or a tier) is open to this account. */
+    public static function unlocked(string $unlock, bool $developer, ?string $tier): bool
     {
-        if (! self::valid($kind, $id) || (isset(self::EXCLUSIVE[$id]) && ! $developer)) {
+        return $unlock === 'dev' ? $developer : $unlock === $tier;
+    }
+
+    /** "Developer accounts only" / "Gold sponsors only". */
+    public static function onlyFor(string $unlock): string
+    {
+        return $unlock === 'dev' ? 'Developer accounts only' : self::TIERS[$unlock].' sponsors only';
+    }
+
+    /**
+     * The look an account actually shows, or null. Exclusive looks need their unlock;
+     * a sponsor who moved tier shows the new tier's look.
+     */
+    public static function effective(string $kind, ?string $id, bool $developer, ?string $tier): ?string
+    {
+        if (! self::valid($kind, $id)) {
+            return null;
+        }
+        if (! isset(self::EXCLUSIVE[$id]) || self::unlocked(self::EXCLUSIVE[$id][1], $developer, $tier)) {
+            return $id;
+        }
+
+        return self::EXCLUSIVE[$id][1] !== 'dev' && isset(self::TIERS[$tier]) ? "sp-{$tier}" : null;
+    }
+
+    /** CSS classes for a look as worn (see effective()), or ''. */
+    public static function cls(string $kind, ?string $id, bool $developer, ?string $tier): string
+    {
+        return self::preview($kind, self::effective($kind, $id, $developer, $tier));
+    }
+
+    /** CSS classes for any look, unlocked or not (picker tiles and admin previews). */
+    public static function preview(string $kind, ?string $id): string
+    {
+        if (! self::valid($kind, $id)) {
             return '';
         }
         $pre = $kind === 'frame' ? 'px-fr' : 'px-qb';

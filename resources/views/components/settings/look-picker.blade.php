@@ -3,8 +3,9 @@
 @props(['user', 'tab' => 'border', 'saved' => false])
 @php
     $dev = (bool) $user->is_developer;
-    // An exclusive look someone lost (developer taken away) counts as none.
-    $cur = ['frame' => $user->frameClass() ? $user->frame : '', 'queue' => $user->queueBgClass() ? $user->queue_bg : ''];
+    $tier = $user->sponsor_tier;
+    // What's worn: an exclusive look someone lost counts as none; a sponsor who moved tier shows the new tier.
+    $cur = ['frame' => Looks::effective('frame', $user->frame, $dev, $tier) ?? '', 'queue' => Looks::effective('queue', $user->queue_bg, $dev, $tier) ?? ''];
     $tab = $tab === 'queue' ? 'queue' : 'border';
     $kind = $tab === 'border' ? 'frame' : 'queue';
     $list = Looks::list($kind);
@@ -12,8 +13,18 @@
         ['Animated', '10', 'anim', array_filter($list, fn ($l) => $l[1])],
         ['Still', '10 + none', 'still', ['' => ['None', false]] + array_filter($list, fn ($l) => ! $l[1])],
     ];
-    $ex = ['Exclusive', $dev ? 'Unlocked' : 'Locked', 'ex', array_map(fn ($l) => [$l, true], Looks::EXCLUSIVE)];
-    $groups = $dev ? [$ex, ...$std] : [...$std, $ex];
+    // Exclusive: unlocked ones first.
+    $exItems = collect(Looks::EXCLUSIVE)->map(fn ($l) => [$l[0], true, $l[1], ! Looks::unlocked($l[1], $dev, $tier)])->sortBy(fn ($l) => $l[3])->all();
+    $open = collect($exItems)->reject(fn ($l) => $l[3])->count();
+    $tierName = Looks::TIERS[$tier] ?? null;
+    $exNote = match (true) {
+        $dev && (bool) $tierName => "An admin marked you as a developer and a {$tierName} sponsor, so these are unlocked for you.",
+        $dev => 'An admin marked your account as a developer, so this is unlocked for you.',
+        (bool) $tierName => "Thanks for sponsoring PickleX. Your {$tierName} sponsor look is unlocked.",
+        default => 'For developers and sponsors who help cover PickleX’s costs. An admin unlocks them.',
+    };
+    $ex = ['Exclusive', $open ? $open.' of '.count($exItems).' unlocked' : 'Locked', 'ex', $exItems];
+    $groups = $open ? [$ex, ...$std] : [...$std, $ex];
     $frName = $cur['frame'] ? Looks::label('frame', $cur['frame']).(isset(Looks::EXCLUSIVE[$cur['frame']]) ? ' · exclusive' : (Looks::FRAMES[$cur['frame']][1] ? ' · animated' : '')) : 'No border';
     $pvFr = $user->frameClass();
 @endphp
@@ -66,21 +77,22 @@
                     @if ($gid === 'anim')
                         <x-icon name="sparkle" :size="16" class="text-lime-text" />
                     @elseif ($isEx)
-                        <x-icon name="code" :size="16" />
+                        <x-icon name="gem" :size="16" />
                     @endif
                     <h4 id="look-{{ $kind }}-{{ $gid }}" class="m-0 text-sm font-extrabold">{{ $glabel }}</h4>
                     <span class="font-mono text-xs text-ink3">{{ $n }}</span>
                 </div>
                 @if ($isEx)
-                    <p class="-mt-1 mb-0 text-[13px] leading-[1.4] text-ink3">{{ $dev ? 'An admin marked your account as a developer, so this is unlocked for you.' : 'Only for developer accounts. An admin unlocks it.' }}</p>
+                    <p class="-mt-1 mb-0 text-[13px] leading-[1.4] text-ink3">{{ $exNote }}</p>
                 @endif
                 <div role="radiogroup" aria-labelledby="look-{{ $kind }}-{{ $gid }}" @class(['grid gap-2.5', 'grid-cols-4 lg:grid-cols-6' => $kind === 'frame', 'grid-cols-2 lg:grid-cols-4' => $kind === 'queue'])>
-                    @foreach ($items as $id => [$label, $anim])
-                        @php($locked = $isEx && ! $dev)
+                    @foreach ($items as $id => $item)
+                        @php([$label, $anim] = $item)
+                        @php($locked = $isEx && $item[3])
                         @php($on = ! $locked && $cur[$kind] === (string) $id)
-                        @php($cls = $id === '' ? '' : Looks::cls($kind, (string) $id, true))
+                        @php($cls = Looks::preview($kind, (string) $id))
                         <button type="button" role="radio" aria-checked="{{ $on ? 'true' : 'false' }}" aria-disabled="{{ $locked ? 'true' : 'false' }}" wire:key="look-{{ $kind }}-{{ $id ?: 'none' }}"
-                                aria-label="{{ $label }}{{ $locked ? ', locked, developer accounts only' : ($isEx ? ', exclusive, animated' : ($anim ? ', animated' : ($id === '' ? ', no '.($kind === 'frame' ? 'border' : 'background') : ''))) }}"
+                                aria-label="{{ $label }}{{ $locked ? ', locked, '.Str::lower(Looks::onlyFor($item[2])) : ($isEx ? ', exclusive, animated' : ($anim ? ', animated' : ($id === '' ? ', no '.($kind === 'frame' ? 'border' : 'background') : ''))) }}"
                                 wire:click="setLook('{{ $kind }}', '{{ $id }}')"
                                 @class([
                                     'relative flex min-w-0 cursor-pointer rounded-[18px] border-2 transition active:scale-97',

@@ -8,7 +8,7 @@
                 <div class="flex min-w-0 flex-col gap-1.5">
                     <span class="inline-flex h-5.5 items-center self-start rounded-full bg-lime px-2.25 text-[11px] font-extrabold tracking-[.06em] text-on-lime">EXCLUSIVE</span>
                     <h2 id="dev-look-h" class="m-0 font-display text-2xl font-extrabold tracking-[-0.03em]">Developer look</h2>
-                    <span class="text-sm leading-[1.45] text-[#F3F2EA]/72">An animated code border with a &lt;/&gt; tag, and a scrolling code queue background. Members see it locked in their picker.</span>
+                    <span class="text-sm leading-[1.45] text-[#F3F2EA]/72">An animated avatar decoration: a code crown, a holographic ring and a bouncing pickleball. In the queue, code bits float up and a pickleball bounces along the row. Members see it locked in their picker.</span>
                 </div>
             </div>
             <div class="flex min-w-0 flex-1 flex-col gap-2 lg:min-w-90">

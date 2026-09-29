@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Livewire\Admin\Developers;
+use App\Livewire\Admin\Sponsors;
 use App\Livewire\Settings;
 use App\Models\User;
 use App\Support\Looks;
@@ -52,7 +53,7 @@ class LooksTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
 
         Livewire::actingAs($kai)->test(Settings::class)
-            ->assertSee('Only for developer accounts. An admin unlocks it.')
+            ->assertSee('For developers and sponsors who help cover PickleX’s costs. An admin unlocks them.')
             ->call('setLook', 'frame', 'dev')->assertDispatched('toast', message: 'Developer accounts only · an admin unlocks this');
         $this->assertNull($kai->fresh()->frame);
         $this->actingAs($kai)->get(route('admin.developers'))->assertForbidden();
@@ -72,6 +73,44 @@ class LooksTest extends TestCase
             ->assertSee('Wearing the border and queue background')
             ->call('removeDeveloper', $kai->id)->assertDispatched('toast', message: 'Kai Santos is no longer a developer · look locked');
         $this->assertSame([null, null, false], [$kai->fresh()->frame, $kai->fresh()->queue_bg, $kai->fresh()->is_developer]);
+    }
+
+    public function test_sponsor_looks_unlock_per_tier_and_follow_tier_changes(): void
+    {
+        $kai = User::factory()->create(['name' => 'Kai Santos']);
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        Livewire::actingAs($kai)->test(Settings::class)
+            ->call('setLook', 'frame', 'sp-gold')->assertDispatched('toast', message: 'Gold sponsors only · an admin unlocks this');
+        $this->actingAs($kai)->get(route('admin.sponsors'))->assertForbidden();
+
+        Livewire::actingAs($admin)->test(Sponsors::class)
+            ->assertSee('Gold sponsor')->assertSee('No sponsors yet')
+            ->set('tier', 'silver')->set('q', 'kai')->assertSee('Add as Silver')
+            ->call('addSponsor', $kai->id)->assertDispatched('toast', message: 'Kai Santos is a Silver sponsor · Silver look unlocked');
+
+        Livewire::actingAs($kai->fresh())->test(Settings::class)
+            ->assertSee('Thanks for sponsoring PickleX. Your Silver sponsor look is unlocked.')->assertSee('1 of 4 unlocked')
+            ->call('setLook', 'frame', 'sp-silver')->call('setLook', 'queue', 'sp-silver')
+            ->call('setLook', 'frame', 'dev')->assertDispatched('toast', message: 'Developer accounts only · an admin unlocks this');
+        $this->assertSame('px-fr px-fr-sp-silver', $kai->fresh()->frameClass());
+
+        Livewire::actingAs($admin)->test(Sponsors::class)
+            ->assertSee('Wearing the Silver border and queue background')
+            ->call('setTier', $kai->id, 'gold')->assertDispatched('toast', message: 'Kai Santos moved to Gold · Gold sponsor look unlocked');
+        $this->assertSame(['sp-gold', 'sp-gold', 'px-qb px-qb-sp-gold'], [$kai->fresh()->frame, $kai->fresh()->queue_bg, $kai->fresh()->queueBgClass()]);
+
+        Livewire::actingAs($admin)->test(Sponsors::class)
+            ->call('removeSponsor', $kai->id)->assertDispatched('toast', message: 'Kai Santos is no longer a sponsor · look locked');
+        $this->assertSame([null, null, null], [$kai->fresh()->frame, $kai->fresh()->queue_bg, $kai->fresh()->sponsor_tier]);
+    }
+
+    public function test_a_sponsor_look_from_another_tier_shows_the_current_tier(): void
+    {
+        $u = User::factory()->create();
+        $u->forceFill(['sponsor_tier' => 'bronze', 'frame' => 'sp-gold', 'queue_bg' => 'dev'])->save();
+
+        $this->assertSame(['px-fr px-fr-sp-bronze', ''], [$u->frameClass(), $u->queueBgClass()]);
     }
 
     public function test_exclusive_looks_never_render_on_non_developers(): void

@@ -15,6 +15,7 @@
         'admin' => [
             ['admin.requests', 'Requests', 'shield', \App\Models\User::where('organizer_status', 'pending')->count() ?: null],
             ['admin.developers', 'Developers', 'code', null],
+            ['admin.sponsors', 'Sponsors', 'heart', null],
         ],
         default => [
             ['member.dashboard', 'Home', 'home', null],
