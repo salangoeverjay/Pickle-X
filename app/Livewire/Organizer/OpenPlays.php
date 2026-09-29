@@ -589,7 +589,7 @@ class OpenPlays extends Component
         $q = mb_strtolower(trim($this->rosterQ));
         $rows = $all->filter(fn ($r) => match ($f) {
             'paid' => $r['paid'], 'unpaid' => $r['owes'], 'guests' => $r['guest'], 'app' => ! $r['guest'], default => true,
-        } && ($q === '' || str_contains(mb_strtolower($r['p']->name), $q) || str_contains(mb_strtolower((string) $r['p']->user?->email), $q)))->values();
+        } && ($q === '' || str_contains(mb_strtolower($r['p']->name.' '.$r['p']->fullName()), $q) || str_contains(mb_strtolower((string) $r['p']->user?->email), $q)))->values();
 
         return [
             'play' => $play, 'free' => $free, 'rows' => $rows, 'counts' => $counts, 'tabs' => $tabs, 'f' => $f, 'q' => trim($this->rosterQ),

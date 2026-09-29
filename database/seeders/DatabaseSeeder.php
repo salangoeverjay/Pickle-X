@@ -47,6 +47,24 @@ class DatabaseSeeder extends Seeder
             $members->firstWhere('name', $name)->update(['avatar' => "preset:{$preset}"]);
         }
 
+        // Some regulars dressed up their avatar (border) and queue spot (background).
+        $looks = [
+            'Rico Dizon' => ['gold', null], 'Ben Tan' => ['lime', 'shimmer'], 'Mika Lim' => ['spin', null], 'Jojo Bautista' => ['orbit', 'barber'],
+            'Paolo Cruz' => ['court', null], 'Gab Navarro' => ['fire', null], 'Nico Garcia' => ['comet', null], 'Bea Castillo' => ['aurora', null],
+            'Joy Villanueva' => ['heart', null], 'Ria Torres' => ['kitchen', 'confetti'], 'Dana Chua' => ['neon', 'sunset'], 'Enzo Aquino' => [null, 'flow'], 'Marco Rivera' => [null, 'waves'],
+        ];
+        foreach ($looks as $name => [$frame, $bg]) {
+            $members->firstWhere('name', $name)->forceFill(['frame' => $frame, 'queue_bg' => $bg])->save();
+        }
+
+        // Two regulars show a display name instead of their full name.
+        $members->firstWhere('name', 'Enzo Aquino')->update(['display_name' => 'Zo', 'show_display_name' => true]);
+        $members->firstWhere('name', 'Marco Rivera')->update(['display_name' => 'Coach Marco', 'show_display_name' => true]);
+
+        // The app developer's own account: an admin marked it as developer, so the exclusive look is unlocked (and worn).
+        User::factory()->create(['name' => 'Jayvee', 'email' => 'jayvee@picklex.app', 'avatar_color' => '#E2D2FF', 'avatar' => 'preset:rocket', 'club' => 'PickleX team'])
+            ->forceFill(['is_developer' => true, 'frame' => 'dev', 'queue_bg' => 'dev'])->save();
+
         $ely = $this->organizer('Ely Ramos', 'ely@panabodink.ph', self::CLUB, 'Panabo City', 4, 'approved', 'Monday night and Saturday morning open plays.', '-16 days');
         $davao = $this->organizer('Rafa Medina', 'rafa@davaopaddle.ph', 'Davao Paddle Club', 'Davao City', 2, 'approved', 'Weekend beginner clinics.', '-30 days');
         $digos = $this->organizer('Joan Uy', 'joan@digosdinkers.ph', 'Digos Dinkers', 'Digos City', 3, 'approved', 'Midweek mixers for all levels.', '-40 days');

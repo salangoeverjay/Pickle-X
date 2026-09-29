@@ -36,7 +36,7 @@
                 <div class="flex min-w-0 animate-rise flex-col items-center gap-2.5" style="animation-delay: {{ $delay }}">
                     @if ($r)
                         <div @class(['relative', 'animate-snap' => in_array($r['participant_id'], $fresh)])>
-                            <x-avatar :src="$p?->avatarUrl()" :name="$p?->name ?? '?'" :color="$p?->color() ?? '#FFFFFF'"
+                            <x-avatar :src="$p?->avatarUrl()" :frame="$p?->frameClass()" :name="$p?->name ?? '?'" :color="$p?->color() ?? '#FFFFFF'"
                                       :class="$size.' border-3 '.($r['participant_id'] === $me ? 'border-lime' : 'border-surface')" />
 <span class="absolute -right-3 -bottom-2 lg:hidden"><x-medal :rank="$i + 1" :size="26" ring="{{ $plain ? 'var(--color-bg)' : 'var(--color-surface)' }}" /></span>
                             <span class="absolute -right-3.75 -bottom-2 hidden lg:block"><x-medal :rank="$i + 1" :size="34" ring="{{ $plain ? 'var(--color-bg)' : 'var(--color-surface)' }}" /></span>
@@ -82,7 +82,7 @@
                         @endif
                     </span>
                     <span role="cell" class="flex min-w-0 items-center gap-2.5">
-                        <x-avatar :src="$p?->avatarUrl()" :name="$p?->name ?? '?'" :color="$p?->color() ?? '#FFFFFF'" class="size-7.5 text-[11px]" />
+                        <x-avatar :src="$p?->avatarUrl()" :frame="$p?->frameClass()" :name="$p?->name ?? '?'" :color="$p?->color() ?? '#FFFFFF'" class="size-7.5 text-[11px]" />
                         <span @class(['min-w-0 truncate', 'font-extrabold' => $top || $mine, 'font-semibold' => ! $top && ! $mine])>
                             <span class="lg:hidden">{{ $p?->firstName() }}</span><span class="hidden lg:inline">{{ $p?->name }}</span>
                         </span>

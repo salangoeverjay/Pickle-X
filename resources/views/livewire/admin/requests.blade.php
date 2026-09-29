@@ -46,7 +46,7 @@
                 @php($fresh = $request->created_at?->gt(now()->subDay()))
                 <div wire:key="req-{{ $request->id }}" @class(['flex animate-fade flex-col gap-3.5 rounded-3xl border-[1.5px] bg-surface p-4.5 lg:p-6', 'border-lime' => $fresh, 'border-line' => ! $fresh])>
                     <div class="flex items-center gap-3">
-                        <x-avatar :src="$request->avatarUrl()" :name="$request->name" :color="palette_color($request->id)" class="size-12 text-[15px]" />
+                        <x-avatar :src="$request->avatarUrl()" :frame="$request->frameClass()" :name="$request->name" :color="palette_color($request->id)" class="size-12 text-[15px]" />
                         <div class="flex min-w-0 flex-1 flex-col">
                             <span class="text-base font-bold">{{ $request->name }}</span>
                             <span class="truncate text-[13px] text-ink3">{{ $request->email }}</span>

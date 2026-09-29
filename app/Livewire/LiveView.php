@@ -8,6 +8,9 @@ use Livewire\Component;
 /** Public, read-only board for a live open play (QR / share-link target). Names only, no contact details. */
 class LiveView extends Component
 {
+    /** Spots in line the big screen lists before "+ N more". */
+    public const QUEUE_CAP = 12;
+
     public OpenPlay $play;
 
     public function mount(OpenPlay $play): void
@@ -54,8 +57,16 @@ class LiveView extends Component
                 'up' => $up,
                 'metaClass' => $metaClass,
                 'you' => $me && $people->contains(fn ($p) => $p->user_id === $me->id),
+                'n' => count($e['ids']),
+                'bg' => $people->map(fn ($p) => $p->queueBgClass())->first(fn ($c) => $c) ?? '',
+                'framed' => $people->contains(fn ($p) => $p->frameClass()),
             ];
         });
+
+        // The big screen shows the front of the line; a member far back still sees their own spot.
+        $meAt = $queue->search(fn ($q) => $q['you']);
+        $meRow = $meAt !== false && $meAt >= self::QUEUE_CAP ? $queue[$meAt] : null;
+        $more = $queue->slice(self::QUEUE_CAP)->reject(fn ($q) => $q['you'])->sum('n');
 
         $results = $play->games()->with('players')->latest('played_at')->latest('id')->take(5)->get()->map(function ($g) use ($play) {
             $secs = now()->timestamp - $g->played_at->timestamp;
@@ -76,7 +87,9 @@ class LiveView extends Component
             'standings' => $play->standings(),
             'myPid' => $me ? $play->participantMap()->firstWhere('user_id', $me->id)?->id : null,
             'courts' => $courts,
-            'queue' => $queue,
+            'queue' => $queue->take(self::QUEUE_CAP),
+            'meRow' => $meRow,
+            'more' => $more,
             'queueCount' => $play->queuedPlayerCount(),
             'results' => $results,
             'next' => $next,

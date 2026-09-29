@@ -14,6 +14,7 @@
         ],
         'admin' => [
             ['admin.requests', 'Requests', 'shield', \App\Models\User::where('organizer_status', 'pending')->count() ?: null],
+            ['admin.developers', 'Developers', 'code', null],
         ],
         default => [
             ['member.dashboard', 'Home', 'home', null],
@@ -91,7 +92,7 @@
         </button>
 
         <div class="flex items-center gap-2.5 rounded-2xl border border-line bg-surface2 p-2.5">
-            <x-avatar :src="$user->avatarUrl()" :name="$user->name" :color="$user->color()" class="size-9.5 text-[13px]" />
+            <x-avatar :src="$user->avatarUrl()" :frame="$user->frameClass()" :name="$user->name" :color="$user->color()" class="size-9.5 text-[13px]" />
             <div class="flex min-w-0 flex-1 flex-col">
                 <span class="truncate text-sm font-bold">{{ $user->name }}</span>
                 <span class="truncate text-xs text-ink3">{{ $user->email }}</span>
@@ -116,7 +117,7 @@
             @endif
             <x-theme-toggle class="border-0 bg-transparent" />
             <button type="button" x-on:click="open = ! open" aria-label="Account menu" x-bind:aria-expanded="open" class="flex size-11 cursor-pointer items-center justify-center rounded-full">
-                <x-avatar :src="$user->avatarUrl()" :name="$user->name" :color="$user->color()" class="size-8.5 text-xs" />
+                <x-avatar :src="$user->avatarUrl()" :frame="$user->frameClass()" :name="$user->name" :color="$user->color()" class="size-8.5 text-xs" />
             </button>
         </div>
 

@@ -88,7 +88,7 @@
                             @if ($n)
                                 <span aria-hidden="true" class="flex pr-0.5">
                                     @foreach ($play->activeParticipants->take(5) as $p)
-                                        <x-avatar :src="$p->avatarUrl()" :name="$p->name" :color="$p->user ? $p->color() : '#E6E3D6'" class="-mr-2.25 size-8.5 border-2 border-bg text-[11px]" />
+                                        <x-avatar :src="$p->avatarUrl()" :frame="$p->frameClass()" :name="$p->name" :color="$p->user ? $p->color() : '#E6E3D6'" class="-mr-2.25 size-8.5 border-2 border-bg text-[11px]" />
                                     @endforeach
                                     @if ($n > 5)
                                         <span class="flex h-8.5 min-w-8.5 items-center justify-center rounded-full border-2 border-bg bg-ink px-1.5 font-mono text-[11px] font-semibold text-bg">+{{ $n - 5 }}</span>
@@ -145,7 +145,7 @@
                                         @foreach ($top3 as $i => $r)
                                             @php($pp = $play->participant($r['participant_id']))
                                             <span class="relative -mr-1.5">
-                                                <x-avatar :src="$pp?->avatarUrl()" :name="$pp?->name ?? '?'" :color="$pp?->color() ?? '#FFFFFF'" class="size-9 border-2 border-surface text-[11px]" />
+                                                <x-avatar :src="$pp?->avatarUrl()" :frame="$pp?->frameClass()" :name="$pp?->name ?? '?'" :color="$pp?->color() ?? '#FFFFFF'" class="size-9 border-2 border-surface text-[11px]" />
                                                 <x-medal :rank="$i + 1" :size="16" ring="var(--color-surface)" :label="false" class="absolute -right-1.75 -bottom-1.25" />
                                             </span>
                                         @endforeach
@@ -353,7 +353,7 @@
                                 <div wire:key="paid-{{ md5($row['key']) }}" class="flex flex-col gap-2 border-b border-line px-3.5 py-2.5 last:border-b-0">
                                     <div class="flex items-center gap-2.5">
                                         @if ($u)
-                                            <x-avatar :name="$u->name" :color="$u->color()" :src="$u->avatarUrl()" class="size-7.5 text-[11px]" />
+                                            <x-avatar :name="$u->name" :color="$u->color()" :src="$u->avatarUrl()" :frame="$u->frameClass()" class="size-7.5 text-[11px]" />
                                         @else
                                             <span class="flex size-7.5 shrink-0 items-center justify-center rounded-full bg-surface2 text-[11px] font-extrabold text-ink2">{{ initials($row['line']) }}</span>
                                         @endif
@@ -383,7 +383,7 @@
                                         <div class="flex flex-col gap-1.5 pl-10">
                                             @foreach ($row['cands'] as $c)
                                                 <div class="flex items-center gap-2 rounded-xl bg-surface2 py-1.5 pr-1.5 pl-2">
-                                                    <x-avatar :name="$c['user']->name" :color="$c['user']->color()" :src="$c['user']->avatarUrl()" class="size-6.5 text-[10px]" />
+                                                    <x-avatar :name="$c['user']->name" :color="$c['user']->color()" :src="$c['user']->avatarUrl()" :frame="$c['user']->frameClass()" class="size-6.5 text-[10px]" />
                                                     <span class="flex min-w-0 flex-1 flex-col">
                                                         <span class="truncate text-[13px] font-bold">{{ $c['user']->name }}</span>
                                                         <span class="truncate text-[11px] text-ink3"><strong class="font-bold text-ink2">{{ $c['why'] }}</strong> · {{ $c['user']->email }}{{ $c['user']->club ? ' · '.$c['user']->club : '' }}</span>

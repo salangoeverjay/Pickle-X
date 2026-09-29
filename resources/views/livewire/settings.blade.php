@@ -30,8 +30,27 @@
 
                     <x-settings.avatar-picker :user="$user" :picker="$picker" />
 
+                    <x-settings.look-picker :user="$user" :tab="$lookTab" :saved="$lookSaved" />
+
                     <div class="grid gap-3.5 lg:grid-cols-2">
                         <x-field label="Full name" id="sf-name" autocomplete="name" wire:model="name" />
+                        @unless ($user->isAdmin())
+                            <div id="sf-dname-f" x-data class="flex scroll-mt-5 flex-col gap-2">
+                                <div class="flex items-baseline justify-between gap-2">
+                                    <label for="sf-dname" class="text-[13px] font-bold text-ink2">Display name <span class="font-medium text-ink3">(optional)</span></label>
+                                    <span aria-hidden="true" class="font-mono text-xs" :class="($wire.displayName || '').trim().length > 20 ? 'text-hot' : 'text-ink3'" x-text="($wire.displayName || '').trim().length + '/20'"></span>
+                                </div>
+                                <input id="sf-dname" type="text" autocomplete="nickname" maxlength="24" placeholder="A nickname, e.g. Kaiser" wire:model="displayName" aria-describedby="sf-dname-hint" class="input">
+                                <span id="sf-dname-hint" class="text-xs text-ink3">Up to 20 characters.</span>
+                            </div>
+                        @endunless
+                    </div>
+
+                    @unless ($user->isAdmin())
+                        @include('livewire.partials.display-name', ['user' => $user])
+                    @endunless
+
+                    <div class="grid gap-3.5 lg:grid-cols-2">
                         <x-field label="Email" id="sf-email" type="email" autocomplete="email" wire:model="email" />
                         <div class="flex flex-col gap-2">
                             <label for="sf-phone" class="text-[13px] font-bold text-ink2">Mobile number <span class="font-medium text-ink3">(for queue alerts)</span></label>
@@ -48,7 +67,7 @@
                         @endif
                     </div>
 
-                    @if ($message = $firstError(['name', 'email', 'phone', 'club']))
+                    @if ($message = $firstError(['name', 'displayName', 'email', 'phone', 'club']))
                         <x-alert>{{ $message }}</x-alert>
                     @endif
 

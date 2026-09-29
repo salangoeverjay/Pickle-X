@@ -1,6 +1,6 @@
 {{--
     Top-down pickleball court with four bobbing players and a bouncing ball. Size it from the caller.
-    players: [[initials, color, ring?, pictureUrl?], ...] in spot order: team A top, A bottom, B top, B bottom.
+    players: [[initials, color, ring?, pictureUrl?, frameClass?], ...] in spot order: team A top, A bottom, B top, B bottom.
     Default slot renders on top of the court (badges, lock markers, "open" overlay).
 --}}
 @props(['players' => [], 'playerClass' => 'size-8 text-[11px]', 'delay' => 0, 'label' => 'Animated court with four players rallying'])
@@ -21,8 +21,8 @@
     {{ $slot }}
 
     @foreach ($players as $i => $player)
-        @php([$initials, $color, $ring, $src] = $player + [2 => '#FFFFFF', 3 => null])
-        <div class="court-player absolute flex items-center justify-center rounded-full border-[3px] font-extrabold text-on-lime {{ $playerClass }}"
+        @php([$initials, $color, $ring, $src, $frame] = $player + [2 => '#FFFFFF', 3 => null, 4 => ''])
+        <div class="court-player absolute flex items-center justify-center rounded-full border-[3px] font-extrabold text-on-lime {{ $playerClass }} {{ $frame }}"
              style="left: {{ $spots[$i][0] }}; top: {{ $spots[$i][1] }}; background: {{ $src ? "url('{$src}') center / cover no-repeat, " : '' }}{{ $color }}; border-color: {{ $ring }}; animation-delay: {{ $spots[$i][2] + $delay }}s, {{ $spots[$i][3] }}s">{{ $src ? '' : $initials }}</div>
     @endforeach
 

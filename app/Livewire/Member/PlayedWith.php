@@ -26,7 +26,7 @@ class PlayedWith extends Component
         $q = Str::lower(trim($this->search));
 
         $rows = ($this->tab === 'opponents' ? $stats->opponents : $stats->partners)
-            ->filter(fn ($r) => $q === '' || Str::contains(Str::lower($r->user->name), $q))
+            ->filter(fn ($r) => $q === '' || Str::contains(Str::lower($r->user->name.' '.$r->user->shownName()), $q))
             ->sortBy($this->sort === 'rate' ? [['pct', 'desc'], ['games', 'desc']] : [['games', 'desc'], ['pct', 'desc']])
             ->values();
 

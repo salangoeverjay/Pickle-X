@@ -73,7 +73,7 @@
                             @php($p = $r['p'])
                             <div role="listitem" wire:key="rr-{{ $p->id }}" class="flex flex-wrap items-center gap-x-2.5 gap-y-2 border-t border-line {{ $pad }} py-3 lg:flex-nowrap lg:gap-x-3.5">
                                 <span class="w-5 shrink-0 font-mono text-xs text-ink3">{{ $r['n'] }}</span>
-                                <x-avatar :src="$p->avatarUrl()" :name="$p->name" :color="$p->user ? $p->color() : '#E6E3D6'" class="size-10 text-[13px]" />
+                                <x-avatar :src="$p->avatarUrl()" :frame="$p->frameClass()" :name="$p->name" :color="$p->user ? $p->color() : '#E6E3D6'" class="size-10 text-[13px]" />
                                 <div class="flex min-w-0 flex-1 flex-col gap-0.5">
                                     <span class="flex min-w-0 items-center gap-1.5">
                                         <span class="min-w-0 truncate text-[15px] font-bold">{{ $p->name }}</span>
@@ -85,7 +85,7 @@
                                         @endif
                                     </span>
                                     <span class="text-xs leading-[1.35] text-ink3">
-                                        {{ $r['guest'] ? 'Guest · no PickleX account · from your paid list' : ($p->from_list ? 'Added from your paid list · '.$p->created_at->format('M j') : 'Joined in the app · '.$p->created_at->format('M j, g:i A')) }}
+                                        {{ $r['guest'] ? 'Guest · no PickleX account · from your paid list' : ($p->user->usesDisplayName() ? $p->user->name.' · ' : '').($p->from_list ? 'Added from your paid list · '.$p->created_at->format('M j') : 'Joined in the app · '.$p->created_at->format('M j, g:i A')) }}
                                     </span>
                                     @if ($r['sent'])
                                         <span class="flex items-center gap-1.25 text-xs font-bold text-ink"><x-icon name="clock" :size="14" />Says they sent {{ $play->fee }} · check your {{ $roster['account'] }}</span>

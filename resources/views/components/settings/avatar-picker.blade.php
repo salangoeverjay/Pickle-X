@@ -9,7 +9,7 @@
 
 <div x-data="avatarPicker(@js($picker))" class="flex flex-wrap items-center gap-5">
     <button type="button" x-on:click="show()" aria-label="Change profile picture" class="relative shrink-0 cursor-pointer rounded-full shadow-[0_0_0_4px_var(--color-surface),0_0_0_5.5px_var(--color-line)] {{ $btn }}">
-        <x-avatar :src="$user->avatarUrl()" :name="$user->name" :color="$user->color()" class="size-23 text-[30px]" />
+        <x-avatar :src="$user->avatarUrl()" :frame="$user->frameClass()" :name="$user->name" :color="$user->color()" class="size-23 text-[30px]" />
         <span aria-hidden="true" class="absolute -right-1 -bottom-1 flex size-8.5 items-center justify-center rounded-full border-3 border-surface bg-ink text-bg"><x-icon name="camera" :size="16" /></span>
     </button>
 

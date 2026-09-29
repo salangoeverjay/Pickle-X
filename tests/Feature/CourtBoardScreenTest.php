@@ -266,7 +266,7 @@ class CourtBoardScreenTest extends TestCase
             ->assertSeeHtml('aria-label="Sub out '.$outNames.'"')
             ->set('subFor', $out)
             ->assertSee("Who subs in for {$outNames}?")
-            ->assertSee("{$outFirst} stays in the queue and keeps their spot for when they're ready.", false)
+            ->assertSee("{$outFirst} stays in the queue and keeps their spot for when they're ready.")
             ->assertSee('Next in line')
             ->call('subIn', $out, $in)
             ->assertSet('subFor', null)

@@ -190,10 +190,11 @@
                                     @php($ne = collect($queue)->firstWhere('id', $eid))
                                     @php($neNames = $play->names($ne['ids']))
                                     <div wire:key="up-{{ $eid }}" class="flex items-center gap-2">
+                                        @php($framed = collect($ne['ids'])->contains(fn ($id) => $play->participant($id)?->frameClass()))
                                         <div class="flex shrink-0">
-                                            @foreach ($ne['ids'] as $id)
+                                            @foreach ($ne['ids'] as $k => $id)
                                                 @php($p = $play->participant($id))
-                                                <x-avatar :src="$p?->avatarUrl()" :name="$p?->name ?? '?'" :color="$p?->color() ?? '#FFFFFF'" class="-mr-2 size-8 border-2 border-surface text-[11px]" />
+                                                <x-avatar :src="$p?->avatarUrl()" :frame="$p?->frameClass()" :name="$p?->name ?? '?'" :color="$p?->color() ?? '#FFFFFF'" @class(['size-8 border-2 border-surface text-[11px]', '-mr-2' => ! $framed, 'mr-1.5' => $framed && $k < count($ne['ids']) - 1]) />
                                             @endforeach
                                         </div>
                                         <div class="ml-2 flex min-w-0 flex-1 flex-col gap-px">
@@ -221,6 +222,7 @@
                             @if ($subOut)
                                 @php($outNames = $play->names($subOut['ids']))
                                 @php($outFirst = $play->participant($subOut['ids'][0])?->firstName() ?? 'Guest')
+                                @php($outPair = $subOut['locked'] && count($subOut['ids']) === 2)
                                 <div class="mt-1 flex animate-snap flex-col gap-2.5 rounded-[14px] border-[1.5px] border-ink bg-surface p-3">
                                     <div class="flex items-center justify-between gap-2">
                                         <span class="text-sm font-extrabold">Who subs in for {{ $outNames }}?</span>
@@ -229,18 +231,24 @@
                                             <x-icon name="x" :size="16" />
                                         </button>
                                     </div>
-                                    <span class="text-xs leading-[1.45] text-ink2">{{ $outFirst }} stays in the queue and keeps their spot for when they're ready.</span>
+                                    <span class="text-xs leading-[1.45] text-ink2">{{ $outPair ? "{$outNames} are a locked pair, so they step out together and keep their spot in line." : "{$outFirst} stays in the queue and keeps their spot for when they're ready." }}</span>
                                     @if ($subCands->isNotEmpty())
                                         <div class="flex flex-wrap gap-1.5">
                                             @foreach ($subCands as $k => $cd)
-                                                @php($cp = $play->participant($cd['ids'][0]))
-                                                <button type="button" wire:key="cand-{{ $cd['id'] }}" wire:click="subIn({{ $subOut['id'] }}, {{ $cd['id'] }})"
-                                                        class="inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-full border-[1.5px] border-line2 bg-surface2 pr-3 pl-1 text-[13px] font-bold text-ink transition hover:brightness-96 active:scale-97">
-                                                    <x-avatar :src="$cp?->avatarUrl()" :name="$cp?->name ?? '?'" :color="$cp?->color() ?? '#FFFFFF'" class="size-7.5 text-[11px]" />
-                                                    {{ $play->names($cd['ids']) }}
-                                                    <span class="font-mono text-[11px] font-medium text-ink3">#{{ $cd['pos'] }}</span>
-                                                    @if ($k === 0)
-                                                        <span class="inline-flex h-5 items-center rounded-full bg-lime px-1.75 text-[10px] font-extrabold text-on-lime">Next in line</span>
+                                                @php($pids = collect($cd['es'])->flatMap(fn ($e) => $e['ids'])->all())
+                                                @php($framed = collect($pids)->contains(fn ($id) => $play->participant($id)?->frameClass()))
+                                                <button type="button" wire:key="cand-{{ collect($cd['es'])->pluck('id')->join('-') }}" wire:click="subIn({{ $subOut['id'] }}, @js(collect($cd['es'])->pluck('id')->all()))"
+                                                        class="inline-flex h-10 max-w-full cursor-pointer items-center gap-1.5 rounded-full border-[1.5px] border-line2 bg-surface2 pr-3 pl-1 text-[13px] font-bold whitespace-nowrap text-ink transition hover:brightness-96 active:scale-97">
+                                                    <span class="flex">
+                                                        @foreach ($pids as $j => $id)
+                                                            @php($cp = $play->participant($id))
+                                                            <x-avatar :src="$cp?->avatarUrl()" :frame="$cp?->frameClass()" :name="$cp?->name ?? '?'" :color="$cp?->color() ?? '#FFFFFF'" @class(['size-7.5 border-2 border-surface2 text-[11px]', '-ml-2' => $j && ! $framed, 'ml-1.5' => $j && $framed]) />
+                                                        @endforeach
+                                                    </span>
+                                                    <span class="ml-1 truncate">{{ $play->names($pids) }}</span>
+                                                    <span class="font-mono text-[11px] font-medium text-ink3">{{ collect($cd['es'])->map(fn ($e) => '#'.$e['pos'])->join(' ') }}</span>
+                                                    @if ($cd['tag'])
+                                                        <span class="inline-flex h-5 items-center rounded-full bg-lime px-1.75 text-[10px] font-extrabold text-on-lime">{{ $cd['tag'] }}</span>
                                                     @endif
                                                 </button>
                                             @endforeach
@@ -248,12 +256,98 @@
                                     @else
                                         <span class="text-[13px] font-semibold text-hot">No checked-in players are free to sub in right now.</span>
                                     @endif
+                                    @if ($outPair)
+                                        <div class="flex flex-wrap items-center gap-1.5 border-t border-line pt-2.5">
+                                            <span class="text-xs font-semibold text-ink2">Only one of them leaving?</span>
+                                            @foreach ($subOut['ids'] as $id)
+                                                @php($of = $play->participant($id)?->firstName() ?? 'Guest')
+                                                <button type="button" wire:click="subOne({{ $subOut['id'] }}, {{ $id }})" aria-label="Unlock the pair and sub out only {{ $of }}"
+                                                        class="inline-flex h-8.5 cursor-pointer items-center gap-1.25 rounded-full border-[1.5px] border-line2 px-2.75 text-xs font-bold text-ink transition hover:brightness-96 active:scale-97">
+                                                    <x-icon name="unlock" :size="13" :stroke="2.2" /><span>Only {{ $of }}</span>
+                                                </button>
+                                            @endforeach
+                                        </div>
+                                    @endif
                                     <button type="button" wire:click="setPaused({{ $subOut['id'] }}, true)"
-                                            class="h-9 cursor-pointer self-start px-0.5 text-[13px] font-semibold text-ink2 underline underline-offset-3">Just mark {{ $outFirst }} as stepped out</button>
+                                            class="h-9 cursor-pointer self-start px-0.5 text-[13px] font-semibold text-ink2 underline underline-offset-3">Just mark {{ $outPair ? $outNames : $outFirst }} as stepped out</button>
                                 </div>
                             @endif
                         </div>
                     @endif
+
+                    <div role="group" aria-label="Add players" class="flex flex-col gap-2.5 border-b border-line pb-4">
+                        <span class="font-mono text-[11px] font-semibold tracking-[.12em] text-ink3 uppercase">Add players</span>
+                        <form wire:submit="addWalkin" class="flex flex-col gap-2">
+                            <div class="flex gap-2">
+                                <label for="walkin" class="sr-only">Walk-in player name or email</label>
+                                <input id="walkin" type="text" wire:model.live.debounce.300ms="walkin" maxlength="60" autocomplete="off" placeholder="Add a walk-in by name or email" aria-describedby="walkin-hint"
+                                       class="h-11.5 min-w-0 flex-1 rounded-[14px] border-[1.5px] border-line bg-surface2 px-3.5 text-sm text-ink outline-none transition-colors placeholder:text-ink3 focus:border-ink">
+                                <button type="submit" class="inline-flex h-11.5 cursor-pointer items-center gap-1.5 rounded-[14px] bg-ink px-4 text-sm font-bold text-bg transition hover:brightness-96 active:scale-97">
+                                    <x-icon name="user-plus" :size="16" :stroke="1.9" />Add
+                                </button>
+                            </div>
+                            <span id="walkin-hint" class="text-xs leading-[1.45] text-ink3">Type a name to look for their PickleX account. Nothing is linked until you confirm it's them.</span>
+                            @error('walkin')
+                                <p class="m-0 text-[13px] font-semibold text-hot">{{ $message }}</p>
+                            @enderror
+
+                            @if ($walkinUser)
+                                @php($wf = $walkinUser->firstName())
+                                @php($wg = \App\Models\GamePlayer::where('user_id', $walkinUser->id)->count())
+                                <div role="group" aria-label="Confirm the account" class="flex animate-snap flex-col gap-3 rounded-2xl border-[1.5px] border-ink bg-surface p-3.5">
+                                    <span class="text-[13px] font-extrabold">Add this account to the queue?</span>
+                                    <div class="flex items-center gap-3">
+                                        <x-avatar :name="$walkinUser->name" :color="$walkinUser->color()" :src="$walkinUser->avatarUrl()" :frame="$walkinUser->frameClass()" class="size-11.5 text-[15px]" />
+                                        <span class="flex min-w-0 flex-1 flex-col gap-px">
+                                            <span class="text-base font-extrabold">{{ $walkinUser->name }}</span>
+                                            <span class="text-xs wrap-anywhere text-ink2">{{ $walkinUser->email }}</span>
+                                            <span class="text-xs text-ink3">{{ $walkinUser->club ? $walkinUser->club.' · ' : '' }}{{ $wg }} {{ Str::plural('game', $wg) }} on PickleX</span>
+                                        </span>
+                                    </div>
+                                    <span class="text-xs leading-[1.45] text-ink2">Check with them first. Their games tonight count toward this account's stats and rankings, and they're checked in right away.</span>
+                                    <div class="flex gap-2">
+                                        <button type="button" wire:click="$set('walkinPick', null)" class="h-10.5 cursor-pointer rounded-full border-[1.5px] border-line2 px-3.5 text-[13px] font-bold text-ink transition hover:brightness-96 active:scale-97">Not them</button>
+                                        <button type="button" wire:click="addAccountWalkin" class="h-10.5 flex-1 cursor-pointer rounded-full bg-lime px-3.5 text-[13px] font-extrabold text-on-lime transition hover:brightness-96 active:scale-97">Yes, add {{ $wf }}</button>
+                                    </div>
+                                </div>
+                            @elseif ($walkinMatches->isNotEmpty())
+                                @php($wq = trim($walkin))
+                                <div role="region" aria-label="Matching PickleX accounts" class="flex animate-fade flex-col gap-2 rounded-2xl border border-line bg-surface2 p-3">
+                                    <span class="text-[13px] font-extrabold">{{ $walkinMatches->count() === 1 ? '1 PickleX account matches' : $walkinMatches->count().' PickleX accounts match' }} “{{ $wq }}”</span>
+                                    @if ($walkinTried)
+                                        <span role="alert" class="text-xs font-bold text-hot">Pick the account that's them, or add them as a guest.</span>
+                                    @endif
+                                    @foreach ($walkinMatches as $m)
+                                        @php($mu = $m['user'])
+                                        <div wire:key="wm-{{ $mu->id }}" class="flex items-center gap-2.5 rounded-[14px] border border-line bg-surface py-2 pr-2 pl-2.5">
+                                            <x-avatar :name="$mu->name" :color="$mu->color()" :src="$mu->avatarUrl()" :frame="$mu->frameClass()" class="size-9 text-xs" />
+                                            <span class="flex min-w-0 flex-1 flex-col gap-px">
+                                                <span class="truncate text-sm font-bold">{{ $mu->name }}</span>
+                                                <span class="text-[11px] font-bold text-ink2">{{ $m['why'] }}</span>
+                                                <span class="truncate text-xs text-ink3">{{ $mu->email }}{{ $mu->club ? ' · '.$mu->club : '' }}</span>
+                                                @if ($m['spot'])
+                                                    <span class="text-xs font-bold text-hot">{{ $m['spot'] }}</span>
+                                                @endif
+                                            </span>
+                                            @unless ($m['spot'])
+                                                <button type="button" wire:click="pickWalkin({{ $mu->id }})" aria-label="Add {{ $mu->name }}, {{ $mu->email }}"
+                                                        class="h-9 shrink-0 cursor-pointer rounded-[10px] border-[1.5px] border-ink bg-transparent px-2.5 text-[13px] font-bold whitespace-nowrap text-ink transition hover:brightness-96 active:scale-97">This is them</button>
+                                            @endunless
+                                        </div>
+                                    @endforeach
+                                    <button type="button" wire:click="addGuestWalkin" class="flex min-h-10.5 cursor-pointer items-center justify-center gap-2 rounded-xl border-[1.5px] border-dashed border-line2 bg-transparent px-3 py-1.5 text-center text-[13px] font-bold text-ink transition hover:brightness-96 active:scale-97">
+                                        <x-icon name="plus" :size="15" /><span>Not listed? Add “{{ $wq }}” as a guest</span>
+                                    </button>
+                                </div>
+                            @endif
+                        </form>
+                        @if ($canAddMe)
+                            <button type="button" wire:click="addMe"
+                                    class="flex h-11.5 cursor-pointer items-center justify-center gap-2 rounded-[14px] border-[1.5px] border-dashed border-line2 text-sm font-bold text-ink transition hover:brightness-96 active:scale-97">
+                                <x-icon name="user-plus" :size="17" :stroke="1.9" />Add me to the queue
+                            </button>
+                        @endif
+                    </div>
 
                     @php($selNames = collect($selected)->map(fn ($id) => $play->participant(collect($queue)->firstWhere('id', $id)['ids'][0])?->firstName())->filter()->join(' & '))
                     @if (count($selected) === 0)
@@ -270,36 +364,59 @@
                         </div>
                     @endif
 
+                    @if ($qt['big'])
+                        <div role="search" aria-label="Find in the queue" class="flex flex-col gap-2.5">
+                            <div class="relative">
+                                <x-icon name="search" :size="17" class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-ink3" />
+                                <input type="search" wire:model.live.debounce.250ms="qq" placeholder="Find a player in the queue" aria-label="Find a player in the queue" autocomplete="off"
+                                       class="h-10.5 w-full rounded-xl border-[1.5px] border-line bg-surface2 pr-10 pl-9.5 text-sm text-ink outline-none focus:border-ink [&::-webkit-search-cancel-button]:hidden">
+                                @if (trim($qq) !== '')
+                                    <button type="button" wire:click="$set('qq', '')" aria-label="Clear search" class="absolute top-1/2 right-1 flex size-8.5 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-ink2"><x-icon name="x" :size="16" /></button>
+                                @endif
+                            </div>
+                            <div role="tablist" aria-label="Show" class="flex flex-wrap gap-1.5">
+                                @foreach ($qt['tabs'] as $f => [$label, $n])
+                                    @php($on = $qt['f'] === $f)
+                                    <button type="button" role="tab" aria-selected="{{ $on ? 'true' : 'false' }}" wire:click="$set('qf', '{{ $f }}')"
+                                            @class(['inline-flex h-8.5 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border-[1.5px] border-line px-3 text-[13px] font-bold whitespace-nowrap transition-colors duration-200', 'bg-ink text-bg' => $on, 'text-ink2' => ! $on])>
+                                        <span>{{ $label }}</span><span class="font-mono text-xs opacity-75">{{ $n }}</span>
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+
                     <div class="flex flex-col gap-2">
-                        @forelse ($queue as $i => $entry)
+                        @forelse ($queueRows as $entry)
                             @php($pair = $entry['locked'] && count($entry['ids']) === 2)
                             @php($on = in_array($entry['id'], $selected))
                             @php($p1 = $play->participant($entry['ids'][0]))
                             @php($label = $pair ? $play->names($entry['ids']) : ($p1?->name ?? 'Guest'))
                             @php($up = $group && in_array($entry['id'], $group['used']))
-                            @php($notHere = (bool) array_diff($entry['ids'], $ready))
-                            @php($paused = ! $notHere && ($entry['paused'] ?? false))
-                            @php($avail = ! $notHere && ! $paused)
+                            @php(['notHere' => $notHere, 'paused' => $paused, 'avail' => $avail] = $entry)
+                            @php($framed = collect($entry['ids'])->contains(fn ($id) => $play->participant($id)?->frameClass()))
+                            @php($rowBg = collect($entry['ids'])->map(fn ($id) => $play->participant($id)?->queueBgClass())->first(fn ($c) => $c))
                             @php($g = (int) ($gamesTonight[$entry['ids'][0]] ?? 0))
                             @php($gamesTxt = $g.($g === 1 ? ' game' : ' games').' tonight')
                             @php($meta = $notHere ? 'Not checked in yet' : ($paused ? 'Stepped out · keeps spot' : ($pair ? 'Locked pair · '.$gamesTxt : $gamesTxt.($p1?->paid ? ' · Paid' : ''))))
                             @php($metaClass = $avail ? ($pair ? 'font-bold text-lime-text' : 'font-medium text-ink3') : 'font-bold text-hot')
                             <div wire:key="entry-{{ $entry['id'] }}" @class([
                                 'flex items-center gap-2 rounded-2xl border-[1.5px] py-1 pr-1 pl-2.5 transition-colors',
+                                (string) $rowBg => (bool) $rowBg,
                                 'border-ink bg-surface2' => $on,
                                 'border-dashed border-line2 bg-transparent' => ! $on && ! $avail,
                                 'border-lime bg-lime-soft' => ! $on && $avail && $pair,
                                 'border-line bg-surface' => ! $on && $avail && ! $pair,
                             ])>
-                                <span class="w-5 shrink-0 font-mono text-xs text-ink3">{{ $i + 1 }}</span>
+                                <span class="w-5 shrink-0 font-mono text-xs text-ink3">{{ $entry['pos'] }}</span>
                                 @if ($pair)
                                     <div class="flex min-h-12.5 min-w-0 flex-1 items-center gap-2.5">
                                         <div class="relative flex shrink-0">
                                             @foreach ($entry['ids'] as $k => $id)
                                                 @php($p = $play->participant($id))
-                                                <x-avatar :src="$p?->avatarUrl()" :name="$p?->name ?? '?'" :color="$p?->color() ?? '#FFFFFF'" class="size-9 border-2 border-surface text-xs {{ $k ? '-ml-2.5' : '' }}" />
+                                                <x-avatar :src="$p?->avatarUrl()" :frame="$p?->frameClass()" :name="$p?->name ?? '?'" :color="$p?->color() ?? '#FFFFFF'" class="size-9 border-2 border-surface text-xs {{ $k ? ($framed ? 'ml-2' : '-ml-2.5') : '' }}" />
                                             @endforeach
-                                            <span aria-hidden="true" class="absolute -bottom-1 left-5.5 flex size-4.5 items-center justify-center rounded-full border-2 border-surface bg-lime text-on-lime"><x-icon name="lock" :size="9" :stroke="2.8" /></span>
+                                            <span aria-hidden="true" class="absolute -bottom-1 z-3 {{ $framed ? 'left-7.75' : 'left-5.5' }} flex size-4.5 items-center justify-center rounded-full border-2 border-surface bg-lime text-on-lime"><x-icon name="lock" :size="9" :stroke="2.8" /></span>
                                         </div>
                                         <span @class(['flex min-w-0 flex-1 flex-col', 'opacity-78' => ! $avail])>
                                             <span class="truncate text-sm font-bold">{{ $label }}</span>
@@ -312,7 +429,7 @@
                                         <span @class(['flex size-5.5 shrink-0 items-center justify-center rounded-[7px] border-2 text-bg transition-colors', 'border-ink bg-ink' => $on, 'border-line2' => ! $on])>
                                             @if ($on)<x-icon name="check" :size="13" :stroke="3.2" />@endif
                                         </span>
-                                        <x-avatar :name="$label" :color="$p1?->color() ?? '#FFFFFF'" :src="$p1?->avatarUrl()" class="size-9 text-xs" />
+                                        <x-avatar :name="$label" :color="$p1?->color() ?? '#FFFFFF'" :src="$p1?->avatarUrl()" :frame="$p1?->frameClass()" class="size-9 text-xs" />
                                         <span @class(['flex min-w-0 flex-1 flex-col', 'opacity-78' => ! $avail])>
                                             <span class="truncate text-sm font-bold">{{ $label }}</span>
                                             <span class="flex min-w-0 items-center gap-1.5">@if ($up && $avail)<span class="inline-flex h-4.25 shrink-0 items-center rounded-full bg-lime px-1.5 text-[9.5px] font-extrabold tracking-[.04em] text-on-lime">NEXT</span>@endif<span class="truncate text-xs {{ $metaClass }}">{{ $meta }}</span></span>
@@ -339,81 +456,25 @@
                                 @endif
                             </div>
                         @empty
-                            <p class="m-0 rounded-2xl border-[1.5px] border-dashed border-line2 p-4 text-sm text-ink2">The queue is empty. Add walk-ins below or wait for games to finish.</p>
+                            @if ($queue)
+                                <p role="status" class="m-0 rounded-2xl border-[1.5px] border-dashed border-line2 px-4 py-3.5 text-sm text-ink2">
+                                    {{ trim($qq) !== '' ? 'No one in the queue matches “'.trim($qq).'”.' : match ($qt['f']) { 'away' => 'Everyone in the queue is checked in.', 'out' => 'No one has stepped out.', default => 'No one is ready right now.' } }}
+                                </p>
+                            @else
+                                <p class="m-0 rounded-2xl border-[1.5px] border-dashed border-line2 p-4 text-sm text-ink2">The queue is empty. Add walk-ins above or wait for games to finish.</p>
+                            @endif
                         @endforelse
-                    </div>
-
-                    @if ($canAddMe)
-                        <button type="button" wire:click="addMe"
-                                class="flex h-11.5 cursor-pointer items-center justify-center gap-2 rounded-[14px] border-[1.5px] border-dashed border-line2 text-sm font-bold text-ink transition hover:brightness-96 active:scale-97">
-                            <x-icon name="user-plus" :size="17" :stroke="1.9" />Add me to the queue
-                        </button>
-                    @endif
-
-                    <form wire:submit="addWalkin" class="flex flex-col gap-2">
-                        <div class="flex gap-2">
-                            <label for="walkin" class="sr-only">Walk-in player name or email</label>
-                            <input id="walkin" type="text" wire:model.live.debounce.300ms="walkin" maxlength="60" autocomplete="off" placeholder="Add a walk-in by name or email" aria-describedby="walkin-hint"
-                                   class="h-11.5 min-w-0 flex-1 rounded-[14px] border-[1.5px] border-line bg-surface2 px-3.5 text-sm text-ink outline-none transition-colors placeholder:text-ink3 focus:border-ink">
-                            <button type="submit" class="inline-flex h-11.5 cursor-pointer items-center gap-1.5 rounded-[14px] bg-ink px-4 text-sm font-bold text-bg transition hover:brightness-96 active:scale-97">
-                                <x-icon name="user-plus" :size="16" :stroke="1.9" />Add
-                            </button>
-                        </div>
-                        <span id="walkin-hint" class="text-xs leading-[1.45] text-ink3">Type a name to look for their PickleX account. Nothing is linked until you confirm it's them.</span>
-                        @error('walkin')
-                            <p class="m-0 text-[13px] font-semibold text-hot">{{ $message }}</p>
-                        @enderror
-
-                        @if ($walkinUser)
-                            @php($wf = $walkinUser->firstName())
-                            @php($wg = \App\Models\GamePlayer::where('user_id', $walkinUser->id)->count())
-                            <div role="group" aria-label="Confirm the account" class="flex animate-snap flex-col gap-3 rounded-2xl border-[1.5px] border-ink bg-surface p-3.5">
-                                <span class="text-[13px] font-extrabold">Add this account to the queue?</span>
-                                <div class="flex items-center gap-3">
-                                    <x-avatar :name="$walkinUser->name" :color="$walkinUser->color()" :src="$walkinUser->avatarUrl()" class="size-11.5 text-[15px]" />
-                                    <span class="flex min-w-0 flex-1 flex-col gap-px">
-                                        <span class="text-base font-extrabold">{{ $walkinUser->name }}</span>
-                                        <span class="text-xs wrap-anywhere text-ink2">{{ $walkinUser->email }}</span>
-                                        <span class="text-xs text-ink3">{{ $walkinUser->club ? $walkinUser->club.' · ' : '' }}{{ $wg }} {{ Str::plural('game', $wg) }} on PickleX</span>
-                                    </span>
-                                </div>
-                                <span class="text-xs leading-[1.45] text-ink2">Check with them first. Their games tonight count toward this account's stats and rankings, and they're checked in right away.</span>
+                        @if ($qt['rest'])
+                            <div class="flex flex-col items-center gap-2 pt-1">
+                                <span class="font-mono text-xs tracking-[.06em] text-ink3">Showing {{ $qt['shown'] }} of {{ $qt['hits'] }} {{ Str::plural('spot', $qt['hits']) }}</span>
                                 <div class="flex gap-2">
-                                    <button type="button" wire:click="$set('walkinPick', null)" class="h-10.5 cursor-pointer rounded-full border-[1.5px] border-line2 px-3.5 text-[13px] font-bold text-ink transition hover:brightness-96 active:scale-97">Not them</button>
-                                    <button type="button" wire:click="addAccountWalkin" class="h-10.5 flex-1 cursor-pointer rounded-full bg-lime px-3.5 text-[13px] font-extrabold text-on-lime transition hover:brightness-96 active:scale-97">Yes, add {{ $wf }}</button>
+                                    <button type="button" wire:click="showMore" class="h-10 cursor-pointer rounded-full border-[1.5px] border-line2 bg-surface px-4 text-[13px] font-bold text-ink transition hover:brightness-96 active:scale-97">Show {{ min($qt['rest'], App\Livewire\Organizer\CourtBoard::QUEUE_PAGE) }} more</button>
+                                    <button type="button" wire:click="showMore({{ $qt['hits'] }})" class="h-10 cursor-pointer rounded-full px-3.5 text-[13px] font-bold text-ink2 underline underline-offset-3">Show all {{ $qt['hits'] }}</button>
                                 </div>
-                            </div>
-                        @elseif ($walkinMatches->isNotEmpty())
-                            @php($wq = trim($walkin))
-                            <div role="region" aria-label="Matching PickleX accounts" class="flex animate-fade flex-col gap-2 rounded-2xl border border-line bg-surface2 p-3">
-                                <span class="text-[13px] font-extrabold">{{ $walkinMatches->count() === 1 ? '1 PickleX account matches' : $walkinMatches->count().' PickleX accounts match' }} “{{ $wq }}”</span>
-                                @if ($walkinTried)
-                                    <span role="alert" class="text-xs font-bold text-hot">Pick the account that's them, or add them as a guest.</span>
-                                @endif
-                                @foreach ($walkinMatches as $m)
-                                    @php($mu = $m['user'])
-                                    <div wire:key="wm-{{ $mu->id }}" class="flex items-center gap-2.5 rounded-[14px] border border-line bg-surface py-2 pr-2 pl-2.5">
-                                        <x-avatar :name="$mu->name" :color="$mu->color()" :src="$mu->avatarUrl()" class="size-9 text-xs" />
-                                        <span class="flex min-w-0 flex-1 flex-col gap-px">
-                                            <span class="truncate text-sm font-bold">{{ $mu->name }}</span>
-                                            <span class="text-[11px] font-bold text-ink2">{{ $m['why'] }}</span>
-                                            <span class="truncate text-xs text-ink3">{{ $mu->email }}{{ $mu->club ? ' · '.$mu->club : '' }}</span>
-                                            @if ($m['spot'])
-                                                <span class="text-xs font-bold text-hot">{{ $m['spot'] }}</span>
-                                            @endif
-                                        </span>
-                                        @unless ($m['spot'])
-                                            <button type="button" wire:click="pickWalkin({{ $mu->id }})" aria-label="Add {{ $mu->name }}, {{ $mu->email }}"
-                                                    class="h-9 shrink-0 cursor-pointer rounded-[10px] border-[1.5px] border-ink bg-transparent px-2.5 text-[13px] font-bold whitespace-nowrap text-ink transition hover:brightness-96 active:scale-97">This is them</button>
-                                        @endunless
-                                    </div>
-                                @endforeach
-                                <button type="button" wire:click="addGuestWalkin" class="flex min-h-10.5 cursor-pointer items-center justify-center gap-2 rounded-xl border-[1.5px] border-dashed border-line2 bg-transparent px-3 py-1.5 text-center text-[13px] font-bold text-ink transition hover:brightness-96 active:scale-97">
-                                    <x-icon name="plus" :size="15" /><span>Not listed? Add “{{ $wq }}” as a guest</span>
-                                </button>
                             </div>
                         @endif
-                    </form>
+                    </div>
+
                 </div>
             </div>
         @endif
@@ -467,7 +528,7 @@
                                         <div class="flex">
                                             @foreach ($scoring[$side]['ids'] as $id)
                                                 @php($p = $play->participant($id))
-                                                <x-avatar :src="$p?->avatarUrl()" :name="$p?->name ?? '?'" :color="$p?->color() ?? '#FFFFFF'" class="-mr-2 size-8 border-2 border-surface text-[11px]" />
+                                                <x-avatar :src="$p?->avatarUrl()" :frame="$p?->frameClass()" :name="$p?->name ?? '?'" :color="$p?->color() ?? '#FFFFFF'" class="-mr-2 size-8 border-2 border-surface text-[11px]" />
                                             @endforeach
                                         </div>
                                         <span class="ml-2 text-[15px] font-bold">{{ $play->names($scoring[$side]['ids']) }}</span>

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -25,8 +26,24 @@ class Participant extends Model
         return $this->belongsTo(User::class);
     }
 
+    /** Linked players show the name they chose for other players (User::shownName()); guests keep the typed name. */
+    protected function name(): Attribute
+    {
+        return Attribute::get(fn (?string $value) => $this->user_id && $this->user ? $this->user->shownName() : $value);
+    }
+
+    /** The account's full name (for organizers), or the guest's name. */
+    public function fullName(): string
+    {
+        return $this->user?->name ?? $this->name;
+    }
+
     public function firstName(): string
     {
+        if ($this->user?->usesDisplayName()) {
+            return $this->user->display_name;
+        }
+
         return strtok(trim($this->name), ' ') ?: $this->name;
     }
 
@@ -38,6 +55,16 @@ class Participant extends Model
     public function avatarUrl(): ?string
     {
         return $this->user?->avatarUrl();
+    }
+
+    public function frameClass(): string
+    {
+        return $this->user?->frameClass() ?? '';
+    }
+
+    public function queueBgClass(): string
+    {
+        return $this->user?->queueBgClass() ?? '';
     }
 
     public function color(): string

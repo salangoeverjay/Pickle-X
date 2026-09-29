@@ -665,21 +665,27 @@ class OpenPlay extends Model
     }
 
     /**
-     * $inId takes $outId's place in line; $outId steps out right behind them and keeps its spot.
-     * Both must be the same shape (single for single, locked pair for locked pair).
+     * $inIds take $outId's place in line; $outId steps out right behind them and keeps its spot.
+     * A single swaps with one single. A locked pair steps out together, so it takes two players back:
+     * another locked pair, or two singles.
      */
-    public function subIn(int $outId, int $inId): void
+    public function subIn(int $outId, int|array $inIds): void
     {
-        $this->mutate(function (array &$board) use ($outId, $inId) {
+        $inIds = array_values(array_unique((array) $inIds));
+        $this->mutate(function (array &$board) use ($outId, $inIds) {
             $queue = collect($board['queue']);
             $out = $queue->firstWhere('id', $outId);
-            $in = $queue->firstWhere('id', $inId);
-            if (! $out || ! $in || $outId === $inId || count($out['ids']) !== count($in['ids'])) {
+            $ins = collect($inIds)->map(fn ($id) => $queue->firstWhere('id', $id))->filter();
+            $pair = fn ($e) => $e['locked'] && count($e['ids']) === 2;
+            $ok = $out && $ins->count() === count($inIds) && ! in_array($outId, $inIds)
+                && $ins->sum(fn ($e) => count($e['ids'])) === count($out['ids'])
+                && ($pair($out) ? $ins->count() === 1 ? $pair($ins[0]) : $ins->every(fn ($e) => count($e['ids']) === 1) : $ins->count() === 1);
+            if (! $ok) {
                 throw new InvalidArgumentException('Pick a waiting player to sub in.');
             }
-            $queue = $queue->reject(fn ($e) => $e['id'] === $inId)->values();
+            $queue = $queue->reject(fn ($e) => in_array($e['id'], $inIds))->values();
             $at = $queue->search(fn ($e) => $e['id'] === $outId);
-            $queue->splice($at, 1, [$in, ['paused' => true] + $out]);
+            $queue->splice($at, 1, [...$ins->values()->all(), ['paused' => true] + $out]);
             $board['queue'] = $queue->all();
         });
     }

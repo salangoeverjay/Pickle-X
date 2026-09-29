@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Support\Looks;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'role', 'organizer_status', 'club', 'city', 'courts', 'organizer_note', 'phone', 'avatar_color', 'avatar', 'preferences'])]
+#[Fillable(['name', 'email', 'password', 'role', 'organizer_status', 'club', 'city', 'courts', 'organizer_note', 'phone', 'avatar_color', 'avatar', 'preferences', 'display_name', 'show_display_name'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -80,6 +81,8 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'preferences' => 'array',
+            'is_developer' => 'boolean',
+            'show_display_name' => 'boolean',
         ];
     }
 
@@ -143,6 +146,24 @@ class User extends Authenticatable
         return strtok(trim($this->name), ' ') ?: $this->name;
     }
 
+    /** Other players see the display name (queues, courts, rankings, open plays) instead of the full name. */
+    public function usesDisplayName(): bool
+    {
+        return $this->show_display_name && trim((string) $this->display_name) !== '';
+    }
+
+    /** The name other players see. Organizers still see the full name next to the email. */
+    public function shownName(): string
+    {
+        return $this->usesDisplayName() ? $this->display_name : $this->name;
+    }
+
+    /** Short form for pairs and toasts: the display name, or the first name. */
+    public function shownFirst(): string
+    {
+        return $this->usesDisplayName() ? $this->display_name : $this->firstName();
+    }
+
     public function initials(): string
     {
         return initials($this->name);
@@ -151,6 +172,18 @@ class User extends Authenticatable
     public function color(): string
     {
         return $this->avatar_color ?? ($this->isAdmin() ? '#E2D2FF' : ($this->organizer_status ? '#FFD3A3' : '#BCD9F7'));
+    }
+
+    /** Avatar border classes (resources/css/looks.css), or '' for none. */
+    public function frameClass(): string
+    {
+        return Looks::cls('frame', $this->frame, (bool) $this->is_developer);
+    }
+
+    /** Queue background classes for this member's spot in line, or '' for none. */
+    public function queueBgClass(): string
+    {
+        return Looks::cls('queue', $this->queue_bg, (bool) $this->is_developer);
     }
 
     /** Profile picture URL, or null when showing initials on color(). */

@@ -102,6 +102,7 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
         Route::livewire('/requests', Admin\Requests::class)->name('requests');
+        Route::livewire('/developers', Admin\Developers::class)->name('developers');
     });
 });
 

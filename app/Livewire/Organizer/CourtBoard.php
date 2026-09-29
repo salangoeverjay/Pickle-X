@@ -40,6 +40,15 @@ class CourtBoard extends Component
     /** Up-next queue entry whose sub panel is open. */
     public ?int $subFor = null;
 
+    /** Big queues: find by name, filter (all|here|away|out), and how many spots show. */
+    public string $qq = '';
+
+    public string $qf = 'all';
+
+    public int $qShow = self::QUEUE_PAGE;
+
+    public const QUEUE_PAGE = 30;
+
     /** Game saved in this request, so its result row can animate in. */
     protected ?int $freshGame = null;
 
@@ -179,22 +188,55 @@ class CourtBoard extends Component
 
         if ($entry && $this->attempt(fn () => $play->setPaused($entryId, $paused)) !== false) {
             $names = $play->names($entry['ids']);
-            $this->dispatch('toast', message: $paused ? "{$names} stepped out · keeps their spot" : "{$names} is back in the rotation");
+            $two = count($entry['ids']) > 1;
+            $this->dispatch('toast', message: $paused ? "{$names} stepped out · ".($two ? 'keep' : 'keeps').' their spot' : "{$names} ".($two ? 'are' : 'is').' back in the rotation');
         }
     }
 
-    public function subIn(int $outId, int $inId): void
+    /** $inIds: one queue entry, or two singles when a locked pair steps out (they always step out together). */
+    public function subIn(int $outId, int|array $inIds): void
     {
         $play = $this->play();
         $queue = collect($play->queue());
-        [$out, $in] = [$queue->firstWhere('id', $outId), $queue->firstWhere('id', $inId)];
+        $out = $queue->firstWhere('id', $outId);
+        $ins = collect((array) $inIds)->map(fn ($id) => $queue->firstWhere('id', $id))->filter();
         $this->subFor = null;
         $this->selected = [];
 
-        if ($out && $in && $this->attempt(fn () => $play->subIn($outId, $inId)) !== false) {
-            $first = $play->participant($out['ids'][0])?->firstName() ?? 'Guest';
-            $this->dispatch('toast', message: "{$play->names($in['ids'])} subs in for {$play->names($out['ids'])} · {$first} keeps their spot");
+        if ($out && $ins->isNotEmpty() && $this->attempt(fn () => $play->subIn($outId, $inIds)) !== false) {
+            $inPids = $ins->flatMap(fn ($e) => $e['ids'])->all();
+            $pair = count($out['ids']) === 2;
+            $outNames = $play->names($out['ids']);
+            $keeps = $pair ? "{$outNames} keep their spot" : ($play->participant($out['ids'][0])?->firstName() ?? 'Guest').' keeps their spot';
+            $this->dispatch('toast', message: $play->names($inPids).(count($inPids) > 1 ? ' sub in for ' : ' subs in for ')."{$outNames} · {$keeps}");
         }
+    }
+
+    /** One partner of a locked pair is leaving: unlock them (same spot in line), then pick a sub for just that player. */
+    public function subOne(int $entryId, int $participantId): void
+    {
+        $play = $this->play();
+        $entry = collect($play->queue())->firstWhere('id', $entryId);
+        if (! $entry || ! in_array($participantId, $entry['ids']) || $this->attempt(fn () => $play->unlockEntry($entryId)) === false) {
+            return;
+        }
+        $this->subFor = collect($play->queue())->first(fn ($e) => $e['ids'] === [$participantId])['id'] ?? null;
+        $this->dispatch('toast', message: 'Partners unlocked · who subs in for '.($play->participant($participantId)?->firstName() ?? 'Guest').'?');
+    }
+
+    public function updatedQq(): void
+    {
+        $this->qShow = self::QUEUE_PAGE;
+    }
+
+    public function updatedQf(): void
+    {
+        $this->qShow = self::QUEUE_PAGE;
+    }
+
+    public function showMore(?int $all = null): void
+    {
+        $this->qShow = $all ?? $this->qShow + self::QUEUE_PAGE;
     }
 
     /** The organizer plays too: joins their own session, already checked in. */
@@ -390,15 +432,38 @@ class CourtBoard extends Component
         $user = auth()->user();
         $shareUrl = $play->shareUrl();
 
-        // Sub panel: available waiting entries of the same shape, not already up next.
+        // Sub panel. A single swaps with a single; a locked pair needs two players back:
+        // the next two singles in line, or another locked pair.
         $subOut = $this->subFor ? collect($queue)->firstWhere('id', $this->subFor) : null;
         $this->subFor = $subOut ? $this->subFor : null;
         $isPair = fn ($e) => $e['locked'] && count($e['ids']) === 2;
-        $subCands = $subOut ? collect($queue)
-            ->map(fn ($e, $i) => $e + ['pos' => $i + 1])
-            ->filter(fn ($e) => $e['id'] !== $subOut['id'] && ! in_array($e['id'], $group['used'] ?? [])
-                && OpenPlay::isAvailable($e, $ready) && $isPair($e) === $isPair($subOut))
-            ->take(6)->values() : collect();
+        $subCands = collect();
+        if ($subOut) {
+            $idle = collect($queue)->map(fn ($e, $i) => $e + ['pos' => $i + 1])
+                ->filter(fn ($e) => $e['id'] !== $subOut['id'] && ! in_array($e['id'], $group['used'] ?? []) && OpenPlay::isAvailable($e, $ready))->values();
+            $singles = $idle->reject($isPair)->values();
+            $subCands = $isPair($subOut)
+                ? $singles->chunk(2)->filter(fn ($d) => $d->count() === 2)->take(3)->values()->map(fn ($d, $k) => ['es' => $d->values()->all(), 'tag' => $k ? '' : 'Next two'])
+                    ->concat($idle->filter($isPair)->take(3)->map(fn ($e) => ['es' => [$e], 'tag' => 'Locked pair']))
+                : $singles->take(6)->map(fn ($e, $k) => ['es' => [$e], 'tag' => $k ? '' : 'Next in line']);
+            $subCands = $subCands->values();
+        }
+
+        // The queue list: filter and page it so big nights (100+) stay usable.
+        $rows = collect($queue)->map(function ($e, $i) use ($play, $ready) {
+            $notHere = (bool) array_diff($e['ids'], $ready);
+            $paused = ! $notHere && ($e['paused'] ?? false);
+
+            return $e + ['pos' => $i + 1, 'notHere' => $notHere, 'paused' => $paused, 'avail' => ! $notHere && ! $paused,
+                'search' => mb_strtolower(collect($e['ids'])->map(fn ($id) => ($p = $play->participant($id)) ? $p->name.' '.$p->fullName() : '')->join(' '))];
+        });
+        $in = fn ($r, $f) => match ($f) {
+            'here' => $r['avail'], 'away' => $r['notHere'], 'out' => $r['paused'], default => true
+        };
+        $qf = in_array($this->qf, ['here', 'away', 'out']) ? $this->qf : 'all';
+        $q = mb_strtolower(trim($this->qq));
+        $hits = $rows->filter(fn ($r) => $in($r, $qf) && ($q === '' || str_contains($r['search'], $q)))->values();
+        $qShow = max(self::QUEUE_PAGE, $this->qShow);
 
         return view('livewire.organizer.court-board', [
             'play' => $play,
@@ -425,6 +490,16 @@ class CourtBoard extends Component
             'total' => count($sessionIds),
             'running' => $started,
             'started' => $started === 'just now' ? 'Started just now' : "Started {$started} ago",
+            'queueRows' => $hits->take($qShow),
+            'qt' => [
+                'big' => count($queue) > 8,
+                'f' => $qf,
+                'tabs' => collect(['all' => 'All', 'here' => 'Ready', 'away' => 'Not here', 'out' => 'Stepped out'])
+                    ->map(fn ($label, $f) => [$label, $rows->filter(fn ($r) => $in($r, $f))->sum(fn ($r) => count($r['ids']))]),
+                'hits' => $hits->count(),
+                'rest' => max(0, $hits->count() - $qShow),
+                'shown' => min($qShow, $hits->count()),
+            ],
             'subOut' => $subOut,
             'subCands' => $subCands,
             'canAddMe' => $user->isMember() && ! $play->participantMap()->only($sessionIds)->contains('user_id', $user->id),

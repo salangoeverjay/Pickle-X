@@ -115,10 +115,11 @@
                                     @continue
                                 @endif
                                 <div class="flex items-center gap-2.5">
+                                    @php($framed = collect($row['ids'])->contains(fn ($id) => $play->participant($id)->frameClass()))
                                     <div class="flex">
-                                        @foreach ($row['ids'] as $id)
+                                        @foreach ($row['ids'] as $k => $id)
                                             @php($p = $play->participant($id))
-                                            <x-avatar :src="$p->avatarUrl()" :name="$p->name" :color="$p->color()" class="-mr-2 size-8.5 border-2 border-surface text-[11px]" />
+                                            <x-avatar :src="$p->avatarUrl()" :frame="$p->frameClass()" :name="$p->name" :color="$p->color()" @class(['size-8.5 border-2 border-surface text-[11px]', '-mr-2' => ! $framed, 'mr-1.5' => $framed && $k < count($row['ids']) - 1]) />
                                         @endforeach
                                     </div>
                                     <span class="ml-2 min-w-0 flex-1 text-base font-extrabold">{{ $play->names($row['ids']) }}</span>
@@ -144,34 +145,20 @@
                             <span class="text-[13px] text-ink3">{{ $queueCount }} in line</span>
                         </div>
                         @forelse ($queue as $q)
-                            <div wire:key="q-{{ $q['pos'] }}" @class(['flex items-center gap-2.5 rounded-xl p-2', 'bg-lime-soft' => $q['you']])>
-                                <span class="w-5 shrink-0 font-mono text-xs text-ink3">{{ $q['pos'] }}</span>
-                                <div class="relative flex shrink-0">
-                                    @foreach ($q['people'] as $k => $p)
-                                        <x-avatar :src="$p->avatarUrl()" :name="$p->name" :color="$p->color()" @class(['size-8 border-2 border-surface text-[11px]', '-ml-2.5' => $k > 0]) />
-                                    @endforeach
-                                    @if ($q['pair'])
-                                        <span role="img" aria-label="Locked partners" class="absolute -bottom-1 left-4.75 flex size-4.25 items-center justify-center rounded-full border-2 border-surface bg-lime text-on-lime"><x-icon name="lock" :size="8" :stroke="2.8" /></span>
-                                    @endif
-                                </div>
-                                <span class="flex min-w-0 flex-1 flex-col">
-                                    <span class="flex min-w-0 items-center gap-1.5 text-sm font-bold">
-                                        <span class="truncate">{{ $q['label'] }}</span>
-                                        @if ($q['you'])
-                                            <span class="inline-flex h-5 shrink-0 items-center rounded-full bg-lime px-1.75 text-[10px] font-extrabold text-on-lime">YOU</span>
-                                        @endif
-                                    </span>
-                                    @if ($q['meta'])
-                                        <span class="text-xs font-semibold {{ $q['metaClass'] }}">{{ $q['meta'] }}</span>
-                                    @endif
-                                </span>
-                                @if ($q['up'])
-                                    <span class="inline-flex h-5.5 shrink-0 items-center rounded-full bg-lime px-2 text-[11px] font-extrabold text-on-lime">NEXT</span>
-                                @endif
-                            </div>
+                            @include('livewire.partials.live-queue-row')
                         @empty
                             <p class="m-0 text-sm text-ink2">Everyone is on court right now.</p>
                         @endforelse
+                        @if ($more)
+                            <div class="flex items-center gap-2.5 px-2 pt-2.5 pb-1.5 text-ink3">
+                                <span aria-hidden="true" class="h-0 flex-1 border-t-[1.5px] border-dashed border-line2"></span>
+                                <span class="font-mono text-[13px] tracking-[.06em]">+ {{ $more }} more {{ Str::plural('player', $more) }} in line</span>
+                                <span aria-hidden="true" class="h-0 flex-1 border-t-[1.5px] border-dashed border-line2"></span>
+                            </div>
+                        @endif
+                        @if ($meRow)
+                            @include('livewire.partials.live-queue-row', ['q' => $meRow])
+                        @endif
                     </div>
 
                     <p class="m-0 px-1 text-[13px] leading-normal text-ink3">Joined this open play? Check in from your PickleX app when you reach the courts so the organizer can call you.</p>

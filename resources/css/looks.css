@@ -1,0 +1,99 @@
+/* Avatar borders (.px-fr-*) and queue backgrounds (.px-qb-*), as designed. Classes come from App\Support\Looks.
+   In the components layer so utilities (absolute, overflow) still win over their position/overflow. */
+@layer components {
+/* ---- avatar borders: a ring drawn outside any avatar ---- */
+.px-fr{position:relative}
+.px-fr::before,.px-fr::after{content:'';position:absolute;inset:calc(-1px - 7%);border-radius:50%;pointer-events:none;z-index:auto}
+.px-fr::before{padding:calc(1px + 5%);background:var(--fr);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+.px-fr::after{display:none}
+.px-fr-gold{--fr:linear-gradient(135deg,#FFF3C4,#F2C94C 35%,#B98519 65%,#FFE58A)}
+.px-fr-silver{--fr:linear-gradient(135deg,#FFFFFF,#CBD1C7 40%,#8E968B 68%,#F4F6F2)}
+.px-fr-lime{--fr:linear-gradient(#D3F347,#B7D92A)}
+.px-fr-court{--fr:conic-gradient(#2F62AD 0 22%,#FFFFFF 0 25%,#2F62AD 0 47%,#FFFFFF 0 50%,#2F62AD 0 72%,#FFFFFF 0 75%,#2F62AD 0 97%,#FFFFFF 0)}
+.px-fr-kitchen{--fr:repeating-conic-gradient(#D3F347 0 15deg,#12170F 15deg 30deg)}
+.px-fr-rainbow{--fr:conic-gradient(#FF5A6E,#FFB020,#FFE14D,#6FD08C,#4FA8FF,#9B7BFF,#FF5A6E)}
+.px-fr-sunset{--fr:linear-gradient(135deg,#FF7A59,#FFB020 50%,#FF5A9E)}
+.px-fr-mint{--fr:repeating-conic-gradient(#2FB38A 0 11deg,transparent 11deg 20deg)}
+.px-fr-night{--fr:repeating-conic-gradient(#1D2F52 0 40deg,#FFE58A 40deg 45deg)}
+.px-fr-wood{--fr:repeating-linear-gradient(60deg,#D39A5E 0 3px,#B87840 3px 6px)}
+.px-fr-spin{--fr:conic-gradient(#FF5A6E,#FFB020,#FFE14D,#6FD08C,#4FA8FF,#9B7BFF,#FF5A6E)}
+.px-fr-spin::before{animation:pxFrSpin 2.6s linear infinite}
+.px-fr-comet{--fr:conic-gradient(rgba(211,243,71,0) 0 42%,rgba(211,243,71,.95) 86%,#FFFFFF 96%,rgba(211,243,71,0) 97%)}
+.px-fr-comet::before{animation:pxFrSpin 1.4s linear infinite}
+.px-fr-comet::after{display:block;border:1.5px solid rgba(128,138,120,.28);box-sizing:border-box}
+.px-fr-fire{--fr:conic-gradient(#FF3D00,#FF8A00,#FFD23F,#FF3D00,#FF8A00,#FFD23F,#FF3D00)}
+.px-fr-fire::before{animation:pxFrSpin 1.1s linear infinite}
+.px-fr-fire::after{display:block;animation:pxFrFlame 1.3s ease-in-out infinite alternate}
+.px-fr-ocean{--fr:conic-gradient(#2F62AD,#6EC1FF,#BDEBE3,#2F62AD,#6EC1FF,#2F62AD)}
+.px-fr-ocean::before{animation:pxFrSpin 4s linear infinite}
+.px-fr-pulse{--fr:linear-gradient(#D3F347,#D3F347)}
+.px-fr-pulse::after{display:block;animation:pxFrPing 1.8s ease-out infinite}
+.px-fr-neon{--fr:conic-gradient(#FF3CAC,#784BA0,#2B86C5,#FF3CAC)}
+.px-fr-neon::before{animation:pxFrSpin 3s linear infinite}
+.px-fr-neon::after{display:block;animation:pxFrGlow 1.6s ease-in-out infinite alternate}
+.px-fr-orbit{--fr:linear-gradient(#2F62AD,#2F62AD)}
+.px-fr-orbit::after{display:block;inset:auto;left:39%;top:-14%;width:22%;height:22%;background:#D3F347;box-shadow:inset 0 0 0 1.5px #12170F;transform-origin:50% 291%;animation:pxFrSpin 2.2s linear infinite}
+.px-fr-disco{--fr:repeating-conic-gradient(#FF5A6E 0 30deg,#FFB020 0 60deg,#6FD08C 0 90deg,#4FA8FF 0 120deg)}
+.px-fr-disco::before{animation:pxFrSpin 2.4s steps(12) infinite}
+.px-fr-heart{--fr:linear-gradient(135deg,#FF8FB1,#FF4F7B)}
+.px-fr-heart::before{animation:pxFrBeat 1.25s ease-in-out infinite}
+.px-fr-aurora{--fr:conic-gradient(#6FD08C,#4FA8FF,#B98CFF,#6FD08C)}
+.px-fr-aurora::before{animation:pxFrSpin 6s linear infinite,pxFrHue 6s linear infinite}
+.px-fr-dev{--fr:conic-gradient(#C678DD 0 15%,transparent 0 20%,#61AFEF 0 35%,transparent 0 40%,#98C379 0 55%,transparent 0 60%,#E5C07B 0 75%,transparent 0 80%,#E06C75 0 95%,transparent 0)}
+.px-fr-dev::before{animation:pxFrSpin 5s linear infinite}
+.px-fr-dev::after{display:block;inset:auto;left:21%;top:-24%;width:58%;height:30%;border-radius:999px;background:#12170F url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 view%42ox=%220 0 40 20%22%3E%3Cpath d=%22M14 5.5 9.5 10l4.5 4.5M26 5.5l4.5 4.5-4.5 4.5M22.4 4.5l-4.8 11%22 fill=%22none%22 stroke=%22%23D3F347%22 stroke-width=%222.6%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E") center/78% 78% no-repeat;box-shadow:0 0 0 1.5px #D3F347;animation:pxFrDevTag 2.4s ease-in-out infinite}
+@keyframes pxFrDevTag{0%,100%{box-shadow:0 0 0 1.5px #D3F347,0 0 0 0 rgba(211,243,71,0)}50%{box-shadow:0 0 0 1.5px #D3F347,0 0 8px 1px rgba(211,243,71,.55)}}
+@keyframes pxFrSpin{to{transform:rotate(360deg)}}
+@keyframes pxFrPing{0%{box-shadow:0 0 0 0 rgba(211,243,71,.8)}100%{box-shadow:0 0 0 9px rgba(211,243,71,0)}}
+@keyframes pxFrGlow{0%{box-shadow:0 0 7px 1px rgba(255,60,172,.6)}100%{box-shadow:0 0 11px 3px rgba(43,134,197,.65)}}
+@keyframes pxFrFlame{0%{box-shadow:0 0 6px 1px rgba(255,138,0,.55)}100%{box-shadow:0 -2px 12px 3px rgba(255,61,0,.6)}}
+@keyframes pxFrBeat{0%,40%,100%{transform:scale(1)}15%{transform:scale(1.13)}28%{transform:scale(1.05)}}
+@keyframes pxFrHue{to{filter:hue-rotate(360deg)}}
+/* ---- queue backgrounds: painted behind a queue row's content ---- */
+.px-qb{position:relative;isolation:isolate;overflow:hidden}
+.px-qb::before{content:'';position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;background-image:var(--qb);background-size:var(--qbs,auto);background-position:0 0;-webkit-mask-image:linear-gradient(90deg,rgba(0,0,0,.38),rgba(0,0,0,.38) 42%,#000 88%);mask-image:linear-gradient(90deg,rgba(0,0,0,.38),rgba(0,0,0,.38) 42%,#000 88%)}
+.px-qb-courtlines{--qb:repeating-linear-gradient(90deg,rgba(47,98,173,.2) 0 2px,transparent 2px 36px),linear-gradient(90deg,rgba(47,98,173,.16),rgba(47,98,173,.04))}
+.px-qb-dots{--qb:radial-gradient(rgba(126,154,16,.45) 1.7px,transparent 2.2px),linear-gradient(rgba(211,243,71,.2),rgba(211,243,71,.2));--qbs:14px 14px,auto}
+.px-qb-stripes{--qb:repeating-linear-gradient(135deg,rgba(211,243,71,.42) 0 8px,transparent 8px 18px)}
+.px-qb-grid{--qb:linear-gradient(rgba(120,128,112,.18) 1px,transparent 1px),linear-gradient(90deg,rgba(120,128,112,.18) 1px,transparent 1px);--qbs:12px 12px,12px 12px}
+.px-qb-sunset{--qb:linear-gradient(90deg,rgba(255,122,89,.32),rgba(255,176,32,.26) 50%,rgba(255,90,158,.26))}
+.px-qb-mint{--qb:radial-gradient(circle at 12% 30%,rgba(47,179,138,.32) 0 26px,transparent 27px),radial-gradient(circle at 70% 90%,rgba(47,179,138,.24) 0 34px,transparent 35px),radial-gradient(circle at 96% 10%,rgba(47,179,138,.2) 0 20px,transparent 21px)}
+.px-qb-checker{--qb:conic-gradient(rgba(120,128,112,.16) 25%,transparent 0 50%,rgba(120,128,112,.16) 0 75%,transparent 0);--qbs:16px 16px}
+.px-qb-confetti{--qb:radial-gradient(circle at 10% 30%,#FF5A6E 0 2.5px,transparent 3px),radial-gradient(circle at 34% 72%,#FFB020 0 2.5px,transparent 3px),radial-gradient(circle at 58% 24%,#4FA8FF 0 2.5px,transparent 3px),radial-gradient(circle at 82% 66%,#6FD08C 0 2.5px,transparent 3px),linear-gradient(rgba(255,239,163,.28),rgba(255,239,163,.28));--qbs:64px 30px,64px 30px,64px 30px,64px 30px,auto}
+.px-qb-night{--qb:radial-gradient(circle,#FFD23F 0 1.2px,transparent 1.7px),radial-gradient(circle,rgba(255,210,63,.7) 0 .9px,transparent 1.3px),linear-gradient(90deg,rgba(29,47,82,.3),rgba(29,47,82,.1));--qbs:34px 22px,21px 17px,auto}
+.px-qb-lemon{--qb:linear-gradient(90deg,rgba(255,229,120,.5),rgba(211,243,71,.28))}
+.px-qb-shimmer{--qb:linear-gradient(100deg,transparent 35%,rgba(255,255,255,.6) 50%,transparent 65%),linear-gradient(rgba(211,243,71,.18),rgba(211,243,71,.18));--qbs:250% 100%,auto}
+.px-qb-shimmer::before{animation:pxQbShimmer 2.6s ease-in-out infinite}
+.px-qb-barber{--qb:repeating-linear-gradient(135deg,rgba(211,243,71,.45) 0 9px,transparent 9px 18px);--qbs:25.46px 25.46px}
+.px-qb-barber::before{animation:pxQbBarber .9s linear infinite}
+.px-qb-bounce{--qb:radial-gradient(circle,#D3F347 0 4px,rgba(126,154,16,.9) 4.5px 5px,transparent 5.5px),linear-gradient(rgba(211,243,71,.14),rgba(211,243,71,.14));--qbs:46px 100%,auto}
+.px-qb-bounce::before{animation:pxQbBounce 1.6s ease-in-out infinite}
+.px-qb-flow{--qb:linear-gradient(90deg,rgba(211,243,71,.35),rgba(110,193,255,.3),rgba(255,143,177,.3),rgba(211,243,71,.35));--qbs:300% 100%}
+.px-qb-flow::before{animation:pxQbFlow 5s linear infinite}
+.px-qb-glow{--qb:radial-gradient(ellipse at 0% 50%,rgba(211,243,71,.6),transparent 60%)}
+.px-qb-glow::before{animation:pxQbGlow 1.8s ease-in-out infinite alternate}
+.px-qb-rally{--qb:repeating-linear-gradient(90deg,transparent 0 22px,rgba(47,98,173,.24) 22px 24px),linear-gradient(90deg,rgba(47,98,173,.1),rgba(47,98,173,.02));--qbs:48px 100%,auto}
+.px-qb-rally::before{animation:pxQbRally 1.2s linear infinite}
+.px-qb-aurora{--qb:radial-gradient(ellipse at 20% 50%,rgba(111,208,140,.4),transparent 55%),radial-gradient(ellipse at 80% 50%,rgba(185,140,255,.36),transparent 55%);--qbs:200% 100%,200% 100%}
+.px-qb-aurora::before{animation:pxQbAurora 6s ease-in-out infinite alternate}
+.px-qb-drift{--qb:radial-gradient(circle at 20% 20%,#FF5A6E 0 2.5px,transparent 3px),radial-gradient(circle at 60% 70%,#4FA8FF 0 2.5px,transparent 3px),radial-gradient(circle at 85% 30%,#FFB020 0 2.5px,transparent 3px),radial-gradient(circle at 40% 45%,#6FD08C 0 2px,transparent 2.5px);--qbs:56px 40px}
+.px-qb-drift::before{animation:pxQbDrift 3s linear infinite}
+.px-qb-waves{--qb:radial-gradient(circle at 50% 120%,transparent 14px,rgba(79,168,255,.3) 15px 17px,transparent 18px),linear-gradient(rgba(79,168,255,.1),rgba(79,168,255,.1));--qbs:36px 22px,auto}
+.px-qb-waves::before{animation:pxQbWaves 2.2s linear infinite}
+.px-qb-sparkle{--qb:radial-gradient(circle,#FFFFFF 0 1.4px,transparent 2px),radial-gradient(circle,#FFD23F 0 1.6px,transparent 2.2px),linear-gradient(90deg,rgba(185,140,255,.22),rgba(79,168,255,.18));--qbs:38px 26px,29px 21px,auto}
+.px-qb-sparkle::before{animation:pxQbTwinkle 1.4s ease-in-out infinite alternate}
+.px-qb-dev{--qb:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22132%22 height=%2260%22 view%42ox=%220 0 132 60%22%3E%3Cg opacity=%22.6%22%3E%3Crect x=%228%22 y=%224%22 width=%2214%22 height=%224.5%22 rx=%222.25%22 fill=%22%23C678DD%22/%3E%3Crect x=%2226%22 y=%224%22 width=%2222%22 height=%224.5%22 rx=%222.25%22 fill=%22%2361AFEF%22/%3E%3Crect x=%2252%22 y=%224%22 width=%2210%22 height=%224.5%22 rx=%222.25%22 fill=%22%238B95A1%22/%3E%3Crect x=%2266%22 y=%224%22 width=%2230%22 height=%224.5%22 rx=%222.25%22 fill=%22%2398C379%22/%3E%3Crect x=%2216%22 y=%2216%22 width=%2218%22 height=%224.5%22 rx=%222.25%22 fill=%22%23E06C75%22/%3E%3Crect x=%2238%22 y=%2216%22 width=%2226%22 height=%224.5%22 rx=%222.25%22 fill=%22%23E5C07B%22/%3E%3Crect x=%2268%22 y=%2216%22 width=%2212%22 height=%224.5%22 rx=%222.25%22 fill=%22%2356B6C2%22/%3E%3Crect x=%2216%22 y=%2228%22 width=%2210%22 height=%224.5%22 rx=%222.25%22 fill=%22%23C678DD%22/%3E%3Crect x=%2230%22 y=%2228%22 width=%2234%22 height=%224.5%22 rx=%222.25%22 fill=%22%2398C379%22/%3E%3Crect x=%2268%22 y=%2228%22 width=%2218%22 height=%224.5%22 rx=%222.25%22 fill=%22%238B95A1%22/%3E%3Crect x=%2224%22 y=%2240%22 width=%2220%22 height=%224.5%22 rx=%222.25%22 fill=%22%2361AFEF%22/%3E%3Crect x=%2248%22 y=%2240%22 width=%2214%22 height=%224.5%22 rx=%222.25%22 fill=%22%23E5C07B%22/%3E%3Crect x=%2266%22 y=%2240%22 width=%2224%22 height=%224.5%22 rx=%222.25%22 fill=%22%23E06C75%22/%3E%3Crect x=%2294%22 y=%2240%22 width=%2216%22 height=%224.5%22 rx=%222.25%22 fill=%22%238B95A1%22/%3E%3Crect x=%228%22 y=%2252%22 width=%2212%22 height=%224.5%22 rx=%222.25%22 fill=%22%2356B6C2%22/%3E%3Crect x=%2224%22 y=%2252%22 width=%228%22 height=%224.5%22 rx=%222.25%22 fill=%22%238B95A1%22/%3E%3Crect x=%2236%22 y=%2252%22 width=%2220%22 height=%224.5%22 rx=%222.25%22 fill=%22%23C678DD%22/%3E%3C/g%3E%3C/svg%3E"),linear-gradient(90deg,rgba(97,175,239,.14),rgba(198,120,221,.2));--qbs:132px 60px,auto}
+.px-qb-dev::before{animation:pxQbCode 4s linear infinite}
+@keyframes pxQbCode{to{background-position:0 -60px,0 0}}
+@keyframes pxQbShimmer{0%{background-position:130% 0,0 0}100%{background-position:-30% 0,0 0}}
+@keyframes pxQbBarber{to{background-position:25.46px 0}}
+@keyframes pxQbBounce{0%,100%{background-position:0 18px,0 0}50%{background-position:23px -14px,0 0}}
+@keyframes pxQbFlow{to{background-position:300% 0}}
+@keyframes pxQbGlow{0%{opacity:.35}100%{opacity:1}}
+@keyframes pxQbRally{to{background-position:48px 0,0 0}}
+@keyframes pxQbAurora{0%{background-position:0 0,100% 0}100%{background-position:100% 0,0 0}}
+@keyframes pxQbDrift{to{background-position:56px 40px}}
+@keyframes pxQbWaves{to{background-position:36px 0,0 0}}
+@keyframes pxQbTwinkle{0%{opacity:.45}100%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.px-fr::before,.px-fr::after,.px-qb::before{animation:none !important}}
+}

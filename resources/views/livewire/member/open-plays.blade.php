@@ -16,7 +16,7 @@
                 };
                 $courts = count($play->boardCourts());
             @endphp
-            <div class="grid animate-fade items-center gap-5 rounded-[26px] border-2 border-lime bg-surface p-4.5 shadow-card lg:grid-cols-2 lg:p-6">
+            <div class="grid animate-fade items-center gap-5 rounded-[26px] border-2 border-lime bg-surface p-4.5 shadow-card lg:grid-cols-2 lg:p-6 {{ auth()->user()->queueBgClass() }}">
                 <div class="flex flex-col gap-3">
                     <span class="inline-flex h-7 items-center gap-2 self-start rounded-full bg-ink px-2.75 font-mono text-[11px] tracking-[.08em] text-bg uppercase">
                         <span class="size-1.75 animate-live rounded-full bg-lime"></span>Live · {{ $play->title }}

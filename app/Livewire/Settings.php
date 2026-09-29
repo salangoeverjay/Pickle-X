@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\User;
+use App\Support\Looks;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -16,6 +17,11 @@ class Settings extends Component
     public string $name = '';
 
     public string $email = '';
+
+    // Optional nickname, and which name other players see: "full" or "display".
+    public string $displayName = '';
+
+    public string $showAs = 'full';
 
     public string $phone = '';
 
@@ -44,12 +50,19 @@ class Settings extends Component
 
     public ?string $applyError = null;
 
+    // Your look: which picker shows (border|queue), and whether a pick has been saved this visit.
+    public string $lookTab = 'border';
+
+    public bool $lookSaved = false;
+
     public function mount()
     {
         $user = $this->user();
 
         $this->fill([
             'name' => $user->name,
+            'displayName' => (string) $user->display_name,
+            'showAs' => $user->usesDisplayName() ? 'display' : 'full',
             'email' => $user->email,
             'phone' => (string) $user->phone,
             'club' => (string) $user->club,
@@ -65,13 +78,18 @@ class Settings extends Component
 
         $this->name = trim($this->name);
         $this->email = trim($this->email);
+        $this->displayName = trim(preg_replace('/\s+/', ' ', $this->displayName));
+        $this->showAs = $this->showAs === 'display' ? 'display' : 'full';
 
         $data = $this->validate([
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             'phone' => 'nullable|string|max:30',
             'club' => 'nullable|string|max:255',
+            'displayName' => ['nullable', 'string', 'max:20', Rule::requiredIf($this->showAs === 'display')],
         ], [
+            'displayName.max' => 'Keep your display name to 20 characters or fewer.',
+            'displayName.required' => 'Add a display name, or choose to show your full name.',
             'name.required' => 'Your name cannot be empty.',
             'email.required' => 'Enter a valid email address.',
             'email.email' => 'Enter a valid email address.',
@@ -81,6 +99,8 @@ class Settings extends Component
 
         $user->fill([
             'name' => $data['name'],
+            'display_name' => $this->displayName ?: null,
+            'show_display_name' => $this->showAs === 'display',
             'email' => $data['email'],
             'phone' => trim($data['phone'] ?? '') ?: null,
         ]);
@@ -92,7 +112,7 @@ class Settings extends Component
 
         $user->save();
 
-        $this->dispatch('toast', message: 'Profile saved');
+        $this->dispatch('toast', message: $user->usesDisplayName() ? "Profile saved · others see you as {$user->display_name}" : 'Profile saved');
     }
 
     // ---------------------------------------------------------------- profile picture
@@ -149,6 +169,27 @@ class Settings extends Component
         $this->dispatch('toast', message: $toast);
 
         return ['ok' => true, 'error' => null, 'avatar' => $avatar, 'url' => $user->avatarUrl(), 'color' => $user->color()];
+    }
+
+    /** Wear an avatar border (kind "frame") or queue background (kind "queue"). An empty id removes it. Saves right away. */
+    public function setLook(string $kind, string $id = ''): void
+    {
+        abort_unless(in_array($kind, ['frame', 'queue']), 404);
+        $user = $this->user();
+        if ($id !== '' && ! Looks::valid($kind, $id)) {
+            return;
+        }
+        if (isset(Looks::EXCLUSIVE[$id]) && ! $user->is_developer) {
+            $this->dispatch('toast', message: 'Developer accounts only · an admin unlocks this');
+
+            return;
+        }
+        $user->forceFill([$kind === 'frame' ? 'frame' : 'queue_bg' => $id ?: null])->save();
+        $this->lookSaved = true;
+        $label = Looks::label($kind, $id);
+        $this->dispatch('toast', message: $kind === 'frame'
+            ? ($label ? "Avatar border: {$label}" : 'Avatar border removed')
+            : ($label ? "Queue background: {$label}" : 'Queue background removed'));
     }
 
     public function savePassword()

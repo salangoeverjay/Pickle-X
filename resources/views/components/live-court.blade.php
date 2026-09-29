@@ -9,7 +9,7 @@
     $players = $busy ? collect([...$court['a']['ids'], ...$court['b']['ids']])->map(function ($id) use ($play, $me) {
         $p = $play->participant($id);
 
-        return [$p?->initials() ?? '?', $p?->color() ?? '#FFFFFF', $me && $p?->user_id === $me->id ? 'var(--color-lime)' : '#FFFFFF', $p?->avatarUrl()];
+        return [$p?->initials() ?? '?', $p?->color() ?? '#FFFFFF', $me && $p?->user_id === $me->id ? 'var(--color-lime)' : '#FFFFFF', $p?->avatarUrl(), $p?->frameClass() ?? ''];
     })->all() : [];
     $elapsed = $busy ? now()->timestamp - $court['started_at'] : 0;
     $label = $busy
@@ -22,7 +22,7 @@
         @foreach (['a' => '21%', 'b' => '79%'] as $side => $x)
             @if ($court[$side]['locked'])
                 <div class="absolute top-[31%] h-[38%] border-l-2 border-dashed border-lime" style="left: {{ $x }}"></div>
-                <div class="absolute top-1/2 -mt-2.75 -ml-2.75 flex size-5.5 items-center justify-center rounded-full border-[1.5px] border-on-lime bg-lime text-on-lime" style="left: {{ $x }}">
+                <div class="absolute top-1/2 z-3 -mt-2.75 -ml-2.75 flex size-5.5 items-center justify-center rounded-full border-[1.5px] border-on-lime bg-lime text-on-lime" style="left: {{ $x }}">
                     <x-icon name="lock" :size="12" :stroke="2.4" />
                 </div>
             @endif
