@@ -24,6 +24,10 @@
 <meta name="theme-color" content="#F3F2EA" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0A0E0B" media="(prefers-color-scheme: dark)">
 
+{{-- Device clock minus server clock, from the first real page load (x-live-timer). Its own tag, since it
+     changes every request: wire:navigate re-runs it on each visit, and ??= keeps the first value. --}}
+<script>window.serverSkew ??= (Date.now() - {{ now()->getTimestampMs() }}) / 1000;</script>
+
 {{-- Set theme before paint to avoid a light flash in dark mode. setTheme() is shared by every theme control. --}}
 <script>
     window.setTheme = (theme) => {
