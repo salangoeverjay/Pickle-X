@@ -1,6 +1,6 @@
 {{-- Your look: an avatar border and a queue background (App\Support\Looks). Each pick saves right away. --}}
 @use('App\Support\Looks')
-@props(['user', 'tab' => 'border', 'saved' => false])
+@props(['user', 'tab' => 'border', 'col' => '', 'saved' => false])
 @php
     $dev = (bool) $user->is_developer;
     $tier = $user->sponsor_tier;
@@ -9,8 +9,13 @@
     $tab = $tab === 'queue' ? 'queue' : 'border';
     $kind = $tab === 'border' ? 'frame' : 'queue';
     $list = Looks::list($kind);
+    // Collections: one tab each; opens on the collection of your current pick.
+    $colId = isset(Looks::COLLECTIONS[$col]) ? $col : (Looks::collectionOf($cur[$kind]) ?? 'nj');
+    $colDef = Looks::COLLECTIONS[$colId];
+    $colTotal = collect(Looks::COLLECTIONS)->sum(fn ($c) => count($c[4]));
     $std = [
         ['Animated', '10', 'anim', array_filter($list, fn ($l) => $l[1])],
+        ['Collections', $colTotal.' animated looks', 'col', array_map(fn ($l) => [$l, true], $colDef[4])],
         ['Still', '10 + none', 'still', ['' => ['None', false]] + array_filter($list, fn ($l) => ! $l[1])],
     ];
     // Exclusive: unlocked ones first.
@@ -25,7 +30,7 @@
     };
     $ex = ['Exclusive', $open ? $open.' of '.count($exItems).' unlocked' : 'Locked', 'ex', $exItems];
     $groups = $open ? [$ex, ...$std] : [...$std, $ex];
-    $frName = $cur['frame'] ? Looks::label('frame', $cur['frame']).(isset(Looks::EXCLUSIVE[$cur['frame']]) ? ' · exclusive' : (Looks::FRAMES[$cur['frame']][1] ? ' · animated' : '')) : 'No border';
+    $frName = $cur['frame'] ? Looks::label('frame', $cur['frame']).(isset(Looks::EXCLUSIVE[$cur['frame']]) ? ' · exclusive' : (($c = Looks::collectionOf($cur['frame'])) ? ' · '.Looks::COLLECTIONS[$c][0] : (Looks::FRAMES[$cur['frame']][1] ? ' · animated' : ''))) : 'No border';
     $pvFr = $user->frameClass();
 @endphp
 
@@ -78,11 +83,27 @@
                         <x-icon name="sparkle" :size="16" class="text-lime-text" />
                     @elseif ($isEx)
                         <x-icon name="gem" :size="16" />
+                    @elseif ($gid === 'col')
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: {{ $colDef[3] }}"><path d="{{ $colDef[2] }}" /></svg>
                     @endif
                     <h4 id="look-{{ $kind }}-{{ $gid }}" class="m-0 text-sm font-extrabold">{{ $glabel }}</h4>
                     <span class="font-mono text-xs text-ink3">{{ $n }}</span>
                 </div>
-                @if ($isEx)
+                @if ($gid === 'col')
+                    <div id="look-{{ $kind }}-cols" role="tablist" aria-label="Collections" class="flex scroll-mt-5 flex-wrap gap-1.5">
+                        @foreach (Looks::COLLECTIONS as $ck => $c)
+                            @php($has = isset($c[4][$cur[$kind]]))
+                            <button type="button" role="tab" aria-selected="{{ $ck === $colId ? 'true' : 'false' }}" aria-label="{{ $c[0] }} collection{{ $has ? ', has your pick' : '' }}" wire:click="$set('lookCol', '{{ $ck }}')"
+                                    @class(['inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full border-[1.5px] px-3.5 text-[13px] font-bold whitespace-nowrap transition active:scale-97', 'border-ink bg-ink text-bg' => $ck === $colId, 'border-line bg-surface text-ink' => $ck !== $colId])>
+                                <span>{{ $c[0] }}</span>
+                                @if ($has)
+                                    <span aria-hidden="true" class="size-1.75 rounded-full bg-lime shadow-[0_0_0_1.5px_var(--color-ink)]"></span>
+                                @endif
+                            </button>
+                        @endforeach
+                    </div>
+                    <p class="-mt-1 mb-0 text-[13px] leading-[1.4] text-ink3">{{ $colDef[0] }} · {{ $colDef[1] }}</p>
+                @elseif ($isEx)
                     <p class="-mt-1 mb-0 text-[13px] leading-[1.4] text-ink3">{{ $exNote }}</p>
                 @endif
                 <div role="radiogroup" aria-labelledby="look-{{ $kind }}-{{ $gid }}" @class(['grid gap-2.5', 'grid-cols-4 lg:grid-cols-6' => $kind === 'frame', 'grid-cols-2 lg:grid-cols-4' => $kind === 'queue'])>

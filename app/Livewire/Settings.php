@@ -55,6 +55,9 @@ class Settings extends Component
 
     public bool $lookSaved = false;
 
+    // Collection tab showing in Your look (empty = the one with your current pick, or Shinobi).
+    public string $lookCol = '';
+
     public function mount()
     {
         $user = $this->user();

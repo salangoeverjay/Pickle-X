@@ -28,6 +28,27 @@ class LooksTest extends TestCase
         }
     }
 
+    public function test_collections_have_css_and_are_pickable(): void
+    {
+        $css = file_get_contents(resource_path('css/looks.css'));
+        $ids = collect(Looks::COLLECTIONS)->flatMap(fn ($c) => array_keys($c[4]));
+        $this->assertCount(44, $ids);
+        foreach ($ids as $id) {
+            $this->assertStringContainsString(".px-fr-{$id}{", $css, "border {$id}");
+            $this->assertStringContainsString(".px-qb-{$id}{", $css, "queue {$id}");
+        }
+
+        $kai = User::factory()->create();
+        Livewire::actingAs($kai)->test(Settings::class)
+            ->assertSee('Collections')->assertSee('44 animated looks')->assertSee('Shinobi flame')
+            ->set('lookCol', 'pr')->assertSee('Pirate · Jolly Rogers')->assertSee('Kraken')
+            ->call('setLook', 'frame', 'pr-kraken')->assertDispatched('toast', message: 'Avatar border: Kraken')
+            ->set('lookCol', '')->assertSee('Pirate collection, has your pick')->assertSee('Kraken · Pirate')
+            ->set('lookTab', 'queue')->call('setLook', 'queue', 'sb-dragon')->assertDispatched('toast', message: 'Queue background: Jade dragon');
+
+        $this->assertSame(['px-fr px-fr-pr-kraken', 'px-qb px-qb-sb-dragon'], [$kai->fresh()->frameClass(), $kai->fresh()->queueBgClass()]);
+    }
+
     public function test_members_pick_a_border_and_background_that_save_right_away(): void
     {
         $kai = User::factory()->create(['name' => 'Kai Santos']);
