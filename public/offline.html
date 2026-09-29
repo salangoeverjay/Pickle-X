@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#F3F2EA">
+    <title>Offline · PickleX</title>
+    <style>
+        :root { color-scheme: light dark; --bg: #F3F2EA; --ink: #12170F; --ink2: #464D42; --lime: #D3F347; }
+        @media (prefers-color-scheme: dark) { :root { --bg: #0A0E0B; --ink: #F3F2EA; --ink2: #B7BCB1; } }
+        * { box-sizing: border-box; }
+        body { margin: 0; min-height: 100dvh; display: flex; align-items: center; justify-content: center; padding: 24px; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, sans-serif; }
+        main { max-width: 360px; display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; }
+        img { width: 72px; height: 72px; border-radius: 18px; }
+        h1 { margin: 0; font-size: 26px; letter-spacing: -0.03em; }
+        p { margin: 0; color: var(--ink2); }
+        button { margin-top: 6px; height: 50px; padding: 0 24px; border: 0; border-radius: 999px; background: var(--lime); color: #12170F; font: inherit; font-weight: 800; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <main>
+        <img src="/icons/icon-192.png" alt="">
+        <h1>You're offline</h1>
+        <p>PickleX needs a connection to show live courts and the queue. Check your signal, then try again.</p>
+        <button type="button" onclick="location.reload()">Try again</button>
+    </main>
+</body>
+</html>

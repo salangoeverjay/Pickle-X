@@ -14,6 +14,13 @@
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+{{-- Installable app (PWA). use-credentials sends cookies with the manifest request, so tunnels
+     like ngrok's free plan (which put a warning page in front of cookie-less requests) still serve it. --}}
+<link rel="manifest" href="/manifest.json" crossorigin="use-credentials">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="PickleX">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#F3F2EA" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0A0E0B" media="(prefers-color-scheme: dark)">
 
@@ -30,6 +37,10 @@
         document.documentElement.dataset.theme = theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     };
     applyTheme();
+    if ('serviceWorker' in navigator && ! window.swRegistered) {
+        window.swRegistered = true;
+        addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+    }
     // wire:navigate copies the new page's <html> attributes, which drops data-theme; restore it before paint.
     if (! window.themeNavigateHook) {
         window.themeNavigateHook = true;
