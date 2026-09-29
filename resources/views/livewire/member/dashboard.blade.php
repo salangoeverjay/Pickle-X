@@ -52,19 +52,19 @@
         <div class="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
             <div class="flex flex-col gap-5.5 rounded-3xl border border-line bg-surface p-4.5 lg:p-6">
                 <div class="flex flex-col gap-3.5">
-                    <div class="flex flex-wrap items-baseline justify-between gap-2">
+                    <div class="flex min-h-9 flex-wrap items-center justify-between gap-x-2 gap-y-1">
                         <h2 class="m-0 font-display text-xl font-bold tracking-[-0.02em]">Recent form</h2>
                         <span class="text-[13px] text-ink3">Last 10 games · newest first</span>
                     </div>
-                    <div class="flex gap-1.5">
+                    <div class="grid grid-cols-10 gap-1.5">
                         @forelse ($stats->form() as $r)
                             <span @class([
-                                'flex h-10 max-w-11.5 flex-1 items-center justify-center rounded-xl border-[1.5px] font-mono text-sm font-semibold',
+                                'flex h-10 items-center justify-center rounded-xl border-[1.5px] font-mono text-sm font-semibold',
                                 'border-lime bg-lime text-on-lime' => $r === 'W',
                                 'border-line2 text-ink2' => $r === 'L',
                             ])>{{ $r }}</span>
                         @empty
-                            <p class="m-0 text-sm text-ink2">No games logged yet. Join an open play to start your record.</p>
+                            <p class="col-span-full m-0 text-sm text-ink2">No games logged yet. Join an open play to start your record.</p>
                         @endforelse
                     </div>
                 </div>
@@ -73,9 +73,9 @@
                         <h3 class="m-0 text-[15px] font-bold">Games per week</h3>
                         <span class="text-[13px] text-ink3">Last 8 weeks</span>
                     </div>
-                    <div class="flex h-37.5 items-end gap-2">
+                    <div class="grid h-37.5 grid-cols-8 items-end gap-2">
                         @foreach ($stats->weeks() as $wk)
-                            <div class="flex h-full flex-1 flex-col items-center justify-end gap-1.5">
+                            <div class="flex h-full min-w-0 flex-col items-center justify-end gap-1.5">
                                 <span class="font-mono text-xs text-ink2">{{ $wk->v }}</span>
                                 <div @class(['w-full max-w-9.5 rounded-[8px_8px_4px_4px]', 'bg-court' => $loop->last, 'bg-ink' => ! $loop->last]) style="height: {{ $wk->h }}px"></div>
                                 <span class="font-mono text-[10px] whitespace-nowrap text-ink3">{{ $wk->label }}</span>

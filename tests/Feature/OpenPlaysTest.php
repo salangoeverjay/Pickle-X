@@ -46,7 +46,7 @@ class OpenPlaysTest extends TestCase
         $this->seed();
 
         $this->actingAs(User::where('email', 'kai@picklex.app')->first())->get(route('member.plays'))->assertOk()->assertSee('Check in to get on court')->assertSee('Leave open play');
-        $this->actingAs(User::where('email', 'ely@panabodink.ph')->first())->get(route('organizer.plays'))->assertOk()->assertSee('LIVE NOW')->assertSee('Past sessions');
+        $this->actingAs(User::where('email', 'ely@panabodink.ph')->first())->get(route('organizer.plays'))->assertOk()->assertSee('LIVE NOW')->assertSee('Concluded open plays');
     }
 
     public function test_member_joins_and_leaves(): void
@@ -90,8 +90,8 @@ class OpenPlaysTest extends TestCase
             ->assertSee('Leave open play')
             ->call('checkInPlay', $play->id)
             ->assertDispatched('toast', message: 'Checked in at '.now()->format('g:i A').". You're in the rotation.")
-            ->assertSee('#1 in line')
-            ->assertSee('0 players ahead of you · 1 of 1 courts in play')
+            ->assertSee("You're next in line")
+            ->assertSee('Waiting for 3 more checked-in players to fill a game. Stay close to the courts.')
             ->assertSee('Checked in '.now()->format('g:i A'));
 
         // Stepped out (e.g. subbed out by the organizer), then back.
@@ -101,7 +101,7 @@ class OpenPlaysTest extends TestCase
             ->assertSee('You kept your spot at #1', false)
             ->call('stepBackIn', $play->id)
             ->assertDispatched('toast', message: "You're back in the rotation")
-            ->assertSee('#1 in line');
+            ->assertSee("You're next in line");
 
         // Three more checked-in players behind make a full next game.
         $more = User::factory(3)->create()->map(fn ($u) => $play->join($u));

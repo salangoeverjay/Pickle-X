@@ -10,9 +10,9 @@
         @php
             // Podium order 2nd, 1st, 3rd; sizes mobile / lg.
             $podium = [
-                1 => ['h' => 'h-[78px] lg:h-[110px]', 'av' => 'size-[50px] text-[15px] lg:size-[66px] lg:text-[19px]', 'medal' => '#D5DAD2', 'block' => 'bg-ink text-bg', 'delay' => '[animation-delay:.12s]'],
-                0 => ['h' => 'h-[108px] lg:h-[150px]', 'av' => 'size-[62px] text-[18px] lg:size-[86px] lg:text-[24px]', 'medal' => '#F2C94C', 'block' => 'bg-lime text-on-lime', 'delay' => ''],
-                2 => ['h' => 'h-[58px] lg:h-[82px]', 'av' => 'size-[50px] text-[15px] lg:size-[66px] lg:text-[19px]', 'medal' => '#E3A57A', 'block' => 'bg-court text-white', 'delay' => '[animation-delay:.24s]'],
+                1 => ['h' => 'h-[78px] lg:h-[110px]', 'av' => 'size-[50px] text-[15px] lg:size-[66px] lg:text-[19px]', 'block' => 'bg-ink text-bg', 'delay' => '[animation-delay:.12s]'],
+                0 => ['h' => 'h-[108px] lg:h-[150px]', 'av' => 'size-[62px] text-[18px] lg:size-[86px] lg:text-[24px]', 'block' => 'bg-lime text-on-lime', 'delay' => ''],
+                2 => ['h' => 'h-[58px] lg:h-[82px]', 'av' => 'size-[50px] text-[15px] lg:size-[66px] lg:text-[19px]', 'block' => 'bg-court text-white', 'delay' => '[animation-delay:.24s]'],
             ];
         @endphp
         <div class="grid grid-cols-3 items-end gap-2 pt-2 lg:gap-4">
@@ -21,7 +21,8 @@
                     <div wire:key="pod-{{ $period }}-{{ $i }}" class="flex animate-rise flex-col items-center gap-2.5 {{ $pd['delay'] }}">
                         <div class="relative">
                             <x-avatar :src="$r->user->avatarUrl()" :name="$r->user->name" :color="$r->user->color()" :class="$pd['av'].' border-3 '.($r->me ? 'border-lime' : 'border-surface')" />
-                            <span class="absolute -right-1 -bottom-1 flex size-7 items-center justify-center rounded-full border-2 border-bg font-mono text-[13px] font-semibold text-on-lime" style="background: {{ $pd['medal'] }}">{{ $r->rank }}</span>
+<span class="absolute -right-3 -bottom-2 lg:hidden"><x-medal :rank="$r->rank" :size="26" ring="var(--color-bg)" /></span>
+                            <span class="absolute -right-3.75 -bottom-2 hidden lg:block"><x-medal :rank="$r->rank" :size="36" ring="var(--color-bg)" /></span>
                         </div>
                         <div class="flex flex-col items-center text-center">
                             <span class="text-sm font-extrabold lg:text-[17px]"><span class="lg:hidden">{{ $r->user->firstName() }}</span><span class="hidden lg:inline">{{ $r->user->name }}</span></span>
@@ -46,7 +47,13 @@
         <div class="overflow-hidden rounded-3xl border border-line bg-surface">
             @foreach ($rows as $r)
                 <div wire:key="row-{{ $r->user->id }}" @class(['flex items-center gap-2.5 border-b border-line px-3.5 py-3 lg:gap-3.5 lg:px-6', 'bg-lime-soft' => $r->me])>
-                    <span class="w-6.5 font-mono text-[15px] font-semibold">{{ $r->rank }}</span>
+                    <span class="flex w-6.5 shrink-0 justify-center">
+                        @if ($r->rank <= 3)
+                            <x-medal :rank="$r->rank" :size="22" />
+                        @else
+                            <span class="font-mono text-[15px] font-semibold">{{ $r->rank }}</span>
+                        @endif
+                    </span>
                     <span @class([
                         'inline-flex w-8.5 items-center gap-px font-mono text-xs',
                         'text-lime-text' => $r->mv > 0,

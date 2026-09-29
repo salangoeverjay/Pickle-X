@@ -1,4 +1,10 @@
-{{-- Branded error page. Sections: code, title, message. --}}
+{{--
+    Branded error page: message on the left, a court scene for the code on the right
+    (scene first on phones). Sections: code, title, kicker, pill, dot, scene, foot,
+    lead, body (extra blocks and actions). @section('hot', 1) tints the kicker orange.
+--}}
+@php($code = trim($__env->yieldContent('code')))
+@php($hot = $__env->hasSection('hot'))
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
@@ -6,32 +12,45 @@
         @include('partials.head', ['title' => html_entity_decode(trim($__env->yieldContent('title')), ENT_QUOTES).' · PickleX'])
     </head>
     <body>
-        @php($home = auth()->check() ? route(auth()->user()->homeRoute()) : route('home'))
-        <main id="main" class="flex min-h-dvh flex-col px-4 pt-4 pb-8 lg:px-14 lg:pt-6 lg:pb-14">
-            <a href="{{ route('home') }}" aria-label="PickleX home" class="self-start text-ink"><x-logo class="text-[27px]" /></a>
+        <div class="relative flex min-h-dvh flex-col overflow-hidden">
+            <div aria-hidden="true" class="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(18,23,15,.07)_1px,transparent_1px),linear-gradient(90deg,rgba(18,23,15,.07)_1px,transparent_1px)] bg-size-[48px_48px] dark:bg-[linear-gradient(rgba(237,242,227,.05)_1px,transparent_1px),linear-gradient(90deg,rgba(237,242,227,.05)_1px,transparent_1px)]"></div>
 
-            <div class="grid flex-1 items-center gap-10 py-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16">
-                <div class="flex animate-rise flex-col items-start gap-5">
-                    <span class="font-mono text-xs tracking-[.14em] text-ink3 uppercase">Error @yield('code')</span>
-                    <h1 class="m-0 font-display text-[44px] leading-[.95] font-extrabold tracking-[-0.045em] text-balance lg:text-7xl">@yield('title')</h1>
-                    <p class="m-0 max-w-120 text-[17px] leading-[1.55] text-pretty text-ink2">@yield('message')</p>
-                    <div class="flex flex-wrap gap-3 pt-1">
-                        <a href="{{ $home }}" class="inline-flex h-13.5 items-center gap-2.5 rounded-full border-2 border-cta-border bg-lime px-6 text-base font-bold text-on-lime shadow-cta transition hover:brightness-96 active:scale-97">
-                            {{ auth()->check() ? 'Go to my PickleX' : 'Back to home' }}<x-icon name="arrow-right" :size="18" :stroke="2.2" />
-                        </a>
-                        <button type="button" onclick="history.length > 1 ? history.back() : location.assign('{{ $home }}')" class="inline-flex h-13.5 cursor-pointer items-center rounded-full border-[1.5px] border-line2 px-5.5 text-base font-semibold text-ink transition hover:brightness-96 active:scale-97">Go back</button>
+            <header class="relative flex shrink-0 items-center justify-between gap-3 px-4 py-2.5 lg:px-12 lg:py-6 2xl:px-16 2xl:py-7">
+                <a href="{{ route('home') }}" aria-label="PickleX home" class="text-ink"><x-logo class="text-[25px] lg:text-[28px] 2xl:text-[30px]" /></a>
+                <x-theme-toggle />
+            </header>
+
+            <main id="main" class="relative grid flex-1 content-start items-center gap-5.5 px-4 pt-1 pb-4.5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.08fr)] lg:content-center lg:gap-18 lg:px-18 lg:pt-2 lg:pb-8 2xl:gap-24 2xl:px-30 2xl:pb-10">
+                {{-- Court scene --}}
+                <div role="img" aria-label="@yield('scene')" class="relative h-52 w-full animate-rise overflow-hidden rounded-[26px] bg-court-out shadow-[0_40px_60px_-40px_rgba(0,0,0,.55)] lg:order-2 lg:h-[min(560px,62dvh)] lg:rounded-[36px] 2xl:h-[min(680px,66dvh)] 2xl:rounded-[40px]">
+                    @include('errors.scene', ['code' => $code])
+                    <span class="absolute top-3 left-3 inline-flex h-7.5 items-center gap-2 rounded-full bg-black/35 px-3 font-mono text-[11px] tracking-[.12em] whitespace-nowrap text-white lg:top-5.5 lg:left-5.5 2xl:top-6 2xl:left-6">
+                        <span class="size-1.75 rounded-full" style="background: @yield('dot', '#DDF84E')"></span>@yield('pill')
+                    </span>
+                    <span aria-hidden="true" class="absolute right-4 bottom-3 font-display text-[68px] leading-[.8] font-extrabold tracking-[-0.06em] text-white [text-shadow:0_6px_30px_rgba(0,0,0,.35)] lg:right-7 lg:bottom-5.5 lg:text-[132px] 2xl:right-8 2xl:bottom-6.5 2xl:text-[160px]">{{ $code }}</span>
+                </div>
+
+                {{-- Message --}}
+                <div class="flex max-w-135 animate-rise flex-col gap-4.5 [animation-delay:.08s] lg:gap-6 2xl:max-w-155 2xl:gap-6.5">
+                    <span @class([
+                        'inline-flex h-7.5 items-center self-start rounded-full border px-3 font-mono text-[11px] font-semibold tracking-widest whitespace-nowrap uppercase',
+                        'border-hot-line bg-hot-soft text-hot' => $hot,
+                        'border-line bg-surface text-ink2' => ! $hot,
+                    ])>@yield('kicker')</span>
+                    <div class="flex flex-col gap-3">
+                        <h1 class="m-0 font-display text-[34px] leading-[.98] font-extrabold tracking-[-0.045em] text-balance lg:text-[64px] 2xl:text-[76px]">@yield('title')</h1>
+                        <p class="m-0 text-base leading-[1.55] text-pretty text-ink2 lg:text-lg 2xl:text-xl">@yield('lead')</p>
                     </div>
+                    @yield('body')
                 </div>
 
-                {{-- An empty court: nobody's playing here. --}}
-                <div aria-hidden="true" class="relative h-55 animate-rise [animation-delay:.12s] lg:h-80">
-                    <x-court class="absolute inset-0 rounded-[28px] shadow-[0_40px_60px_-34px_rgba(8,30,18,.6)] transform-[perspective(1200px)_rotateX(22deg)_rotateZ(-5deg)]" label="">
-                        <div class="absolute inset-0 z-1 flex items-center justify-center bg-[rgba(8,20,14,.28)]">
-                            <span class="font-display text-[64px] leading-none font-extrabold tracking-[-0.05em] text-white/92 lg:text-[104px]">@yield('code')</span>
-                        </div>
-                    </x-court>
-                </div>
-            </div>
-        </main>
+                <p class="m-0 pt-1 pb-1.5 text-center text-xs text-ink3 lg:hidden">PickleX is made by <strong class="text-ink2">CreativeX Techlabs Inc.</strong></p>
+            </main>
+
+            <footer class="relative hidden shrink-0 items-center justify-between gap-x-4 gap-y-1.5 px-12 pt-3.5 pb-6.5 text-xs text-ink3 lg:flex 2xl:px-16 2xl:pt-4 2xl:pb-7">
+                <span>PickleX is made by <strong class="text-ink2">CreativeX Techlabs Inc.</strong></span>
+                <span class="font-mono">@yield('foot')</span>
+            </footer>
+        </div>
     </body>
 </html>

@@ -24,11 +24,18 @@
         document.documentElement.dataset.theme = theme;
         try { localStorage.setItem('theme', theme); } catch {}
     };
-    (() => {
+    window.applyTheme ??= () => {
         let theme;
         try { theme = localStorage.getItem('theme'); } catch {}
         document.documentElement.dataset.theme = theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    })();
+    };
+    applyTheme();
+    // wire:navigate copies the new page's <html> attributes, which drops data-theme; restore it before paint.
+    if (! window.themeNavigateHook) {
+        window.themeNavigateHook = true;
+        document.addEventListener('livewire:navigating', (e) => e.detail.onSwap(applyTheme));
+        document.addEventListener('livewire:navigated', applyTheme);
+    }
 </script>
 
 {{ Vite::fonts() }}

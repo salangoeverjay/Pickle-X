@@ -27,16 +27,41 @@ class User extends Authenticatable
         '#E2D2FF' => 'Lilac', '#FFEFA3' => 'Butter', '#BDEBE3' => 'Seafoam', '#FFCBBB' => 'Coral',
     ];
 
-    // PickleX avatars (public/avatars/presets/{id}.svg), [id => label].
+    /** PickleX avatars (public/avatars/presets/{id}.svg), in picker order. */
     public const AVATAR_PRESETS = [
+        // Pickleball
         'paddle' => 'Paddle', 'ball' => 'Pickleball', 'happy' => 'Happy ball', 'dill' => 'Big dill',
-        'dink' => 'Dink shot', 'kitchen' => 'Kitchen', 'doubles' => 'Doubles', 'ace' => 'Ace',
-        'champ' => 'Champion', 'streak' => 'Hot streak', 'shoes' => 'Court shoes', 'night' => 'Night owl',
+        'dink' => 'Dink shot', 'kitchen' => 'Kitchen', 'doubles' => 'Doubles', 'ace' => 'Ace', 'champ' => 'Champion',
+        'streak' => 'Hot streak', 'shoes' => 'Court shoes', 'night' => 'Night owl',
+        // Smileys
+        'grin' => 'Grinning', 'wink' => 'Winky', 'shades' => 'Too cool', 'starstruck' => 'Star-struck',
+        'lol' => 'Laughing', 'gameface' => 'Game face',
+        // Animals
+        'cat' => 'Cat', 'dog' => 'Pup', 'fox' => 'Fox', 'panda' => 'Panda', 'frog' => 'Frog', 'penguin' => 'Penguin',
+        // Food
+        'mango' => 'Mango', 'pineapple' => 'Pineapple', 'avocado' => 'Avocado', 'watermelon' => 'Watermelon',
+        'donut' => 'Donut', 'boba' => 'Milk tea',
+        // Nature
+        'sunny' => 'Sunny', 'cactus' => 'Cactus', 'wave' => 'Wave', 'palm' => 'Island', 'rainbow' => 'Rainbow',
+        'blossom' => 'Blossom',
+        // Things
+        'crown' => 'Crown', 'rocket' => 'Rocket', 'bolt' => 'Bolt', 'heart' => 'Heart', 'gem' => 'Gem',
+        'headphones' => 'Headphones',
+    ];
+
+    /** Emoji-style groups for the avatar picker: key => [label, 24px icon path, preset ids]. */
+    public const AVATAR_GROUPS = [
+        'pb' => ['Pickleball', 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM9 8.5h.01M14.5 8.8h.01M12 12.3h.01M8.3 14.6h.01M15.4 14.8h.01', ['paddle', 'ball', 'happy', 'dill', 'dink', 'kitchen', 'doubles', 'ace', 'champ', 'streak', 'shoes', 'night']],
+        'faces' => ['Smileys', 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM8.3 14.2c2 2.3 5.4 2.3 7.4 0M9 9.6h.01M15 9.6h.01', ['grin', 'wink', 'shades', 'starstruck', 'lol', 'gameface']],
+        'animals' => ['Animals', 'M5.2 10.2 5.8 4l4.3 3.1h3.8L18.2 4l.6 6.2c.8 1.1 1.2 2.3 1.2 3.6 0 3.9-3.6 6.2-8 6.2s-8-2.3-8-6.2c0-1.3.4-2.5 1.2-3.6ZM9.4 13h.01M14.6 13h.01M11 16.2h2', ['cat', 'dog', 'fox', 'panda', 'frog', 'penguin']],
+        'food' => ['Food', 'M6 8.5h12l-1.4 11a1.6 1.6 0 0 1-1.6 1.5H9a1.6 1.6 0 0 1-1.6-1.5ZM5 8.5h14M12 8.5 14.6 3H17M9.5 16.5h.01M12.5 17h.01M14.5 15.5h.01', ['mango', 'pineapple', 'avocado', 'watermelon', 'donut', 'boba']],
+        'nature' => ['Nature', 'M5 19.5c0-8.5 5-14.5 14.5-14.5 0 9.3-6 14.5-14.5 14.5ZM5 19.5l7.5-7.5', ['sunny', 'cactus', 'wave', 'palm', 'rainbow', 'blossom']],
+        'things' => ['Things', 'M12 3.2l2.3 5.2 5.5.7-4.1 3.8 1.1 5.5-4.8-2.8-4.8 2.8 1.1-5.5-4.1-3.8 5.5-.7Z', ['crown', 'rocket', 'bolt', 'heart', 'gem', 'headphones']],
     ];
 
     public const DEFAULT_PREFERENCES = [
         'notify' => [
-            'upNext' => true, 'liveStart' => true, 'newPlays' => true, 'recap' => false,
+            'upNext' => true, 'liveStart' => true, 'newPlays' => true, 'sessionRecap' => true, 'recap' => false,
             'joins' => true, 'courtIdle' => true, 'reminder' => true, 'clubRecap' => false,
             'requests' => true, 'adminRecap' => false,
         ],

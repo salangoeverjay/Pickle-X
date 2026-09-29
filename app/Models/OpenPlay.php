@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -114,11 +115,25 @@ class OpenPlay extends Model
     /** "6:00 - 10:00 PM", "11:00 AM - 1:00 PM" across noon, "8:00 PM - 1:00 AM (next day)" overnight. */
     public function timeRange(): string
     {
-        $sameHalf = $this->starts_at->format('A') === $this->ends_at->format('A');
+        return self::rangeLabel($this->starts_at, $this->ends_at);
+    }
 
-        $range = $this->starts_at->format($sameHalf ? 'g:i' : 'g:i A').' - '.$this->ends_at->format('g:i A');
+    /** timeRange() for any two times (the create/edit review uses it before saving). */
+    public static function rangeLabel(CarbonInterface $starts, CarbonInterface $ends): string
+    {
+        $sameHalf = $starts->format('A') === $ends->format('A');
+        $range = $starts->format($sameHalf ? 'g:i' : 'g:i A').' - '.$ends->format('g:i A');
 
-        return $this->ends_at->isSameDay($this->starts_at) ? $range : $range.' (next day)';
+        return $ends->isSameDay($starts) ? $range : $range.' (next day)';
+    }
+
+    /** "3 hrs", "1 hr 30 min". */
+    public static function lengthLabel(int $minutes): string
+    {
+        $h = intdiv($minutes, 60);
+        $m = $minutes % 60;
+
+        return trim(($h ? $h.' '.($h === 1 ? 'hr' : 'hrs') : '').($m ? " {$m} min" : '')) ?: '0 min';
     }
 
     /** Joined players still in the session. Uses withCount('activeParticipants') when loaded. */
@@ -195,6 +210,46 @@ class OpenPlay extends Model
     public function nextUpTeams(): ?array
     {
         return self::nextUp($this->queue(), $this->readyIds());
+    }
+
+    /**
+     * Who plays next: a full game when 4 are ready, otherwise the ready entries at the front
+     * of the line and how many more checked-in players are needed. Null when nobody is ready.
+     *
+     * @return array{full: bool, used: int[], need: int, a?: array, b?: array}|null
+     */
+    public function nextGroup(): ?array
+    {
+        $queue = $this->queue();
+        $ready = $this->readyIds();
+        if ($full = self::nextUp($queue, $ready)) {
+            return $full + ['full' => true, 'need' => 0];
+        }
+
+        $used = [];
+        $n = 0;
+        foreach ($queue as $e) {
+            if ($n >= 4) {
+                break;
+            }
+            if (self::isAvailable($e, $ready) && $n + count($e['ids']) <= 4) {
+                $used[] = $e['id'];
+                $n += count($e['ids']);
+            }
+        }
+
+        return $used ? ['full' => false, 'used' => $used, 'need' => 4 - $n] : null;
+    }
+
+    /** Entries ahead of the last one called next that are being skipped: [names, anyPaused]. */
+    public function skippedForNext(array $group): array
+    {
+        $queue = $this->queue();
+        $last = array_search(end($group['used']), array_column($queue, 'id'));
+        $ready = $this->readyIds();
+        $skipped = array_filter(array_slice($queue, 0, $last === false ? 0 : $last + 1), fn ($e) => ! self::isAvailable($e, $ready));
+
+        return [collect($skipped)->map(fn ($e) => $this->names($e['ids']))->join(', '), collect($skipped)->contains(fn ($e) => $e['paused'] ?? false)];
     }
 
     /** Checked-in participants still in the session (from the loaded map). */
@@ -322,7 +377,9 @@ class OpenPlay extends Model
         }
 
         $ahead = 0;
-        $next = $this->nextUpTeams();
+        $group = $this->nextGroup();
+        $next = $group && $group['full'] ? $group : null;
+        $free = collect($this->boardCourts())->first(fn ($c) => ! $c['a']);
         foreach ($this->queue() as $i => $entry) {
             if (in_array($me->id, $entry['ids'])) {
                 if (! $me->checked_in_at) {
@@ -339,7 +396,12 @@ class OpenPlay extends Model
                         'state' => 'next',
                         'partner' => $this->names(array_diff($mine['ids'], [$me->id])) ?: null,
                         'opponents' => $this->names($opp['ids']),
+                        'court' => $free['n'] ?? null,
                     ];
+                }
+                // First in line, but fewer than 4 players are ready to fill a game.
+                if ($group && ! $group['full'] && in_array($entry['id'], $group['used'])) {
+                    return ['state' => 'waiting', 'position' => $i + 1, 'need' => $group['need']];
                 }
 
                 return ['state' => 'queued', 'position' => $i + 1, 'ahead' => $ahead];
@@ -623,7 +685,7 @@ class OpenPlay extends Model
     }
 
     /**
-     * Add the organizer's paid list (rows from PaidList::match). Linked members join as themselves,
+     * Add the organizer's paid list (rows from PaidList::rows). Linked members join as themselves,
      * everyone else as a named guest. Duplicate accounts are added once. Returns [added, linked].
      */
     public function addPaidPlayers(array $rows): array
@@ -632,10 +694,12 @@ class OpenPlay extends Model
         $added = 0;
         foreach (collect($rows)->unique(fn ($r) => $r['user']?->id ?? 'guest:'.mb_strtolower($r['line'])) as $row) {
             if ($row['user']) {
-                $this->participants()->updateOrCreate(['user_id' => $row['user']->id], ['name' => $row['user']->name, 'paid' => true, 'left_at' => null]);
+                // Members who already joined in the app keep that; everyone else came from the list.
+                $p = $this->participants()->firstOrNew(['user_id' => $row['user']->id], ['from_list' => true]);
+                $p->fill(['name' => $row['user']->name, 'paid' => true, 'left_at' => null])->save();
                 $linked++;
             } else {
-                $this->participants()->create(['name' => $row['line'], 'paid' => true]);
+                $this->participants()->create(['name' => $row['line'], 'paid' => true, 'from_list' => true]);
             }
             $added++;
         }

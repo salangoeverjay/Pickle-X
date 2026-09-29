@@ -66,4 +66,21 @@ class ProfilePictureTest extends TestCase
         $this->assertNull($user->fresh()->avatar);
         $this->assertDatabaseMissing('avatar_photos', ['user_id' => $user->id]);
     }
+
+    public function test_all_42_avatars_are_grouped_and_usable(): void
+    {
+        $groups = collect(User::AVATAR_GROUPS);
+        $this->assertSame(array_keys(User::AVATAR_PRESETS), $groups->flatMap(fn ($g) => $g[2])->all(), 'every preset is in exactly one group, in order');
+        $this->assertCount(42, User::AVATAR_PRESETS);
+        foreach (array_keys(User::AVATAR_PRESETS) as $id) {
+            $this->assertFileExists(public_path("avatars/presets/{$id}.svg"));
+        }
+
+        $user = User::factory()->create();
+        $this->actingAs($user)->get(route('settings'))->assertOk()
+            ->assertSee('Avatar categories')->assertSee('Smileys')->assertSee('Headphones')->assertSee('42 avatars made for PickleX');
+
+        Livewire::actingAs($user)->test(Settings::class)->call('usePreset', 'fox');
+        $this->assertSame('preset:fox', $user->fresh()->avatar);
+    }
 }

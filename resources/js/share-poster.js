@@ -1,7 +1,7 @@
 // Share view mode (court board): draws a 1080 × 1350 PNG poster with the live-view QR, for
 // Download QR image and Send to members. `info` comes from CourtBoard::render() ('poster').
 
-const FONTS = ["800 60px 'Bricolage Grotesque'", "500 30px 'Instrument Sans'", "600 46px 'Geist Mono'"];
+const FONTS = ["800 60px 'Bricolage Grotesque'", "500 30px 'Instrument Sans'", "700 58px 'Barlow Condensed'", "600 32px 'Barlow Condensed'", "500 36px 'Barlow Condensed'"];
 
 function draw(info) {
     const W = 1080;
@@ -67,7 +67,7 @@ function draw(info) {
     x.fillText('PickleX', 176, 137);
     x.textAlign = 'right';
     x.fillStyle = '#D3F347';
-    x.font = "600 26px 'Geist Mono', ui-monospace, monospace";
+    x.font = "600 32px 'Barlow Condensed', 'Arial Narrow', sans-serif";
     spacing('4px');
     x.fillText('● LIVE VIEW', W - 120, 137);
     spacing('0px');
@@ -111,13 +111,13 @@ function draw(info) {
 
     // Code, link, how-to
     let fy = qy + qs + 86;
-    x.font = "600 46px 'Geist Mono', ui-monospace, monospace";
+    x.font = "700 58px 'Barlow Condensed', 'Arial Narrow', sans-serif";
     spacing('8px');
     x.fillText(info.code, W / 2, fy);
     spacing('0px');
     fy += 54;
     x.fillStyle = '#464D42';
-    x.font = "500 30px 'Geist Mono', ui-monospace, monospace";
+    x.font = "500 36px 'Barlow Condensed', 'Arial Narrow', sans-serif";
     x.fillText(info.shortUrl, W / 2, fy);
     fy += 64;
     x.fillStyle = '#5B6257';

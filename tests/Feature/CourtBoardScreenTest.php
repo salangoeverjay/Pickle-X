@@ -64,7 +64,7 @@ class CourtBoardScreenTest extends TestCase
                 && str_ends_with($params['message'], 'onto the podium'))
             ->assertSet('scoreCourt', null)
             ->assertSee('Latest results')
-            ->assertSee("Tonight's standings", false);
+            ->assertSee("Tonight's standings");
         $this->assertSame(1, $play->games()->count());
     }
 
@@ -161,11 +161,57 @@ class CourtBoardScreenTest extends TestCase
             ->set('walkin', str_repeat('x', 61))->call('addWalkin')->assertHasErrors('walkin')
             ->set('walkin', ' Tito Boy ')->call('addWalkin')
             ->assertHasNoErrors()
-            ->assertDispatched('toast', message: 'Tito Boy joined the queue as a walk-in')
+            ->assertDispatched('toast', message: 'Tito Boy joined the queue as a guest · checked in')
             ->assertSet('walkin', '')
             ->assertSee('Tito Boy');
 
         $this->assertSame(2, $play->fresh()->queuedPlayerCount());
+    }
+
+    public function test_walkins_with_a_matching_account_need_confirming(): void
+    {
+        $play = $this->livePlay();
+        $mika = User::factory()->create(['name' => 'Mika Lim', 'email' => 'mika.lim@example.com', 'club' => 'Club']);
+        User::factory()->create(['name' => 'Mika Santos']);
+
+        $board = Livewire::actingAs($this->org)->test(CourtBoard::class)
+            ->set('walkin', 'Mika Lim')
+            ->assertSee('PickleX accounts match')->assertSee('Same name')->assertSee('mika.lim@example.com')->assertSee('This is them')
+            ->assertSee('Not listed? Add “Mika Lim” as a guest', false)
+            ->call('addWalkin')->assertSet('walkinTried', true)->assertSee("Pick the account that's them, or add them as a guest.", false);
+        $this->assertFalse($play->participants()->where('name', 'Mika Lim')->exists(), 'nothing is added without a choice');
+
+        $board->call('pickWalkin', $mika->id)
+            ->assertSee('Add this account to the queue?')->assertSee('Yes, add Mika')
+            ->call('addAccountWalkin')
+            ->assertDispatched('toast', message: 'Mika Lim joined the queue · linked to their account')
+            ->assertSet('walkin', '');
+        $p = $play->participants()->where('user_id', $mika->id)->first();
+        $this->assertNotNull($p->checked_in_at);
+
+        // Already in the session: the match says where they are and can't be added again.
+        $board->set('walkin', 'Mika Lim')->assertSee('Already in the queue at #')->call('pickWalkin', $mika->id)->call('addAccountWalkin')
+            ->assertDispatched('toast', fn ($n, $p) => str_starts_with($p['message'], 'Mika Lim is already in the queue at #'));
+
+        // Or add them as a guest instead.
+        $board->set('walkin', 'Mika Santos')->call('addGuestWalkin')
+            ->assertDispatched('toast', message: 'Mika Santos joined the queue as a guest · checked in');
+        $this->assertTrue($play->participants()->where('name', 'Mika Santos')->whereNull('user_id')->exists());
+    }
+
+    public function test_up_next_shows_a_partial_group_and_who_is_skipped(): void
+    {
+        $play = $this->livePlay(9, ['courts' => 2]); // 8 on court, 1 checked in and waiting
+        $front = $play->queue()[0];
+        $larry = User::factory()->create(['name' => 'Larry Late']);
+        $play->checkIn([$play->join($larry)->id]);
+        $play->setPaused($front['id'], true); // front of the line stepped out
+
+        Livewire::actingAs($this->org)->test(CourtBoard::class)
+            ->assertSee('Up next')->assertSee('Larry')
+            ->assertSee('Needs 3 more checked-in players to start a game')
+            ->assertSee('Courts full · Court')
+            ->assertSee('Skipping '.$play->fresh()->names($front['ids']).' until they are back.');
     }
 
     public function test_end_session_redirects_with_toast(): void

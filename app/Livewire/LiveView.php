@@ -26,20 +26,22 @@ class LiveView extends Component
 
         $me = auth()->user();
         $ready = $play->readyIds();
-        $next = $play->nextUpTeams();
+        $group = $play->nextGroup();
+        $next = $group && $group['full'] ? $group : null;
         $courts = $play->boardCourts();
         $free = collect($courts)->first(fn ($c) => ! $c['a']);
 
-        $queue = collect($play->queue())->map(function ($e, $i) use ($play, $ready, $next, $me) {
+        $queue = collect($play->queue())->map(function ($e, $i) use ($play, $ready, $group, $me) {
             $people = collect($e['ids'])->map(fn ($id) => $play->participant($id));
             $pair = $e['locked'] && count($e['ids']) === 2;
             $notHere = (bool) array_diff($e['ids'], $ready);
 
+            $up = ! $notHere && ! ($e['paused'] ?? false) && in_array($e['id'], $group['used'] ?? []);
             [$meta, $metaClass] = match (true) {
                 $notHere => ['Not checked in', 'text-hot'],
                 $e['paused'] ?? false => ['Stepped out', 'text-hot'],
-                in_array($e['id'], $next['used'] ?? []) => ['Up next', 'text-lime-text'],
-                $pair => ['Locked partners', 'text-ink3'],
+                $up => [$pair ? 'Up next · locked pair' : 'Up next', 'text-lime-text'],
+                $pair => ['Locked pair', 'text-lime-text'],
                 default => [null, null],
             };
 
@@ -48,6 +50,8 @@ class LiveView extends Component
                 'people' => $pair ? $people : $people->take(1),
                 'label' => $pair ? $play->names($e['ids']) : $people->first()->name,
                 'meta' => $meta,
+                'pair' => $pair,
+                'up' => $up,
                 'metaClass' => $metaClass,
                 'you' => $me && $people->contains(fn ($p) => $p->user_id === $me->id),
             ];
@@ -76,7 +80,13 @@ class LiveView extends Component
             'queueCount' => $play->queuedPlayerCount(),
             'results' => $results,
             'next' => $next,
-            'where' => $free ? "Court {$free['n']} is open" : 'Next court to finish',
+            'group' => $group,
+            'skipped' => $group ? $play->skippedForNext($group) : ['', false],
+            'where' => match (true) {
+                (bool) $free => "Court {$free['n']} ".($next ? 'is open' : 'is waiting'),
+                ($soon = $play->longestCourtIndex()) !== null => 'Courts full · Court '.$courts[$soon]['n'].' likely next',
+                default => 'Next court to finish',
+            },
             'busy' => $play->busyCourtCount().' of '.count($courts).' courts in play',
             'here' => $play->checkedInCount().' of '.count($play->sessionPlayerIds()).' checked in',
             'ago' => ago(now()->timestamp - ($play->started_at ?? now())->timestamp),

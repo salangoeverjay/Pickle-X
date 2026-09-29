@@ -5,6 +5,7 @@ namespace App\Livewire\Admin;
 use App\Models\GamePlayer;
 use App\Models\OpenPlay;
 use App\Models\User;
+use App\Support\Emails;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -40,7 +41,12 @@ class Requests extends Component
         abort_unless(auth()->user()->isAdmin(), 403);
 
         $user = User::whereNotNull('organizer_status')->findOrFail($id);
+        $changed = $user->organizer_status !== $status;
         $user->update(['organizer_status' => $status]);
+
+        if ($changed && in_array($status, ['approved', 'declined'])) {
+            Emails::send($user, $status === 'approved' ? Emails::organizerApproved($user) : Emails::organizerDeclined($user));
+        }
 
         return $user;
     }

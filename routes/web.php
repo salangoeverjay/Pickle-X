@@ -1,6 +1,7 @@
 <?php
 
 use App\Livewire\Admin;
+use App\Livewire\Auth\ForgotPassword;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Signup;
 use App\Livewire\Home;
@@ -21,6 +22,7 @@ Route::livewire('/', Home::class)->name('home');
 Route::middleware('guest')->group(function () {
     Route::livewire('/login', Login::class)->name('login');
     Route::livewire('/signup', Signup::class)->name('signup');
+    Route::livewire('/forgot-password', ForgotPassword::class)->name('password.request');
 });
 
 // One-tap demo accounts (seeded). Only exists when APP_DEMO=true.
@@ -82,6 +84,20 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:organizer')->prefix('organizer')->name('organizer.')->group(function () {
         Route::livewire('/plays', Organizer\OpenPlays::class)->name('plays');
         Route::livewire('/board', Organizer\CourtBoard::class)->name('board');
+
+        // Final standings of a concluded open play (linked from the organizer recap email).
+        Route::get('/plays/{play}/standings.csv', function (OpenPlay $play) {
+            abort_unless($play->organizer_id === auth()->id() && $play->status === 'done', 404);
+
+            return response()->streamDownload(function () use ($play) {
+                $out = fopen('php://output', 'w');
+                fputcsv($out, ['Rank', 'Player', 'Wins', 'Losses', 'Games', 'Points for', 'Points against', 'Point difference', 'Win %']);
+                foreach ($play->standings() as $r) {
+                    fputcsv($out, [$r['rank'], $play->participant($r['participant_id'])?->name, $r['w'], $r['l'], $r['g'], $r['pf'], $r['pa'], $r['diff'], round($r['w'] * 100 / $r['g'])]);
+                }
+                fclose($out);
+            }, 'picklex-'.Str::slug($play->title).'-'.$play->starts_at->format('Y-m-d').'-standings.csv', ['Content-Type' => 'text/csv']);
+        })->name('standings-csv');
     });
 
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {

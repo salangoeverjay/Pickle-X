@@ -26,7 +26,7 @@
             </div>
         </div>
     @else
-        <div class="flex max-w-350 flex-col gap-5 px-4 pt-4 pb-8 lg:px-12 lg:pt-7 lg:pb-12">
+        <div class="flex max-w-350 flex-col gap-5 px-4 pt-4 pb-8 lg:px-12 lg:pt-7 lg:pb-12 2xl:max-w-430">
             <div class="flex flex-col gap-2">
                 <div class="flex flex-wrap items-center gap-2">
                     <span class="inline-flex h-7 items-center gap-1.75 rounded-full bg-ink px-2.75 font-mono text-[11px] tracking-widest text-bg">
@@ -59,14 +59,14 @@
                                 </div>
 
                                 @if ($court['a'])
-                                    <x-live-court :play="$play" :court="$court" :me="$me" :badge="false" :index="$i" class="h-41 rounded-2xl! lg:h-44.5" player-class="size-8.5 text-xs lg:size-9.5" />
+                                    <x-live-court :play="$play" :court="$court" :me="$me" :badge="false" :locks="true" :index="$i" class="h-41 rounded-2xl! lg:aspect-[21/10] lg:h-auto" player-class="size-8.5 text-xs lg:size-9.5" />
                                     <div class="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-1 pb-0.5">
-                                        <span class="truncate text-sm font-bold">{{ $play->names($court['a']['ids']) }}</span>
+                                        <span class="flex min-w-0 items-center gap-1.25">@if ($court['a']['locked'] ?? false)<span role="img" aria-label="Locked partners" title="Locked partners" class="flex size-4.5 shrink-0 items-center justify-center rounded-full bg-lime text-on-lime"><x-icon name="lock" :size="10" :stroke="2.8" /></span>@endif<span class="truncate text-sm font-bold">{{ $play->names($court['a']['ids']) }}</span></span>
                                         <span class="font-mono text-[11px] text-ink3">VS</span>
-                                        <span class="truncate text-right text-sm font-bold">{{ $play->names($court['b']['ids']) }}</span>
+                                        <span class="flex min-w-0 items-center justify-end gap-1.25"><span class="truncate text-right text-sm font-bold">{{ $play->names($court['b']['ids']) }}</span>@if ($court['b']['locked'] ?? false)<span role="img" aria-label="Locked partners" title="Locked partners" class="flex size-4.5 shrink-0 items-center justify-center rounded-full bg-lime text-on-lime"><x-icon name="lock" :size="10" :stroke="2.8" /></span>@endif</span>
                                     </div>
                                 @else
-                                    <x-court class="relative h-41 rounded-2xl lg:h-44.5" :label="'Court '.$court['n'].' is open'">
+                                    <x-court class="relative h-41 rounded-2xl lg:aspect-[21/10] lg:h-auto" :label="'Court '.$court['n'].' is open'">
                                         <div class="absolute inset-0 flex items-center justify-center bg-[rgba(8,20,14,.32)]">
                                             <span class="inline-flex h-8.5 items-center rounded-full bg-white/96 px-3.5 text-[13px] font-extrabold text-on-lime">Next group being called</span>
                                         </div>
@@ -99,26 +99,42 @@
 
                 {{-- Up next + queue (first on mobile) --}}
                 <div class="order-1 flex min-w-0 flex-col gap-4 lg:order-0">
-                    @if ($next)
+                    @if ($group)
+                        @php($qById = collect($play->queue())->keyBy('id'))
+                        @php($rows = $next
+                            ? [['ids' => $next['a']['ids'], 'locked' => $next['a']['locked']], null, ['ids' => $next['b']['ids'], 'locked' => $next['b']['locked']]]
+                            : collect($group['used'])->map(fn ($id) => ['ids' => $qById[$id]['ids'], 'locked' => $qById[$id]['locked'] && count($qById[$id]['ids']) === 2])->all())
                         <div class="flex flex-col gap-2.5 rounded-[22px] border-[1.5px] border-lime bg-lime-soft p-4">
                             <div class="flex items-center justify-between gap-2">
                                 <span class="font-mono text-[11px] font-semibold tracking-[.12em] text-lime-text uppercase">Up next</span>
-                                <span class="text-xs text-ink2">{{ $where }}</span>
+                                <span class="text-right text-xs text-ink2">{{ $where }}</span>
                             </div>
-                            @foreach (['a', 'b'] as $side)
-                                @if ($side === 'b')
+                            @foreach ($rows as $row)
+                                @if (! $row)
                                     <span class="font-mono text-[10px] tracking-[.12em] text-ink3">VS</span>
+                                    @continue
                                 @endif
                                 <div class="flex items-center gap-2.5">
                                     <div class="flex">
-                                        @foreach ($next[$side]['ids'] as $id)
+                                        @foreach ($row['ids'] as $id)
                                             @php($p = $play->participant($id))
                                             <x-avatar :src="$p->avatarUrl()" :name="$p->name" :color="$p->color()" class="-mr-2 size-8.5 border-2 border-surface text-[11px]" />
                                         @endforeach
                                     </div>
-                                    <span class="ml-2 flex-1 text-base font-extrabold">{{ $play->names($next[$side]['ids']) }}</span>
+                                    <span class="ml-2 min-w-0 flex-1 text-base font-extrabold">{{ $play->names($row['ids']) }}</span>
+                                    @if ($row['locked'])
+                                        <span class="inline-flex h-5.5 shrink-0 items-center gap-1 rounded-full bg-lime px-2 text-[11px] font-extrabold text-on-lime"><x-icon name="lock" :size="11" :stroke="2.6" />Locked</span>
+                                    @endif
                                 </div>
                             @endforeach
+                            @if (! $next)
+                                <span class="text-[13px] font-bold">Needs {{ $group['need'] }} more checked-in {{ Str::plural('player', $group['need']) }} to start a game</span>
+                            @elseif (! str_contains($where, 'is open'))
+                                <span class="text-[13px] text-ink2">They go on as soon as a court finishes.</span>
+                            @endif
+                            @if ($skipped[0])
+                                <span class="text-xs text-ink3">Skipping {{ $skipped[0] }} {{ $skipped[1] ? 'until they are back.' : 'until they check in.' }}</span>
+                            @endif
                         </div>
                     @endif
 
@@ -130,10 +146,13 @@
                         @forelse ($queue as $q)
                             <div wire:key="q-{{ $q['pos'] }}" @class(['flex items-center gap-2.5 rounded-xl p-2', 'bg-lime-soft' => $q['you']])>
                                 <span class="w-5 shrink-0 font-mono text-xs text-ink3">{{ $q['pos'] }}</span>
-                                <div class="flex shrink-0">
+                                <div class="relative flex shrink-0">
                                     @foreach ($q['people'] as $k => $p)
                                         <x-avatar :src="$p->avatarUrl()" :name="$p->name" :color="$p->color()" @class(['size-8 border-2 border-surface text-[11px]', '-ml-2.5' => $k > 0]) />
                                     @endforeach
+                                    @if ($q['pair'])
+                                        <span role="img" aria-label="Locked partners" class="absolute -bottom-1 left-4.75 flex size-4.25 items-center justify-center rounded-full border-2 border-surface bg-lime text-on-lime"><x-icon name="lock" :size="8" :stroke="2.8" /></span>
+                                    @endif
                                 </div>
                                 <span class="flex min-w-0 flex-1 flex-col">
                                     <span class="flex min-w-0 items-center gap-1.5 text-sm font-bold">
@@ -146,6 +165,9 @@
                                         <span class="text-xs font-semibold {{ $q['metaClass'] }}">{{ $q['meta'] }}</span>
                                     @endif
                                 </span>
+                                @if ($q['up'])
+                                    <span class="inline-flex h-5.5 shrink-0 items-center rounded-full bg-lime px-2 text-[11px] font-extrabold text-on-lime">NEXT</span>
+                                @endif
                             </div>
                         @empty
                             <p class="m-0 text-sm text-ink2">Everyone is on court right now.</p>

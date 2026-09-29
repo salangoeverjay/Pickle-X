@@ -91,7 +91,7 @@
                                     @endif
                                 </div>
 
-                                <x-live-court :play="$play" :court="$court" :badge="false" :locks="true" :index="$i" class="h-41 lg:h-44.5" player-class="size-8.5 text-xs lg:size-9.5" />
+                                <x-live-court :play="$play" :court="$court" :badge="false" :locks="true" :index="$i" class="h-41 lg:aspect-[21/10] lg:h-auto" player-class="size-8.5 text-xs lg:size-9.5" />
 
                                 @if ($court['a'])
                                     <div class="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-1">
@@ -166,7 +166,7 @@
                 </div>
 
                 {{-- Queue column --}}
-                <div @class(['flex-col gap-3.5 rounded-3xl border border-line bg-surface p-4.5 shadow-card lg:sticky lg:top-5', 'flex' => $tab === 'queue', 'hidden lg:flex' => $tab !== 'queue'])>
+                <div @class(['flex-col gap-3.5 rounded-3xl border border-line bg-surface p-4.5 shadow-card lg:sticky lg:top-5 lg:max-h-260 lg:overflow-y-auto lg:[scrollbar-width:thin] [&>*]:shrink-0', 'flex' => $tab === 'queue', 'hidden lg:flex' => $tab !== 'queue'])>
                     <div class="flex items-center justify-between gap-2.5">
                         <div class="flex items-center gap-2.5">
                             <h2 class="m-0 font-display text-[22px] font-extrabold tracking-[-0.03em]">Queue</h2>
@@ -175,17 +175,18 @@
                         <span class="inline-flex items-center gap-1.5 text-xs text-ink3"><x-icon name="rotate" :size="14" />{{ $play->rotationLabel() }}</span>
                     </div>
 
-                    @if ($next)
+                    @if ($group)
+                        @php($sides = $next ? [$next['a']['eids'], $next['b']['eids']] : [$group['used']])
                         <div class="flex flex-col gap-2.5 rounded-[18px] border-[1.5px] border-lime bg-lime-soft p-3.5">
                             <div class="flex items-center justify-between gap-2">
                                 <span class="font-mono text-[11px] font-semibold tracking-[.12em] text-lime-text uppercase">Up next</span>
-                                <span class="text-xs text-ink2">{{ $where }}</span>
+                                <span class="text-right text-xs text-ink2">{{ $where }}</span>
                             </div>
-                            @foreach (['a', 'b'] as $side)
-                                @if ($side === 'b')
+                            @foreach ($sides as $side => $eids)
+                                @if ($side === 1)
                                     <span class="font-mono text-[10px] tracking-[.12em] text-ink3">VS</span>
                                 @endif
-                                @foreach ($next[$side]['eids'] as $eid)
+                                @foreach ($eids as $eid)
                                     @php($ne = collect($queue)->firstWhere('id', $eid))
                                     @php($neNames = $play->names($ne['ids']))
                                     <div wire:key="up-{{ $eid }}" class="flex items-center gap-2">
@@ -195,10 +196,12 @@
                                                 <x-avatar :src="$p?->avatarUrl()" :name="$p?->name ?? '?'" :color="$p?->color() ?? '#FFFFFF'" class="-mr-2 size-8 border-2 border-surface text-[11px]" />
                                             @endforeach
                                         </div>
-                                        <span class="ml-2 min-w-0 flex-1 truncate text-sm font-bold">{{ $neNames }}</span>
-                                        @if ($ne['locked'])
-                                            <span class="inline-flex h-5.5 shrink-0 items-center gap-1 rounded-full bg-lime px-2 text-[11px] font-extrabold text-on-lime"><x-icon name="lock" :size="11" :stroke="2.6" />Locked</span>
-                                        @endif
+                                        <div class="ml-2 flex min-w-0 flex-1 flex-col gap-px">
+                                            <span class="truncate text-sm font-bold">{{ $neNames }}</span>
+                                            @if ($ne['locked'] && count($ne['ids']) === 2)
+                                                <span class="inline-flex items-center gap-1 text-[11px] font-extrabold text-lime-text"><x-icon name="lock" :size="11" :stroke="2.6" />Locked pair</span>
+                                            @endif
+                                        </div>
                                         <button type="button" wire:click="$set('subFor', {{ $eid }})" aria-label="Sub out {{ $neNames }}"
                                                 class="inline-flex h-8.5 shrink-0 cursor-pointer items-center gap-1 rounded-[10px] border-[1.5px] border-line2 bg-surface px-2.5 text-xs font-bold text-ink transition hover:brightness-96 active:scale-97">
                                             <x-icon name="swap" :size="13" :stroke="2.2" />Sub out
@@ -206,6 +209,14 @@
                                     </div>
                                 @endforeach
                             @endforeach
+                            @if (! $next)
+                                <span class="flex items-center gap-2 text-[13px] font-bold text-ink"><x-icon name="clock" :size="15" />Needs {{ $group['need'] }} more checked-in {{ Str::plural('player', $group['need']) }} to start a game</span>
+                            @elseif (! str_contains($where, 'is open'))
+                                <span class="text-xs text-ink2">They go on as soon as a court finishes.</span>
+                            @endif
+                            @if ($skipped[0])
+                                <span class="text-xs text-ink3">Skipping {{ $skipped[0] }} {{ $skipped[1] ? 'until they are back.' : 'until they check in.' }}</span>
+                            @endif
 
                             @if ($subOut)
                                 @php($outNames = $play->names($subOut['ids']))
@@ -265,13 +276,13 @@
                             @php($on = in_array($entry['id'], $selected))
                             @php($p1 = $play->participant($entry['ids'][0]))
                             @php($label = $pair ? $play->names($entry['ids']) : ($p1?->name ?? 'Guest'))
-                            @php($up = $next && in_array($entry['id'], $next['used']))
+                            @php($up = $group && in_array($entry['id'], $group['used']))
                             @php($notHere = (bool) array_diff($entry['ids'], $ready))
                             @php($paused = ! $notHere && ($entry['paused'] ?? false))
                             @php($avail = ! $notHere && ! $paused)
                             @php($g = (int) ($gamesTonight[$entry['ids'][0]] ?? 0))
                             @php($gamesTxt = $g.($g === 1 ? ' game' : ' games').' tonight')
-                            @php($meta = $notHere ? 'Not checked in yet' : ($paused ? 'Stepped out · keeps spot' : ($pair ? 'Locked partners · '.$gamesTxt : $gamesTxt.($p1?->paid ? ' · Paid' : ''))))
+                            @php($meta = $notHere ? 'Not checked in yet' : ($paused ? 'Stepped out · keeps spot' : ($pair ? 'Locked pair · '.$gamesTxt : $gamesTxt.($p1?->paid ? ' · Paid' : ''))))
                             @php($metaClass = $avail ? ($pair ? 'font-bold text-lime-text' : 'font-medium text-ink3') : 'font-bold text-hot')
                             <div wire:key="entry-{{ $entry['id'] }}" @class([
                                 'flex items-center gap-2 rounded-2xl border-[1.5px] py-1 pr-1 pl-2.5 transition-colors',
@@ -292,7 +303,7 @@
                                         </div>
                                         <span @class(['flex min-w-0 flex-1 flex-col', 'opacity-78' => ! $avail])>
                                             <span class="truncate text-sm font-bold">{{ $label }}</span>
-                                            <span class="truncate text-xs {{ $metaClass }}">{{ $meta }}</span>
+                                            <span class="flex min-w-0 items-center gap-1.5">@if ($up && $avail)<span class="inline-flex h-4.25 shrink-0 items-center rounded-full bg-lime px-1.5 text-[9.5px] font-extrabold tracking-[.04em] text-on-lime">NEXT</span>@endif<span class="truncate text-xs {{ $metaClass }}">{{ $meta }}</span></span>
                                         </span>
                                     </div>
                                 @else
@@ -304,12 +315,9 @@
                                         <x-avatar :name="$label" :color="$p1?->color() ?? '#FFFFFF'" :src="$p1?->avatarUrl()" class="size-9 text-xs" />
                                         <span @class(['flex min-w-0 flex-1 flex-col', 'opacity-78' => ! $avail])>
                                             <span class="truncate text-sm font-bold">{{ $label }}</span>
-                                            <span class="text-xs {{ $metaClass }}">{{ $meta }}</span>
+                                            <span class="flex min-w-0 items-center gap-1.5">@if ($up && $avail)<span class="inline-flex h-4.25 shrink-0 items-center rounded-full bg-lime px-1.5 text-[9.5px] font-extrabold tracking-[.04em] text-on-lime">NEXT</span>@endif<span class="truncate text-xs {{ $metaClass }}">{{ $meta }}</span></span>
                                         </span>
                                     </button>
-                                @endif
-                                @if ($up)
-                                    <span class="inline-flex h-5.5 shrink-0 items-center rounded-full bg-lime px-2 text-[11px] font-extrabold text-on-lime">NEXT</span>
                                 @endif
                                 @if ($notHere)
                                     <button type="button" wire:click="checkInEntry({{ $entry['id'] }})"
@@ -344,16 +352,67 @@
 
                     <form wire:submit="addWalkin" class="flex flex-col gap-2">
                         <div class="flex gap-2">
-                            <label for="walkin" class="sr-only">Walk-in player name</label>
-                            <input id="walkin" type="text" wire:model="walkin" maxlength="60" placeholder="Add a walk-in by name"
+                            <label for="walkin" class="sr-only">Walk-in player name or email</label>
+                            <input id="walkin" type="text" wire:model.live.debounce.300ms="walkin" maxlength="60" autocomplete="off" placeholder="Add a walk-in by name or email" aria-describedby="walkin-hint"
                                    class="h-11.5 min-w-0 flex-1 rounded-[14px] border-[1.5px] border-line bg-surface2 px-3.5 text-sm text-ink outline-none transition-colors placeholder:text-ink3 focus:border-ink">
                             <button type="submit" class="inline-flex h-11.5 cursor-pointer items-center gap-1.5 rounded-[14px] bg-ink px-4 text-sm font-bold text-bg transition hover:brightness-96 active:scale-97">
                                 <x-icon name="user-plus" :size="16" :stroke="1.9" />Add
                             </button>
                         </div>
+                        <span id="walkin-hint" class="text-xs leading-[1.45] text-ink3">Type a name to look for their PickleX account. Nothing is linked until you confirm it's them.</span>
                         @error('walkin')
                             <p class="m-0 text-[13px] font-semibold text-hot">{{ $message }}</p>
                         @enderror
+
+                        @if ($walkinUser)
+                            @php($wf = $walkinUser->firstName())
+                            @php($wg = \App\Models\GamePlayer::where('user_id', $walkinUser->id)->count())
+                            <div role="group" aria-label="Confirm the account" class="flex animate-snap flex-col gap-3 rounded-2xl border-[1.5px] border-ink bg-surface p-3.5">
+                                <span class="text-[13px] font-extrabold">Add this account to the queue?</span>
+                                <div class="flex items-center gap-3">
+                                    <x-avatar :name="$walkinUser->name" :color="$walkinUser->color()" :src="$walkinUser->avatarUrl()" class="size-11.5 text-[15px]" />
+                                    <span class="flex min-w-0 flex-1 flex-col gap-px">
+                                        <span class="text-base font-extrabold">{{ $walkinUser->name }}</span>
+                                        <span class="text-xs wrap-anywhere text-ink2">{{ $walkinUser->email }}</span>
+                                        <span class="text-xs text-ink3">{{ $walkinUser->club ? $walkinUser->club.' · ' : '' }}{{ $wg }} {{ Str::plural('game', $wg) }} on PickleX</span>
+                                    </span>
+                                </div>
+                                <span class="text-xs leading-[1.45] text-ink2">Check with them first. Their games tonight count toward this account's stats and rankings, and they're checked in right away.</span>
+                                <div class="flex gap-2">
+                                    <button type="button" wire:click="$set('walkinPick', null)" class="h-10.5 cursor-pointer rounded-full border-[1.5px] border-line2 px-3.5 text-[13px] font-bold text-ink transition hover:brightness-96 active:scale-97">Not them</button>
+                                    <button type="button" wire:click="addAccountWalkin" class="h-10.5 flex-1 cursor-pointer rounded-full bg-lime px-3.5 text-[13px] font-extrabold text-on-lime transition hover:brightness-96 active:scale-97">Yes, add {{ $wf }}</button>
+                                </div>
+                            </div>
+                        @elseif ($walkinMatches->isNotEmpty())
+                            @php($wq = trim($walkin))
+                            <div role="region" aria-label="Matching PickleX accounts" class="flex animate-fade flex-col gap-2 rounded-2xl border border-line bg-surface2 p-3">
+                                <span class="text-[13px] font-extrabold">{{ $walkinMatches->count() === 1 ? '1 PickleX account matches' : $walkinMatches->count().' PickleX accounts match' }} “{{ $wq }}”</span>
+                                @if ($walkinTried)
+                                    <span role="alert" class="text-xs font-bold text-hot">Pick the account that's them, or add them as a guest.</span>
+                                @endif
+                                @foreach ($walkinMatches as $m)
+                                    @php($mu = $m['user'])
+                                    <div wire:key="wm-{{ $mu->id }}" class="flex items-center gap-2.5 rounded-[14px] border border-line bg-surface py-2 pr-2 pl-2.5">
+                                        <x-avatar :name="$mu->name" :color="$mu->color()" :src="$mu->avatarUrl()" class="size-9 text-xs" />
+                                        <span class="flex min-w-0 flex-1 flex-col gap-px">
+                                            <span class="truncate text-sm font-bold">{{ $mu->name }}</span>
+                                            <span class="text-[11px] font-bold text-ink2">{{ $m['why'] }}</span>
+                                            <span class="truncate text-xs text-ink3">{{ $mu->email }}{{ $mu->club ? ' · '.$mu->club : '' }}</span>
+                                            @if ($m['spot'])
+                                                <span class="text-xs font-bold text-hot">{{ $m['spot'] }}</span>
+                                            @endif
+                                        </span>
+                                        @unless ($m['spot'])
+                                            <button type="button" wire:click="pickWalkin({{ $mu->id }})" aria-label="Add {{ $mu->name }}, {{ $mu->email }}"
+                                                    class="h-9 shrink-0 cursor-pointer rounded-[10px] border-[1.5px] border-ink bg-transparent px-2.5 text-[13px] font-bold whitespace-nowrap text-ink transition hover:brightness-96 active:scale-97">This is them</button>
+                                        @endunless
+                                    </div>
+                                @endforeach
+                                <button type="button" wire:click="addGuestWalkin" class="flex min-h-10.5 cursor-pointer items-center justify-center gap-2 rounded-xl border-[1.5px] border-dashed border-line2 bg-transparent px-3 py-1.5 text-center text-[13px] font-bold text-ink transition hover:brightness-96 active:scale-97">
+                                    <x-icon name="plus" :size="15" /><span>Not listed? Add “{{ $wq }}” as a guest</span>
+                                </button>
+                            </div>
+                        @endif
                     </form>
                 </div>
             </div>

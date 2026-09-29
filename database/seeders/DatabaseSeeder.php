@@ -97,7 +97,18 @@ class DatabaseSeeder extends Seeder
         $sat = Carbon::today()->next(Carbon::SATURDAY);
         $sunrise = $this->play($ely, 'Saturday Sunrise Rally', $sat->copy()->setTime(6, 0), 3, 18, 11, 'winners', '₱120', 3);
         $this->attachDemoPayQr($sunrise);
-        $sunrise->addPaidPlayers(PaidList::match("Rico Dizon\nmika@picklex.test\nBen Tan\nCarla Mendoza\nPaolo Cruz\nTin Ramos\nGab Navarro\nLiza Uy\nGrace Ong"));
+        // The organizer linked each paid name to its account (Grace Ong is a guest).
+        $paid = "Rico Dizon\nmika@picklex.test\nBen Tan\nCarla Mendoza\nPaolo Cruz\nTin Ramos\nGab Navarro\nLiza Uy\nGrace Ong";
+        $links = collect(explode("\n", $paid))->mapWithKeys(fn ($l) => [PaidList::key($l) => User::where('email', $l)->orWhere('name', $l)->value('id') ?? 'guest'])->all();
+        $sunrise->addPaidPlayers(PaidList::rows($paid, $links));
+        // Three more joined in the app and haven't paid; one says they sent it.
+        $inApp = $members->reject(fn ($m) => $m->is($kai) || $sunrise->participants()->where('user_id', $m->id)->exists())->take(3)->values();
+        foreach ($inApp as $i => $m) {
+            Carbon::setTestNow(now()->addMinutes(20 + $i * 90));
+            $sunrise->join($m);
+        }
+        Carbon::setTestNow();
+        DB::table('pay_claims')->insert(['open_play_id' => $sunrise->id, 'user_id' => $inApp[1]->id, 'created_at' => now(), 'updated_at' => now()]);
         $this->withJoins($this->play($davao, "Beginners' Open Court", $sat->copy()->addDay()->setTime(16, 0), 2, 12, 11, 'rotate', null, 3), $members->slice(4, 6));
         $this->withJoins($this->play($digos, 'Midweek Mixer', Carbon::today()->next(Carbon::WEDNESDAY)->setTime(19, 0), 3, 16, 15, 'rotate', '₱100', 3), $members->slice(8, 12));
     }

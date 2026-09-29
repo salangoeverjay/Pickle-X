@@ -30,7 +30,7 @@
                     </div>
                 </div>
                 @if ($longest !== null)
-                    <x-live-court :play="$play" :court="$play->boardCourts()[$longest]" :index="$longest" class="h-42.5 shadow-[0_30px_50px_-25px_rgba(0,0,0,.6)] lg:h-52.5" />
+                    <x-live-court :play="$play" :court="$play->boardCourts()[$longest]" :index="$longest" class="h-42.5 shadow-[0_30px_50px_-25px_rgba(0,0,0,.6)] lg:aspect-[12/5] lg:h-auto" />
                 @endif
             </div>
         @endforeach
@@ -52,9 +52,13 @@
                             <span class="font-display text-[21px] leading-[1.2] font-bold tracking-[-0.02em]">{{ $play->title }}</span>
                             <span class="text-sm leading-[1.45] text-ink2">{{ $play->timeRange() }} · {{ $play->venue }} · {{ $play->courts }} courts</span>
                         </div>
-                        <button type="button" wire:click="startSession({{ $play->id }})" class="hidden h-11.5 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full border-[1.5px] border-line2 bg-transparent px-5 text-sm font-bold text-ink transition hover:brightness-96 active:scale-97 lg:inline-flex">
-                            <x-icon name="court" :size="16" />Start session
-                        </button>
+                        <div class="hidden shrink-0 items-center gap-2 lg:flex">
+                            <button type="button" wire:click="edit({{ $play->id }})" aria-label="Edit {{ $play->title }}" class="inline-flex h-11.5 cursor-pointer items-center gap-2 rounded-full border-[1.5px] border-line2 bg-transparent px-4.5 text-sm font-bold text-ink transition hover:brightness-96 active:scale-97"><x-icon name="edit" :size="17" />Edit</button>
+                            <button type="button" wire:click="askDelete({{ $play->id }})" aria-label="Delete {{ $play->title }}" title="Delete" class="flex size-11.5 cursor-pointer items-center justify-center rounded-full border-[1.5px] border-hot-line bg-transparent text-hot transition hover:brightness-96 active:scale-97"><x-icon name="trash" :size="18" /></button>
+                            <button type="button" wire:click="startSession({{ $play->id }})" class="inline-flex h-11.5 cursor-pointer items-center gap-2 rounded-full bg-ink px-5 text-sm font-bold text-bg transition hover:brightness-96 active:scale-97">
+                                <x-icon name="court" :size="16" />Start session
+                            </button>
+                        </div>
                     </div>
                     <div class="flex flex-col gap-3.5 lg:pl-23">
                         <div class="flex max-w-105 items-center gap-3">
@@ -78,10 +82,30 @@
                                 @endif
                             </div>
                         @endif
+                        @php($n = $play->playerCount())
+                        <button type="button" wire:click="openRoster({{ $play->id }})" aria-label="See the {{ $n }} {{ Str::plural('player', $n) }} who joined {{ $play->title }}"
+                                class="inline-flex min-h-11.5 cursor-pointer items-center gap-2.5 self-stretch rounded-full border-[1.5px] border-line2 bg-bg py-1.25 pr-4 pl-1.5 text-ink transition hover:brightness-96 active:scale-97 lg:self-start">
+                            @if ($n)
+                                <span aria-hidden="true" class="flex pr-0.5">
+                                    @foreach ($play->activeParticipants->take(5) as $p)
+                                        <x-avatar :src="$p->avatarUrl()" :name="$p->name" :color="$p->user ? $p->color() : '#E6E3D6'" class="-mr-2.25 size-8.5 border-2 border-bg text-[11px]" />
+                                    @endforeach
+                                    @if ($n > 5)
+                                        <span class="flex h-8.5 min-w-8.5 items-center justify-center rounded-full border-2 border-bg bg-ink px-1.5 font-mono text-[11px] font-semibold text-bg">+{{ $n - 5 }}</span>
+                                    @endif
+                                </span>
+                            @endif
+                            <span class="ml-1.5 flex-1 text-left text-sm font-bold whitespace-nowrap">{{ $n ? "See who's in" : 'No one yet' }}</span>
+                            <x-icon name="chevron-right" :size="18" />
+                        </button>
                     </div>
-                    <button type="button" wire:click="startSession({{ $play->id }})" class="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-full border-[1.5px] border-line2 bg-transparent px-4.5 text-[15px] font-bold text-ink transition hover:brightness-96 active:scale-97 lg:hidden">
-                        <x-icon name="court" :size="16" />Start session
-                    </button>
+                    <div class="flex items-center gap-2 lg:hidden">
+                        <button type="button" wire:click="startSession({{ $play->id }})" class="flex h-12 min-w-0 flex-1 cursor-pointer items-center justify-center gap-2 rounded-full bg-ink px-4 text-[15px] font-bold text-bg transition hover:brightness-96 active:scale-97">
+                            <x-icon name="court" :size="16" />Start session
+                        </button>
+                        <button type="button" wire:click="edit({{ $play->id }})" aria-label="Edit {{ $play->title }}" title="Edit" class="flex size-12 shrink-0 cursor-pointer items-center justify-center rounded-full border-[1.5px] border-line2 bg-transparent text-ink transition hover:brightness-96 active:scale-97"><x-icon name="edit" :size="17" /></button>
+                        <button type="button" wire:click="askDelete({{ $play->id }})" aria-label="Delete {{ $play->title }}" title="Delete" class="flex size-12 shrink-0 cursor-pointer items-center justify-center rounded-full border-[1.5px] border-hot-line bg-transparent text-hot transition hover:brightness-96 active:scale-97"><x-icon name="trash" :size="18" /></button>
+                    </div>
                 </div>
             @empty
                 <p class="m-0 rounded-[20px] border-[1.5px] border-dashed border-line2 p-5 text-ink2">No upcoming open plays. Create one and members can start joining.</p>
@@ -89,17 +113,51 @@
         </section>
 
         @if ($past->isNotEmpty())
-            <section class="flex flex-col gap-3">
-                <h2 class="m-0 font-display text-[22px] font-bold tracking-[-0.02em]">Past sessions</h2>
-                <div class="overflow-hidden rounded-[22px] border border-line bg-surface">
+            @php($medals = App\Support\Results::MEDALS)
+            <section aria-labelledby="past-title" class="flex flex-col gap-3.5">
+                <div class="flex items-baseline justify-between gap-2.5">
+                    <h2 id="past-title" class="m-0 font-display text-[22px] font-bold tracking-[-0.02em]">Concluded open plays</h2>
+                    <span class="font-mono text-xs text-ink3">{{ $hosted['sessions'] }} hosted</span>
+                </div>
+                <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                    <x-stat-tile label="Sessions run" :value="$hosted['sessions']" sub="Concluded open plays" />
+                    <x-stat-tile label="Games logged" :value="$hosted['games']" :sub="round($hosted['games'] / max(1, $hosted['sessions'])).' per session'" />
+                    <x-stat-tile label="Player check-ins" :value="$hosted['checkins']" :sub="round($hosted['checkins'] / max(1, $hosted['sessions'])).' players per session'" />
+                    <x-stat-tile label="Unique players" :value="$hosted['unique']" sub="Came to at least one" :accent="true" />
+                </div>
+                <div class="flex flex-col gap-2.5">
                     @foreach ($past as $play)
-                        <div wire:key="past-{{ $play->id }}" class="flex items-center gap-3.5 border-b border-line px-4.5 py-3.5 last:border-b-0">
-                            <span class="flex size-9.5 shrink-0 items-center justify-center rounded-xl bg-surface2 text-ink2"><x-icon name="check" :size="18" /></span>
-                            <div class="flex min-w-0 flex-1 flex-col">
-                                <span class="font-bold">{{ $play->title }}</span>
-                                <span class="text-[13px] text-ink3">{{ $play->whenLabel() }} · {{ $play->playerCount() }} players</span>
+                        @php($standings = $play->standings())
+                        @php($top3 = array_slice($standings, 0, 3))
+                        @php($players = max(count($standings), $play->active_participants_count))
+                        <div wire:key="past-{{ $play->id }}" class="flex flex-wrap items-center gap-x-4.5 gap-y-3.5 rounded-[22px] border border-line bg-surface p-3.5 transition duration-300 hover:-translate-y-1 hover:shadow-card lg:px-5 lg:py-4">
+                            <div class="flex min-w-0 flex-[1_1_260px] items-center gap-3.5">
+                                <x-date-tile :date="$play->starts_at" />
+                                <div class="flex min-w-0 flex-1 flex-col gap-1">
+                                    <span class="font-display text-lg leading-[1.2] font-bold tracking-[-0.02em]">{{ $play->title }}</span>
+                                    <span class="text-[13px] leading-[1.4] text-ink3">{{ $play->timeRange() }} · {{ $players }} players · {{ $play->games_count }} {{ Str::plural('game', $play->games_count) }} · {{ $play->courts }} courts</span>
+                                </div>
                             </div>
-                            <span class="font-mono text-[13px] text-ink2">{{ $play->games_count }} games</span>
+                            <div class="flex flex-auto flex-wrap items-center justify-between gap-x-4 gap-y-2.5 lg:justify-end">
+                                @if ($top3)
+                                    @php($winner = $play->participant($top3[0]['participant_id'])?->firstName())
+                                    <div class="flex items-center" aria-label="Top 3: {{ collect($top3)->map(fn ($r) => $play->participant($r['participant_id'])?->firstName())->join(', ') }}">
+                                        @foreach ($top3 as $i => $r)
+                                            @php($pp = $play->participant($r['participant_id']))
+                                            <span class="relative -mr-1.5">
+                                                <x-avatar :src="$pp?->avatarUrl()" :name="$pp?->name ?? '?'" :color="$pp?->color() ?? '#FFFFFF'" class="size-9 border-2 border-surface text-[11px]" />
+                                                <x-medal :rank="$i + 1" :size="16" ring="var(--color-surface)" :label="false" class="absolute -right-1.75 -bottom-1.25" />
+                                            </span>
+                                        @endforeach
+                                        <span class="ml-3.5 text-[13px] font-bold whitespace-nowrap">{{ $winner }} won<span class="hidden lg:inline"> the night</span></span>
+                                    </div>
+                                @else
+                                    <span class="text-[13px] font-bold text-ink3">No games logged</span>
+                                @endif
+                                @if ($top3)
+                                    <x-results-button :play="$play" />
+                                @endif
+                            </div>
                         </div>
                     @endforeach
                 </div>
@@ -107,11 +165,13 @@
         @endif
     </x-page>
 
+    <livewire:past-results />
+
     {{-- Create open play: bottom sheet on mobile, right drawer on desktop. --}}
     <div x-show="$wire.create" x-cloak x-on:keydown.escape.window="$wire.$set('create', false)" class="fixed inset-0 z-60 flex items-end justify-end">
         <button type="button" x-on:click="$wire.$set('create', false)" aria-label="Close" class="absolute inset-0 animate-fade cursor-pointer bg-[rgba(18,23,15,.45)] dark:bg-black/62"></button>
 
-        <form x-data="payQr(@js($lastQrUrl))" x-on:submit.prevent="publish()" x-on:create-published.window="reset($event.detail.qrUrl)" novalidate
+        <form x-data="payQr(@js($lastQrUrl))" x-on:submit.prevent="review()" x-on:create-published.window="reset($event.detail.qrUrl)" x-on:pay-qr-load.window="load($event.detail.url, $event.detail.label)" novalidate
               role="dialog" aria-modal="true" aria-labelledby="create-title"
               x-show="$wire.create" x-trap.noscroll="$wire.create"
               x-transition:enter="transition-transform duration-[420ms] ease-[cubic-bezier(.2,.8,.2,1)]"
@@ -121,14 +181,18 @@
             <div class="flex shrink-0 items-center justify-between gap-3 border-b border-line pt-5 pr-5 pb-4 pl-6">
                 <div class="flex flex-col gap-0.5">
                     <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">{{ $club }}</span>
-                    <h2 id="create-title" class="m-0 font-display text-[26px] font-extrabold tracking-[-0.03em]">Create open play</h2>
+                    <h2 id="create-title" class="m-0 font-display text-[26px] font-extrabold tracking-[-0.03em]">{{ $review ? ($editId ? 'Review changes' : 'Review open play') : ($editId ? 'Edit open play' : 'Create open play') }}</h2>
                 </div>
                 <button type="button" x-on:click="$wire.$set('create', false)" aria-label="Close" class="flex size-11 cursor-pointer items-center justify-center rounded-full border border-line bg-surface text-ink transition hover:brightness-96 active:scale-97">
                     <x-icon name="x" :size="18" :stroke="2.2" />
                 </button>
             </div>
 
-            <div class="flex min-h-0 flex-1 flex-col gap-4.5 overflow-x-hidden overflow-y-auto px-6 py-5">
+            <div x-ref="sheetBody" class="flex min-h-0 flex-1 flex-col gap-4.5 overflow-x-hidden overflow-y-auto px-6 py-5">
+                @if ($review)
+                    @include('livewire.organizer.partials.create-review')
+                @endif
+                <div x-show="! $wire.review" class="contents">
                 <x-field label="Title" id="c-title" wire:model="title" placeholder="e.g. Saturday Sunrise Rally" />
                 <x-field label="Venue" id="c-venue" wire:model="venue" placeholder="Court name and city" />
 
@@ -269,26 +333,68 @@
                 <div class="flex flex-col gap-2">
                     <label for="c-paid" class="text-[13px] font-bold text-ink2">Paid players <span class="font-medium text-ink3">(one per line)</span></label>
                     <textarea id="c-paid" rows="6" aria-describedby="c-paid-hint" wire:model.live.debounce.400ms="paid" placeholder="Rico Dizon&#10;mika@picklex.app&#10;Juan Dela Cruz" class="input h-auto resize-y py-3.5 font-mono text-sm leading-[1.6]"></textarea>
-                    <span id="c-paid-hint" class="text-xs text-ink3">Paste names or emails. Anyone with a PickleX account is linked automatically and joins the open play; everyone else is added as a guest.</span>
+                    <span id="c-paid-hint" class="text-xs text-ink3">Paste names or emails. We suggest matching PickleX accounts, and you link each one yourself. Linked players join the open play; everyone else is added as a guest.</span>
                     @if ($paidPreview)
                         @php($linkedN = collect($paidPreview)->whereNotNull('user')->count())
-                        @php($guestN = count($paidPreview) - $linkedN)
+                        @php($reviewN = collect($paidPreview)->where('review', true)->count())
+                        @php($guestN = count($paidPreview) - $linkedN - $reviewN)
                         <div class="flex animate-fade flex-col overflow-hidden rounded-2xl border border-line bg-surface">
-                            <div class="border-b border-line px-3.5 py-2.5 text-[13px] font-bold">{{ count($paidPreview) }} paid · {{ $linkedN }} linked to accounts · {{ $guestN }} {{ Str::plural('guest', $guestN) }}</div>
+                            <div class="border-b border-line px-3.5 py-2.5 text-[13px] font-bold">
+                                {{ count($paidPreview) }} {{ Str::plural('name', count($paidPreview)) }} · {{ $linkedN }} linked · {{ $reviewN ? $reviewN.' to review · ' : '' }}{{ $guestN }} {{ Str::plural('guest', $guestN) }}
+                            </div>
+                            @if ($reviewN)
+                                <div class="flex items-start gap-2 border-b border-line bg-hot-soft px-3.5 py-2.5 text-xs leading-[1.45] font-semibold text-hot">
+                                    <x-icon name="alert" :size="16" class="mt-px" />
+                                    <span>{{ $reviewN }} {{ $reviewN === 1 ? 'name has' : 'names have' }} possible accounts. Nothing is linked until you pick one, and unlinked names join as guests.</span>
+                                </div>
+                            @endif
                             @foreach ($paidPreview as $row)
-                                <div wire:key="paid-{{ $loop->index }}" class="flex items-center gap-2.5 border-b border-line px-3.5 py-2 last:border-b-0">
-                                    @if ($row['user'])
-                                        <x-avatar :name="$row['name']" :color="$row['user']->color()" :src="$row['user']->avatarUrl()" class="size-7.5 text-[11px]" />
-                                    @else
-                                        <span class="flex size-7.5 shrink-0 items-center justify-center rounded-full bg-surface2 text-[11px] font-extrabold text-ink2">{{ initials($row['name']) }}</span>
-                                    @endif
-                                    <span class="flex min-w-0 flex-1 flex-col">
-                                        <span class="truncate text-sm font-bold">{{ $row['name'] }}</span>
-                                        @if ($row['user'] && mb_strtolower($row['line']) !== mb_strtolower($row['name']))
-                                            <span class="truncate font-mono text-[11px] text-ink3">from “{{ $row['line'] }}”</span>
+                                @php($u = $row['user'])
+                                <div wire:key="paid-{{ md5($row['key']) }}" class="flex flex-col gap-2 border-b border-line px-3.5 py-2.5 last:border-b-0">
+                                    <div class="flex items-center gap-2.5">
+                                        @if ($u)
+                                            <x-avatar :name="$u->name" :color="$u->color()" :src="$u->avatarUrl()" class="size-7.5 text-[11px]" />
+                                        @else
+                                            <span class="flex size-7.5 shrink-0 items-center justify-center rounded-full bg-surface2 text-[11px] font-extrabold text-ink2">{{ initials($row['line']) }}</span>
                                         @endif
-                                    </span>
-                                    <span class="inline-flex h-6 shrink-0 items-center rounded-full px-2.25 text-[11px] font-bold {{ \App\Livewire\Organizer\OpenPlays::PAID_TAGS[$row['how']][1] }}">{{ \App\Livewire\Organizer\OpenPlays::PAID_TAGS[$row['how']][0] }}</span>
+                                        <span class="flex min-w-0 flex-1 flex-col">
+                                            <span class="truncate font-mono text-[13px] font-semibold">{{ $row['line'] }}</span>
+                                            <span @class(['text-xs leading-[1.35] font-semibold', 'text-lime-text' => $u, 'text-hot' => $row['review'], 'text-ink3' => ! $u && ! $row['review']])>
+                                                @if ($u)
+                                                    Linked to {{ $u->name }} · {{ $u->email }}
+                                                @elseif ($row['review'])
+                                                    {{ count($row['cands']) === 1 ? '1 possible account. Link it only if it is them.' : count($row['cands']).' possible accounts. Link the right one, or keep as guest.' }}
+                                                @elseif ($row['guest'])
+                                                    Guest · you chose not to link an account
+                                                @else
+                                                    Guest · no matching account
+                                                @endif
+                                            </span>
+                                        </span>
+                                        @if ($row['review'] || (! $u && ! $row['guest']))
+                                            <span @class(['inline-flex h-6 shrink-0 items-center rounded-full px-2.25 text-[11px] font-bold', 'bg-hot-soft text-hot' => $row['review'], 'bg-surface2 text-ink2' => ! $row['review']])>{{ $row['review'] ? 'Needs review' : 'Guest' }}</span>
+                                        @endif
+                                        @if ($u || $row['guest'])
+                                            <button type="button" wire:click="unlinkPaid(@js($row['key']))" @if ($u) aria-label="Unlink {{ $row['line'] }}" @endif
+                                                    class="h-7.5 shrink-0 cursor-pointer rounded-full border-[1.5px] border-line2 px-2.5 text-xs font-bold text-ink transition hover:brightness-96 active:scale-97">{{ $u ? 'Unlink' : 'Undo' }}</button>
+                                        @endif
+                                    </div>
+                                    @if ($row['review'])
+                                        <div class="flex flex-col gap-1.5 pl-10">
+                                            @foreach ($row['cands'] as $c)
+                                                <div class="flex items-center gap-2 rounded-xl bg-surface2 py-1.5 pr-1.5 pl-2">
+                                                    <x-avatar :name="$c['user']->name" :color="$c['user']->color()" :src="$c['user']->avatarUrl()" class="size-6.5 text-[10px]" />
+                                                    <span class="flex min-w-0 flex-1 flex-col">
+                                                        <span class="truncate text-[13px] font-bold">{{ $c['user']->name }}</span>
+                                                        <span class="truncate text-[11px] text-ink3"><strong class="font-bold text-ink2">{{ $c['why'] }}</strong> · {{ $c['user']->email }}{{ $c['user']->club ? ' · '.$c['user']->club : '' }}</span>
+                                                    </span>
+                                                    <button type="button" wire:click="linkPaid(@js($row['key']), {{ $c['user']->id }})" aria-label="Link {{ $row['line'] }} to {{ $c['user']->name }}, {{ $c['user']->email }}"
+                                                            class="h-8 shrink-0 cursor-pointer rounded-full bg-ink px-3 text-xs font-bold text-bg transition hover:brightness-96 active:scale-97">Link</button>
+                                                </div>
+                                            @endforeach
+                                            <button type="button" wire:click="keepGuest(@js($row['key']))" class="h-8 cursor-pointer self-start px-1 text-xs font-bold text-ink2 underline underline-offset-3">None of these · keep as guest</button>
+                                        </div>
+                                    @endif
                                 </div>
                             @endforeach
                         </div>
@@ -334,7 +440,7 @@
                         <div x-show="qr" x-cloak class="flex animate-fade flex-wrap items-center gap-3.5">
                             <div class="shrink-0 rounded-2xl border border-[#DEDCD0] bg-white p-2"><img :src="src" alt="Your payment QR" class="block size-30 object-contain"></div>
                             <div class="flex min-w-45 flex-1 flex-col gap-2">
-                                <span x-show="qr === 'saved'" class="inline-flex h-6.5 items-center gap-1.5 self-start rounded-full border border-line bg-surface2 px-2.5 text-xs font-bold text-ink2"><x-icon name="history" :size="14" />Saved from your last open play</span>
+                                <span x-show="qr === 'saved'" class="inline-flex h-6.5 items-center gap-1.5 self-start rounded-full border border-line bg-surface2 px-2.5 text-xs font-bold text-ink2"><x-icon name="history" :size="14" /><span x-text="savedLabel">Saved from your last open play</span></span>
                                 <span x-show="check === 'ok'" class="inline-flex h-6.5 animate-snap items-center gap-1.5 self-start rounded-full bg-lime-soft px-2.5 text-xs font-extrabold text-lime-text"><x-icon name="check" :size="14" :stroke="2.4" />QR code found</span>
                                 <span x-show="check === 'none'" role="alert" class="text-[13px] leading-[1.45] font-semibold text-hot">We couldn't spot a QR code in this image. Check that it's the QR from your payment app.</span>
                                 <span class="truncate font-mono text-xs text-ink3" x-text="name"></span>
@@ -363,12 +469,37 @@
                 @if ($error)
                     <x-alert>{{ $error }}</x-alert>
                 @endif
+
+                @if ($editId)
+                    <button type="button" wire:click="askDelete({{ $editId }})" class="inline-flex h-10 cursor-pointer items-center gap-2 self-start px-1 text-sm font-bold text-hot transition hover:brightness-96">
+                        <x-icon name="trash" :size="17" />Delete this open play
+                    </button>
+                @endif
+                </div>
             </div>
 
             <div class="flex shrink-0 gap-2.5 border-t border-line bg-bg px-6 pt-3.5 pb-5.5">
-                <button type="button" x-on:click="$wire.$set('create', false)" class="h-13 cursor-pointer rounded-full border-[1.5px] border-line2 bg-transparent px-5 text-[15px] font-bold text-ink transition hover:brightness-96 active:scale-97">Cancel</button>
-                <button type="submit" class="h-13 flex-1 cursor-pointer rounded-full border-2 border-cta-border bg-lime text-[15px] font-extrabold text-on-lime shadow-cta transition hover:brightness-96 active:scale-97">Publish open play</button>
+                @if ($review)
+                    <button type="button" wire:click="backToForm" class="inline-flex h-13 cursor-pointer items-center gap-1.5 rounded-full border-[1.5px] border-line2 bg-transparent px-4.5 text-[15px] font-bold text-ink transition hover:brightness-96 active:scale-97">
+                        <x-icon name="chevron-left" :size="17" :stroke="2.2" />Back to edit
+                    </button>
+                    <button type="button" x-on:click="publish()" wire:loading.attr="disabled" @disabled($editId && ! $reviewData['changes'])
+                            class="h-13 flex-1 cursor-pointer rounded-full border-2 border-cta-border bg-lime text-[15px] font-extrabold text-on-lime shadow-cta transition hover:brightness-96 active:scale-97 disabled:cursor-not-allowed disabled:opacity-50">{{ $editId ? 'Save changes' : 'Publish open play' }}</button>
+                @else
+                    <button type="button" x-on:click="$wire.$set('create', false)" class="h-13 cursor-pointer rounded-full border-[1.5px] border-line2 bg-transparent px-5 text-[15px] font-bold text-ink transition hover:brightness-96 active:scale-97">Cancel</button>
+                    <button type="submit" wire:loading.attr="disabled" class="inline-flex h-13 flex-1 cursor-pointer items-center justify-center gap-2 rounded-full border-2 border-cta-border bg-lime text-[15px] font-extrabold text-on-lime shadow-cta transition hover:brightness-96 active:scale-97">
+                        {{ $editId ? 'Review changes' : 'Review details' }}<x-icon name="arrow-right" :size="17" :stroke="2.2" />
+                    </button>
+                @endif
             </div>
         </form>
     </div>
+
+    @if ($roster)
+        @include('livewire.organizer.partials.roster')
+    @endif
+
+    @if ($deleting)
+        @include('livewire.organizer.partials.delete-play', ['play' => $deleting])
+    @endif
 </x-app-shell>

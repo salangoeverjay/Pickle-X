@@ -5,42 +5,51 @@ namespace App\Support;
 use App\Models\User;
 
 /**
- * Matches an organizer's pasted "paid players" list (one name or email per line) to accounts.
- * Order of attempts: exact email, exact full name, unique first name; otherwise a guest.
+ * An organizer's pasted "paid players" list (one name or email per line). Every line is a guest
+ * until the organizer links it to an account; AccountMatch suggests possible accounts.
+ * $links maps a line's key (lowercased) to a user id, or "guest" when they chose not to link.
  */
 class PaidList
 {
+    public static function key(string $line): string
+    {
+        return mb_strtolower(preg_replace('/\s+/', ' ', trim($line)));
+    }
+
     /**
-     * @return array<int, array{line: string, user: ?User, how: 'email'|'name'|'first'|'guest', name: string}>
+     * @return array<int, array{line: string, key: string, user: ?User, guest: bool, cands: array, review: bool, name: string}>
      */
-    public static function match(string $text): array
+    public static function rows(string $text, array $links = [], ?string $club = null): array
     {
         $lines = collect(preg_split('/\R/', $text))
             ->map(fn ($l) => preg_replace('/\s+/', ' ', trim($l)))
             ->filter()
-            ->unique(fn ($l) => mb_strtolower($l))
+            ->unique(fn ($l) => self::key($l))
             ->values();
 
         if ($lines->isEmpty()) {
             return [];
         }
 
-        // ponytail: loads every member once per call; switch to targeted where-in queries if the directory gets large.
-        $members = User::where('role', 'member')->get(['id', 'name', 'email', 'avatar_color', 'avatar', 'organizer_status', 'role']);
-        $byEmail = $members->keyBy(fn ($u) => mb_strtolower($u->email));
-        $byName = $members->groupBy(fn ($u) => mb_strtolower($u->name));
-        $byFirst = $members->groupBy(fn ($u) => mb_strtolower(strtok($u->name, ' ')));
+        $ids = collect($links)->filter(fn ($v) => is_int($v) || ctype_digit((string) $v))->map(fn ($v) => (int) $v);
+        $linked = User::where('role', 'member')->whereIn('id', $ids->values())->get()->keyBy('id');
 
-        return $lines->map(function ($line) use ($byEmail, $byName, $byFirst) {
-            $key = mb_strtolower($line);
-            [$user, $how] = match (true) {
-                strpos($line, '@') > 0 => [$byEmail->get($key), 'email'],
-                ($byName->get($key)?->count() ?? 0) === 1 => [$byName->get($key)->first(), 'name'],
-                ! str_contains($line, ' ') && ($byFirst->get($key)?->count() ?? 0) === 1 => [$byFirst->get($key)->first(), 'first'],
-                default => [null, 'guest'],
-            };
+        $rows = $lines->map(function ($line) use ($links, $linked) {
+            $key = self::key($line);
+            $user = isset($links[$key]) && $links[$key] !== 'guest' ? $linked->get((int) $links[$key]) : null;
 
-            return ['line' => $line, 'user' => $user, 'how' => $user ? $how : 'guest', 'name' => $user?->name ?? $line];
+            return ['line' => $line, 'key' => $key, 'user' => $user, 'guest' => ($links[$key] ?? null) === 'guest', 'cands' => [], 'review' => false, 'name' => $user?->name ?? $line];
         })->all();
+
+        // Suggestions for lines that are neither linked nor kept as a guest (accounts already linked are left out).
+        $taken = collect($rows)->pluck('user.id')->filter()->all();
+        foreach ($rows as &$r) {
+            if (! $r['user'] && ! $r['guest']) {
+                $r['cands'] = AccountMatch::find($r['line'], 3, $taken, $club)->all();
+                $r['review'] = (bool) $r['cands'];
+            }
+        }
+
+        return $rows;
     }
 }

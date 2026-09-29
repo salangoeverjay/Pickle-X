@@ -263,6 +263,7 @@ class Settings extends Component
                 'notify.upNext' => ["I'm up next", 'When you are in the next group to play'],
                 'notify.liveStart' => ['An open play I joined goes live', 'So you know when to head to the courts'],
                 'notify.newPlays' => ['New open plays from my clubs', 'Get first pick of the spots'],
+                'notify.sessionRecap' => ['Recap after each open play', 'Your record, your games and the final standings'],
                 'notify.recap' => ['Weekly stats recap', 'Games, win rate and ranking moves every Monday'],
                 'privacy.ranked' => ['Show me in club rankings', 'Turn off to hide your row from other members'],
                 'privacy.statsPublic' => ['Let others see who I play with', 'Your partners and opponents list'],
@@ -283,6 +284,9 @@ class Settings extends Component
         $picker = [
             'current' => ['avatar' => $user->avatar, 'url' => $user->avatarUrl(), 'color' => $user->color()],
             'presets' => collect(User::AVATAR_PRESETS)->map(fn ($label, $id) => ['label' => $label, 'url' => asset("avatars/presets/{$id}.svg")]),
+            'groups' => User::AVATAR_GROUPS,
+            // preset id => group key, so the picker opens on the group of your current avatar.
+            'groupOf' => collect(User::AVATAR_GROUPS)->flatMap(fn ($g, $key) => array_fill_keys($g[2], $key)),
             'colors' => User::AVATARS,
         ];
 

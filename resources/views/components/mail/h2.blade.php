@@ -1,0 +1,1 @@
+<p class="em-ink" style="margin: 0 0 12px; font-family: 'Bricolage Grotesque', 'Arial Black', Helvetica, Arial, sans-serif; font-weight: 700; font-size: 19px; letter-spacing: -0.02em; color: #12170F;">{{ $slot }}</p>

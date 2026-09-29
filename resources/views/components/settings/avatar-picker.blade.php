@@ -86,18 +86,43 @@
                     <div id="av-panel" role="tabpanel" :aria-labelledby="'av-tab-' + tab" class="flex flex-col gap-3.5">
                         {{-- PickleX avatars --}}
                         <div x-show="tab === 'presets'" class="flex animate-fade flex-col gap-3.5">
-                            <div role="radiogroup" aria-label="PickleX avatars" class="grid grid-cols-4 gap-2.5 lg:grid-cols-6">
-                                @foreach ($picker['presets'] as $id => $preset)
-                                    <button type="button" role="radio" x-bind:aria-checked="sel === '{{ $id }}'" aria-label="{{ $preset['label'] }}" x-on:click="sel = '{{ $id }}'; error = ''"
-                                            :class="sel === '{{ $id }}' ? 'border-ink bg-surface' : 'border-line'"
-                                            class="relative flex cursor-pointer flex-col items-center gap-1.5 rounded-[18px] border-2 px-1 py-2 text-ink {{ $btn }}">
-                                        <img src="{{ $preset['url'] }}" alt="" class="aspect-square w-full max-w-17 rounded-full shadow-[0_0_0_1px_var(--color-line)]">
-                                        <span aria-hidden="true" class="max-w-full truncate text-center text-xs leading-[1.2] font-bold">{{ $preset['label'] }}</span>
-                                        <span x-show="sel === '{{ $id }}'" aria-hidden="true" class="absolute top-1 right-1 flex size-6 animate-snap items-center justify-center rounded-full border-2 border-bg bg-lime text-on-lime"><x-icon name="check" :size="13" :stroke="2.6" /></span>
+                            {{-- Category bar: jumps to a group; scrolling the grid lights up the group in view (like an emoji picker). --}}
+                            <div role="tablist" aria-label="Avatar categories" class="flex gap-1 rounded-2xl border-[1.5px] border-line bg-surface2 p-1">
+                                @foreach ($picker['groups'] as $key => [$label, $icon, $ids])
+                                    <button type="button" role="tab" x-bind:aria-selected="cat === '{{ $key }}'" aria-controls="av-grid" aria-label="{{ $label }}" title="{{ $label }}" x-on:click="jump('{{ $key }}')"
+                                            :class="cat === '{{ $key }}' ? 'grow-[3.3] bg-surface text-ink shadow-[0_1px_2px_rgba(18,23,15,.12),0_4px_12px_-6px_rgba(18,23,15,.25)] lg:grow-[2.4]' : 'grow text-ink3'"
+                                            class="relative flex h-10.5 min-w-0 basis-0 cursor-pointer items-center justify-center gap-1.5 rounded-xl px-2 text-[13px] font-bold transition-[flex-grow,background-color,color,box-shadow] duration-200">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="shrink-0"><path d="{{ $icon }}" /></svg>
+                                        <span x-show="cat === '{{ $key }}'" class="min-w-0 animate-fade truncate">{{ $label }}</span>
+                                        <span x-show="{{ Js::from($ids) }}.includes(sel)" aria-hidden="true" class="absolute top-1.25 right-1.5 size-1.75 rounded-full bg-lime shadow-[0_0_0_1.5px_var(--color-ink)]"></span>
                                     </button>
                                 @endforeach
                             </div>
-                            <p class="m-0 text-[13px] text-ink3">Made for PickleX. Anyone in your open plays sees it next to your name.</p>
+
+                            <div id="av-grid" x-ref="grid" x-on:scroll.debounce.30ms="scrolled()" role="radiogroup" aria-label="PickleX avatars"
+                                 class="relative -mx-1.5 -mt-0.5 flex max-h-73 flex-col gap-4.5 overflow-y-auto pt-0.5 pr-1.5 pb-1.5 pl-0.5 [scrollbar-width:thin] lg:max-h-79.5">
+                                @foreach ($picker['groups'] as $key => [$label, $icon, $ids])
+                                    <section id="av-sec-{{ $key }}" data-group="{{ $key }}" role="group" aria-labelledby="av-h-{{ $key }}" class="flex flex-col gap-2.5">
+                                        <div class="sticky -top-0.5 z-2 -mr-1.5 -mb-1 -ml-0.5 flex items-baseline justify-between gap-2 bg-bg py-1.5 pr-1.5 pl-0.5">
+                                            <h3 id="av-h-{{ $key }}" class="m-0 text-sm font-extrabold">{{ $label }}</h3>
+                                            <span class="font-mono text-[11px] text-ink3">{{ count($ids) }} avatars</span>
+                                        </div>
+                                        <div class="grid grid-cols-4 gap-2.5 lg:grid-cols-6">
+                                            @foreach ($ids as $id)
+                                                @php($preset = $picker['presets'][$id])
+                                                <button type="button" role="radio" x-bind:aria-checked="sel === '{{ $id }}'" aria-label="{{ $preset['label'] }}" x-on:click="sel = '{{ $id }}'; error = ''"
+                                                        :class="sel === '{{ $id }}' ? 'border-ink bg-surface' : 'border-line'"
+                                                        class="relative flex cursor-pointer flex-col items-center gap-1.5 rounded-[18px] border-2 px-1 py-2 text-ink {{ $btn }}">
+                                                    <img src="{{ $preset['url'] }}" alt="" loading="lazy" class="aspect-square w-full max-w-17 rounded-full shadow-[0_0_0_1px_var(--color-line)]">
+                                                    <span aria-hidden="true" class="max-w-full truncate text-center text-xs leading-[1.2] font-bold">{{ $preset['label'] }}</span>
+                                                    <span x-show="sel === '{{ $id }}'" aria-hidden="true" class="absolute top-1 right-1 flex size-6 animate-snap items-center justify-center rounded-full border-2 border-bg bg-lime text-on-lime"><x-icon name="check" :size="13" :stroke="2.6" /></span>
+                                                </button>
+                                            @endforeach
+                                        </div>
+                                    </section>
+                                @endforeach
+                            </div>
+                            <p class="m-0 text-[13px] text-ink3">{{ count($picker['presets']) }} avatars made for PickleX. Anyone in your open plays sees yours next to your name.</p>
                         </div>
 
                         {{-- Upload + crop --}}

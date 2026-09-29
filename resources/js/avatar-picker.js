@@ -11,6 +11,8 @@ document.addEventListener('alpine:init', () => {
         tab: 'presets',
         current: config.current, // { avatar, url, color }
         sel: null,
+        cat: 'pb', // avatar group in view (category bar)
+        jumpUntil: 0,
         color: config.current.color,
         crop: null, // { src, w, h, zoom, x, y, name } x/y run -1..1 (0 = centred)
         img: null,
@@ -23,11 +25,34 @@ document.addEventListener('alpine:init', () => {
         show(tab) {
             const [kind, value] = (this.current.avatar || '').split(':');
             this.sel = kind === 'preset' ? value : null;
+            this.cat = (this.sel && config.groupOf[this.sel]) || 'pb';
             this.color = this.current.color;
             this.tab = tab || (kind === 'photo' ? 'upload' : 'presets');
             this.error = '';
             this.crop = null;
             this.open = true;
+            // Open scrolled to the group of your current avatar.
+            this.$nextTick(() => this.cat !== 'pb' && this.jump(this.cat, false));
+        },
+
+        // ------------------------------------------------------------ avatar groups
+        jump(cat, smooth = true) {
+            this.cat = cat;
+            this.jumpUntil = Date.now() + 700;
+            const grid = this.$refs.grid;
+            const sec = grid?.querySelector(`#av-sec-${cat}`);
+            if (sec) grid.scrollTo({ top: Math.max(0, sec.offsetTop - 2), behavior: smooth ? 'smooth' : 'auto' });
+        },
+
+        scrolled() {
+            if (Date.now() < this.jumpUntil) return;
+            const grid = this.$refs.grid;
+            const secs = [...grid.querySelectorAll('section[data-group]')];
+            if (!secs.length) return;
+            let cur = secs[0];
+            for (const s of secs) if (s.offsetTop - grid.scrollTop <= 48) cur = s;
+            if (grid.scrollTop + grid.clientHeight >= grid.scrollHeight - 2) cur = secs[secs.length - 1];
+            this.cat = cur.dataset.group;
         },
 
         close() {

@@ -3,6 +3,8 @@
 namespace App\Livewire\Member;
 
 use App\Models\OpenPlay;
+use App\Support\Emails;
+use App\Support\Results;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Livewire\Attributes\Title;
@@ -47,6 +49,13 @@ class OpenPlays extends Component
         }
 
         $this->dispatch('toast', message: $play->isLive() ? "You're in the queue. Check in when you reach the courts." : "You're in. See you {$play->whenLabel()}.");
+
+        $user = auth()->user();
+        Emails::send($user, Emails::joined($play, $user));
+        $organizer = $play->organizer;
+        if ($organizer && $organizer->id !== $user->id && $organizer->pref('notify.joins')) {
+            Emails::send($organizer, Emails::playerJoined($play, $user));
+        }
     }
 
     public function leavePlay(int $id): void
@@ -115,6 +124,7 @@ class OpenPlays extends Component
             'paidIds' => $user->participations()->whereNull('left_at')->where('paid', true)->pluck('open_play_id')->all(),
             'claimedIds' => DB::table('pay_claims')->where('user_id', $user->id)->pluck('open_play_id')->all(),
             'payPlay' => $this->payFor ? $plays->firstWhere('id', $this->payFor) : null,
+            'history' => Results::memberHistory($user),
         ]);
     }
 }

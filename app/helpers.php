@@ -41,3 +41,16 @@ if (! function_exists('ago')) {
         return $m >= 60 ? intdiv($m, 60).'h '.($m % 60).'m' : ($m ? $m.'m' : 'just now');
     }
 }
+
+if (! function_exists('error_id')) {
+    /** One support ID per request ("PX-7F3A-2C91"): shown on the 500 page and added to the error log. */
+    function error_id(): string
+    {
+        if (! app()->bound('error_id')) {
+            $hex = strtoupper(bin2hex(random_bytes(4)));
+            app()->instance('error_id', 'PX-'.substr($hex, 0, 4).'-'.substr($hex, 4));
+        }
+
+        return app('error_id');
+    }
+}

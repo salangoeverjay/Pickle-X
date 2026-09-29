@@ -91,7 +91,8 @@ class CourtBoardTest extends TestCase
         $this->assertSame('checkin', $play->statusFor($late)['state']);
 
         $play->checkIn([$play->participants()->where('user_id', $late->id)->value('id')]);
-        $this->assertSame('queued', $play->fresh()->statusFor($late)['state']);
+        // First in line, but only 1 of the 4 needed is ready.
+        $this->assertSame(['state' => 'waiting', 'need' => 3], collect($play->fresh()->statusFor($late))->only('state', 'need')->all());
 
         $play->leave($late);
         $this->assertNull($play->statusFor($late));

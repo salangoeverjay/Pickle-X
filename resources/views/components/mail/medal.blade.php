@@ -1,0 +1,4 @@
+{{-- Email version of x-medal: a metal-coloured disc with rim and engraved rank (no SVG or gradients, which email clients drop). --}}
+@props(['rank', 'size' => 22, 'ring' => null, 'display' => false])
+@php([$fill, $rim, $ink] = [1 => ['#F2C94C', '#A87812', '#5E4003'], 2 => ['#DCE0D9', '#8C948A', '#394039'], 3 => ['#E3A57A', '#96552A', '#4F250D']][$rank])
+<div style="width: {{ $size }}px; height: {{ $size }}px; line-height: {{ $size - 4 }}px; border-radius: 50%; background: {{ $fill }}; border: 2px solid {{ $rim }}; {{ $ring ? "box-shadow: 0 0 0 2px {$ring};" : '' }} color: {{ $ink }}; text-align: center; font-family: {{ $display ? "'Bricolage Grotesque', 'Arial Black', Helvetica, Arial, sans-serif" : "'Barlow Condensed', 'Arial Narrow', sans-serif; font-size-adjust: 0.58; font-variant-numeric: tabular-nums" }}; font-weight: 800; font-size: {{ round($size * 0.44) }}px; box-sizing: border-box;">{{ $rank }}</div>

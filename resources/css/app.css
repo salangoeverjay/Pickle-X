@@ -8,7 +8,7 @@
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
     --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
-    --font-mono: 'Geist Mono', ui-monospace, monospace;
+    --font-mono: 'Barlow Condensed', 'Arial Narrow', sans-serif;
 
     /* Light theme tokens; dark overrides below. */
     --color-bg: #F3F2EA;
@@ -120,6 +120,12 @@
         outline: 2px solid var(--color-focus);
         outline-offset: 2px;
     }
+}
+
+/* Labels, times and codes: condensed, sized up to match the body x-height, digits in even columns. */
+.font-mono {
+    font-size-adjust: 0.58;
+    font-variant-numeric: tabular-nums;
 }
 
 /* Backgrounds and multi-step animations too long for utility classes. */

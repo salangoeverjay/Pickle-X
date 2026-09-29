@@ -3,6 +3,7 @@
 namespace App\Livewire\Auth;
 
 use App\Models\User;
+use App\Support\Emails;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Title;
@@ -75,6 +76,7 @@ class Signup extends Component
         ]);
 
         $this->reset('password');
+        Emails::send($user, Emails::welcome($user));
 
         // Everyone can play right away; organizer tools unlock on this account once approved.
         Auth::login($user);

@@ -16,6 +16,12 @@ class Login extends Component
 
     public string $password = '';
 
+    public function mount(): void
+    {
+        // Filled in after a password reset.
+        $this->email = (string) session('login_email', '');
+    }
+
     public function login()
     {
         $this->validate(

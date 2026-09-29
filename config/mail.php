@@ -110,6 +110,9 @@ return [
     |
     */
 
+    // Password reset codes come from here; ordinary mail uses 'from'.
+    'security_address' => env('MAIL_SECURITY_ADDRESS', 'no-reply@picklex.app'),
+
     'from' => [
         'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),

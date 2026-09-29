@@ -3,8 +3,13 @@
 namespace App\Livewire\Organizer;
 
 use App\Models\OpenPlay;
+use App\Models\User;
+use App\Support\AccountMatch;
+use App\Support\Emails;
+use App\Support\Results;
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
+use Illuminate\Support\Collection;
 use InvalidArgumentException;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -19,6 +24,11 @@ class CourtBoard extends Component
     public array $selected = [];
 
     public string $walkin = '';
+
+    /** Walk-in: account the organizer picked from the matches (waiting on "Yes, add"), and whether Add was pressed with matches unanswered. */
+    public ?int $walkinPick = null;
+
+    public bool $walkinTried = false;
 
     /** Court whose score sheet is open; null when closed. Null scores = blank input. */
     public ?int $scoreCourt = null;
@@ -68,10 +78,29 @@ class CourtBoard extends Component
         $play = $this->play();
         $games = $play->games()->count();
         $play->end();
+        self::sendRecaps($play->fresh());
 
         session()->flash('toast', "Session ended · {$games} ".($games === 1 ? 'game' : 'games').' logged');
 
         return $this->redirectRoute('organizer.plays', navigate: true);
+    }
+
+    /** Recap emails once a session ends: one per player who logged games (unless turned off), one for the organizer. */
+    public static function sendRecaps(OpenPlay $play): void
+    {
+        $results = new Results($play);
+        $ids = collect($results->rows)->pluck('participant_id');
+        $play->participants()->whereIn('id', $ids)->whereNotNull('user_id')->with('user')->get()
+            ->pluck('user')->filter(fn ($u) => $u && $u->pref('notify.sessionRecap'))
+            ->each(function (User $u) use ($play, $results) {
+                if ($mail = Emails::recap($play, $u, $results)) {
+                    Emails::send($u, $mail);
+                }
+            });
+
+        if ($play->organizer) {
+            Emails::send($play->organizer, Emails::recapOrganizer($play, $results));
+        }
     }
 
     public function fillCourt(int $n): void
@@ -183,17 +212,92 @@ class CourtBoard extends Component
         }
     }
 
+    public function updatedWalkin(): void
+    {
+        $this->walkinPick = null;
+        $this->walkinTried = false;
+    }
+
+    /** Add: no matching account adds a guest; with matches the organizer has to pick one or choose guest. */
     public function addWalkin(): void
     {
         $this->walkin = trim($this->walkin);
         $this->validate(['walkin' => 'required|string|max:60'], [], ['walkin' => 'name']);
 
+        if ($this->walkinMatches()->isNotEmpty()) {
+            $this->walkinTried = true;
+
+            return;
+        }
+        $this->addGuestWalkin();
+    }
+
+    public function addGuestWalkin(): void
+    {
+        $this->walkin = trim($this->walkin);
+        $this->validate(['walkin' => 'required|string|max:60'], [], ['walkin' => 'name']);
         $play = $this->play();
 
         if ($this->attempt(fn () => $play->addWalkin($this->walkin)) !== false) {
-            $this->dispatch('toast', message: "{$this->walkin} joined the queue as a walk-in");
-            $this->walkin = '';
+            $this->dispatch('toast', message: "{$this->walkin} joined the queue as a guest · checked in");
+            $this->reset('walkin', 'walkinPick', 'walkinTried');
         }
+    }
+
+    public function pickWalkin(int $userId): void
+    {
+        $this->walkinPick = $this->walkinMatches()->firstWhere('user.id', $userId) ? $userId : null;
+    }
+
+    /** "Yes, add": the picked account joins the session, checked in. */
+    public function addAccountWalkin(): void
+    {
+        $play = $this->play();
+        $user = User::where('role', 'member')->find($this->walkinPick);
+        if (! $user) {
+            $this->walkinPick = null;
+
+            return;
+        }
+        if ($spot = self::sessionSpot($play, $user)) {
+            $this->walkinPick = null;
+            $this->dispatch('toast', message: "{$user->name} is ".lcfirst($spot));
+
+            return;
+        }
+
+        $done = $this->attempt(fn () => $play->checkIn([$play->join($user)->id]));
+        if ($done !== false) {
+            $this->dispatch('toast', message: "{$user->name} joined the queue · linked to their account");
+            $this->reset('walkin', 'walkinPick', 'walkinTried');
+        }
+    }
+
+    /** Matching accounts for the walk-in box. */
+    private function walkinMatches(): Collection
+    {
+        return mb_strlen(trim($this->walkin)) >= 2 ? AccountMatch::find($this->walkin, 4, [], auth()->user()->club) : collect();
+    }
+
+    /** "On court 2" / "Already in the queue at #4" when this account is already in the session. */
+    private static function sessionSpot(OpenPlay $play, User $user): ?string
+    {
+        $pid = $play->participantMap()->first(fn ($p) => $p->user_id === $user->id && ! $p->left_at)?->id;
+        if (! $pid) {
+            return null;
+        }
+        foreach ($play->boardCourts() as $c) {
+            if ($c['a'] && in_array($pid, [...$c['a']['ids'], ...$c['b']['ids']])) {
+                return "On court {$c['n']}";
+            }
+        }
+        foreach ($play->queue() as $i => $e) {
+            if (in_array($pid, $e['ids'])) {
+                return 'Already in the queue at #'.($i + 1);
+            }
+        }
+
+        return null;
     }
 
     public function openScore(int $n): void
@@ -279,7 +383,8 @@ class CourtBoard extends Component
         $busy = $play->busyCourtCount();
         $free = collect($courts)->first(fn ($c) => ! $c['a']);
         $started = ago(now()->timestamp - $play->started_at->timestamp);
-        $next = $play->nextUpTeams();
+        $group = $play->nextGroup();
+        $next = $group && $group['full'] ? $group : null;
         $ready = $play->readyIds();
         $sessionIds = $play->sessionPlayerIds();
         $user = auth()->user();
@@ -291,7 +396,7 @@ class CourtBoard extends Component
         $isPair = fn ($e) => $e['locked'] && count($e['ids']) === 2;
         $subCands = $subOut ? collect($queue)
             ->map(fn ($e, $i) => $e + ['pos' => $i + 1])
-            ->filter(fn ($e) => $e['id'] !== $subOut['id'] && ! in_array($e['id'], $next['used'] ?? [])
+            ->filter(fn ($e) => $e['id'] !== $subOut['id'] && ! in_array($e['id'], $group['used'] ?? [])
                 && OpenPlay::isAvailable($e, $ready) && $isPair($e) === $isPair($subOut))
             ->take(6)->values() : collect();
 
@@ -301,7 +406,15 @@ class CourtBoard extends Component
             'queue' => $queue,
             'next' => $next,
             'ready' => $ready,
-            'where' => $free ? "Court {$free['n']} is open" : 'Next court to finish',
+            'group' => $group,
+            'where' => match (true) {
+                (bool) $free => "Court {$free['n']} ".($next ? 'is open' : 'is waiting'),
+                ($soon = $play->longestCourtIndex()) !== null => 'Courts full · Court '.$courts[$soon]['n'].' likely next',
+                default => 'Next court to finish',
+            },
+            'skipped' => $group ? $play->skippedForNext($group) : ['', false],
+            'walkinMatches' => $this->walkinPick ? collect() : $this->walkinMatches()->map(fn ($m) => $m + ['spot' => self::sessionSpot($play, $m['user'])]),
+            'walkinUser' => $this->walkinPick ? User::find($this->walkinPick) : null,
             'gamesTonight' => $play->gamesTonight(),
             'results' => $results,
             'games' => $play->games()->count(),

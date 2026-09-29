@@ -9,6 +9,7 @@
                 $head = match ($s['state']) {
                     'court' => "You're on Court {$s['court']}",
                     'next' => "You're up next",
+                    'waiting' => "You're next in line",
                     'checkin' => 'Check in to get on court',
                     'paused' => 'You stepped out',
                     default => "#{$s['position']} in line",
@@ -27,7 +28,10 @@
                                 {{ $s['partner'] ? "With {$s['partner']} vs " : 'Against ' }}{{ $s['opponents'] }} · <x-live-timer :start="now()->timestamp - $s['started_at']" />
                                 @break
                             @case('next')
-                                {{ $s['partner'] ? "With {$s['partner']} vs " : 'Against ' }}{{ $s['opponents'] }}. Grab your paddle.
+                                {{ $s['partner'] ? "With {$s['partner']} vs " : 'Against ' }}{{ $s['opponents'] }}{{ $s['court'] ? " on Court {$s['court']}. Grab your paddle." : '. You go on as soon as a court finishes.' }}
+                                @break
+                            @case('waiting')
+                                Waiting for {{ $s['need'] }} more checked-in {{ $s['need'] === 1 ? 'player' : 'players' }} to fill a game. Stay close to the courts.
                                 @break
                             @case('checkin')
                                 You're #{{ $s['position'] }} in line. Organizers only call players who are checked in, so tap Check in when you reach the courts.
@@ -55,26 +59,26 @@
                         </span>
                     @endif
 
-                    <div class="mt-1 flex flex-wrap gap-2">
+                    <div class="mt-1 flex flex-wrap items-center gap-2.5">
                         @if ($s['state'] === 'checkin')
-                            <button type="button" wire:click="checkInPlay({{ $play->id }})" class="inline-flex h-12.5 cursor-pointer items-center gap-2 rounded-full border-2 border-cta-border bg-lime px-5 text-[15px] font-extrabold text-on-lime shadow-cta transition hover:brightness-96 active:scale-97">
+                            <button type="button" wire:click="checkInPlay({{ $play->id }})" class="inline-flex h-12.5 grow cursor-pointer items-center justify-center gap-2 rounded-full border-2 border-cta-border bg-lime px-5.5 text-[15px] font-extrabold text-on-lime shadow-cta lg:grow-0 transition hover:brightness-96 active:scale-97">
                                 <x-icon name="pin" :size="18" />I'm at the courts
                             </button>
                         @elseif ($s['state'] === 'paused')
-                            <button type="button" wire:click="stepBackIn({{ $play->id }})" class="h-12.5 cursor-pointer rounded-full border-0 bg-lime px-5 text-[15px] font-extrabold text-on-lime transition hover:brightness-96 active:scale-97">I'm back</button>
+                            <button type="button" wire:click="stepBackIn({{ $play->id }})" class="inline-flex h-12.5 grow cursor-pointer items-center justify-center rounded-full border-2 border-cta-border bg-lime px-5.5 text-[15px] font-extrabold text-on-lime shadow-cta transition hover:brightness-96 active:scale-97 lg:grow-0">I'm back</button>
                         @endif
                         @if ($play->share_code)
-                            <a href="{{ route('live', $play->share_code) }}" wire:navigate class="inline-flex h-11 items-center gap-2 rounded-full border-[1.5px] border-line2 px-4 text-sm font-bold text-ink transition hover:brightness-96 active:scale-97">
+                            <a href="{{ route('live', $play->share_code) }}" wire:navigate class="inline-flex h-12.5 grow items-center justify-center gap-2 rounded-full border-2 border-line2 px-5.5 text-[15px] font-extrabold text-ink transition hover:brightness-96 active:scale-97 lg:grow-0">
                                 <x-icon name="eye" :size="18" />Live board
                             </a>
                         @endif
-                        <button type="button" wire:click="leavePlay({{ $play->id }})" class="h-11 cursor-pointer rounded-full border-0 bg-transparent px-3.5 text-sm font-semibold text-ink2 underline underline-offset-3 transition hover:brightness-96 active:scale-97">Leave open play</button>
+                        <button type="button" wire:click="leavePlay({{ $play->id }})" class="h-12.5 grow cursor-pointer rounded-full border-0 bg-transparent px-3.5 text-sm font-semibold text-ink2 underline lg:grow-0 underline-offset-3 transition hover:brightness-96 active:scale-97">Leave open play</button>
                     </div>
                 </div>
 
                 @if ($my['court'])
                     <div class="flex flex-col gap-2">
-                        <x-live-court :play="$play" :court="$my['court']" :index="$my['index']" :me="auth()->user()" class="h-42.5 lg:h-52.5" />
+                        <x-live-court :play="$play" :court="$my['court']" :index="$my['index']" :me="auth()->user()" class="h-42.5 lg:aspect-[12/5] lg:h-auto" />
                         <span class="text-[13px] text-ink3">
                             {{ $s['state'] === 'court' ? "That's you with the lime ring." : "Court {$my['court']['n']} has played the longest, so it is likely the next to open." }}
                         </span>
@@ -99,13 +103,72 @@
 
         <section class="flex flex-col gap-3.5">
             <h2 class="m-0 font-display text-[22px] font-bold tracking-[-0.02em]">Upcoming</h2>
-            <div class="grid gap-3.5 lg:grid-cols-2">
+            <div class="grid gap-3.5 lg:grid-cols-2 2xl:grid-cols-3">
                 @foreach ($upcoming as $p)
                     <x-plays.card :play="$p" :joined="in_array($p->id, $joined)" :paid="in_array($p->id, $paidIds)" :claimed="in_array($p->id, $claimedIds)" wire:key="up-{{ $p->id }}" />
                 @endforeach
             </div>
         </section>
+
+        @if ($history['rows']->isNotEmpty())
+            @php($medals = App\Support\Results::MEDALS)
+            @php($games = $history['w'] + $history['l'])
+            <section aria-labelledby="past-title" class="flex flex-col gap-3.5">
+                <div class="flex items-baseline justify-between gap-2.5">
+                    <h2 id="past-title" class="m-0 font-display text-[22px] font-bold tracking-[-0.02em]">Past open plays</h2>
+                    <span class="font-mono text-xs text-ink3">{{ $history['rows']->count() }} concluded</span>
+                </div>
+                <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                    <x-stat-tile label="Sessions" :value="$history['rows']->count()" :sub="$games.' '.Str::plural('game', $games).' played'" />
+                    <x-stat-tile label="Record" :value="$history['w'].'-'.$history['l']" :sub="round($history['w'] * 100 / max(1, $games)).'% win rate'" />
+                    <div class="flex flex-col gap-2 rounded-[22px] bg-lime p-4 text-on-lime lg:p-5">
+                        <span class="font-mono text-[11px] tracking-widest uppercase">Podium finishes</span>
+                        <span class="font-display text-[34px] leading-none font-extrabold tracking-[-0.04em] lg:text-[40px]">{{ array_sum($history['medals']) }}</span>
+                        <span class="flex flex-wrap gap-1.5">
+                            @foreach ($history['medals'] as $i => $n)
+                                <span class="inline-flex h-6 items-center gap-1.25 rounded-full bg-[rgba(18,23,15,.1)] pr-2 pl-1 text-xs font-extrabold" aria-label="{{ $n }} {{ $medals[$i][1] }}">
+                                    <x-medal :rank="$i + 1" :size="15" :number="false" :label="false" />{{ $n }}
+                                </span>
+                            @endforeach
+                        </span>
+                    </div>
+                    <x-stat-tile label="Best finish" :value="'#'.$history['best']['row']['rank']" :sub="$history['best']['play']->title.' · '.$history['best']['play']->starts_at->format('D, M j')" />
+                </div>
+                <div class="flex flex-col gap-2.5">
+                    @foreach ($history['rows'] as ['play' => $p, 'row' => $r])
+                        @php($top = $r['rank'] <= 3)
+                        <div wire:key="past-{{ $p->id }}" class="flex flex-wrap items-center gap-x-4.5 gap-y-3.5 rounded-[22px] border border-line bg-surface p-3.5 transition duration-300 hover:-translate-y-1 hover:shadow-card lg:px-5 lg:py-4">
+                            <div class="flex min-w-0 flex-[1_1_260px] items-center gap-3.5">
+                                <x-date-tile :date="$p->starts_at" />
+                                <div class="flex min-w-0 flex-1 flex-col gap-1">
+                                    <span class="font-display text-lg leading-[1.2] font-bold tracking-[-0.02em]">{{ $p->title }}</span>
+                                    <span class="text-[13px] leading-[1.4] text-ink3">{{ $p->club }} · {{ $p->timeRange() }} · {{ $r['of'] }} players</span>
+                                </div>
+                            </div>
+                            <div class="flex flex-auto flex-wrap items-center justify-between gap-x-3.5 gap-y-2.5 lg:justify-end">
+                                <div class="flex items-center gap-3.5">
+                                    <span @class(['inline-flex h-8.5 items-center gap-2 rounded-full border text-[13px] font-extrabold whitespace-nowrap', 'border-lime bg-lime-soft pr-3 pl-1.5' => $top, 'border-line bg-surface2 px-3' => ! $top])>
+                                        @if ($top)
+                                            <x-medal :rank="$r['rank']" :size="18" :label="false" />
+                                            <span class="sr-only">{{ $medals[$r['rank'] - 1][1] }},</span>
+                                        @endif
+                                        {{ App\Support\Results::ordinal($r['rank']) }} of {{ $r['of'] }}
+                                    </span>
+                                    <span class="flex min-w-14 flex-col">
+                                        <span class="font-mono text-[15px] font-bold">{{ $r['w'] }}-{{ $r['l'] }}</span>
+                                        <span @class(['font-mono text-xs font-semibold', 'text-lime-text' => $r['diff'] > 0, 'text-hot' => $r['diff'] < 0, 'text-ink3' => ! $r['diff']])>{{ App\Support\Results::signed($r['diff']) }}</span>
+                                    </span>
+                                </div>
+                                <x-results-button :play="$p" />
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </section>
+        @endif
     </x-page>
+
+    <livewire:past-results />
 
     {{-- Pay for an open play: bottom sheet on mobile, centered on desktop. --}}
     @if ($payPlay)

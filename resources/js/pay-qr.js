@@ -1,5 +1,5 @@
 // Payment QR in Create open play. The image stays here until publish, then goes to
-// OpenPlays::publish() as a data URL ("saved" reuses the QR from your last open play).
+// OpenPlays::showReview() and ::publish() as a data URL ("saved" keeps the QR shown in the sheet).
 
 const TYPES = /^image\/(png|jpe?g|webp)$/i;
 const MAX_SIDE = 900;
@@ -7,6 +7,7 @@ const MAX_SIDE = 900;
 document.addEventListener('alpine:init', () => {
     window.Alpine.data('payQr', (savedUrl) => ({
         savedUrl,
+        savedLabel: 'Saved from your last open play',
         qr: savedUrl ? 'saved' : null, // null | 'saved' | data URL
         name: savedUrl ? 'Saved QR' : '',
         busy: false,
@@ -86,8 +87,23 @@ document.addEventListener('alpine:init', () => {
             this.error = '';
         },
 
+        // Submitting the sheet shows the review; the review's button publishes (or saves an edit).
+        review() {
+            this.$wire.showReview(this.qr).then(() => this.$refs.sheetBody?.scrollTo({ top: 0 }));
+        },
+
         publish() {
             this.$wire.publish(this.qr);
+        },
+
+        // Opening the sheet: create starts from your last QR, edit from the open play's own QR.
+        load(url, label) {
+            this.savedUrl = url || null;
+            this.savedLabel = label || 'Saved from your last open play';
+            this.qr = this.savedUrl ? 'saved' : null;
+            this.name = this.savedUrl ? 'Saved QR' : '';
+            this.check = '';
+            this.error = '';
         },
 
         // After publishing, the QR just used becomes "saved from your last open play".

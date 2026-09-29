@@ -28,7 +28,11 @@ class Dashboard extends Component
 
             return ['title' => $play->title, 'standing' => $standing] + match ($s['state']) {
                 'court' => ['head' => "You're on Court {$s['court']}", 'sub' => $with.' · ', 'timer' => now()->timestamp - ($s['started_at'] ?? now()->timestamp)],
-                'next' => ['head' => "You're up next", 'sub' => $with.'. Grab your paddle.'],
+                'next' => ['head' => "You're up next", 'sub' => $with.(($s['court'] ?? null) ? " on Court {$s['court']}. Grab your paddle." : '. You go on as soon as a court finishes.')],
+                'waiting' => [
+                    'head' => "You're next in line",
+                    'sub' => "Waiting for {$s['need']} more checked-in ".($s['need'] === 1 ? 'player' : 'players').' to fill a game. Stay close to the courts.',
+                ],
                 'checkin' => [
                     'head' => 'Check in to get on court',
                     'sub' => "You're #{$s['position']} in line. Organizers only call players who are checked in, so tap Check in when you reach the courts.",
