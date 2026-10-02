@@ -1,6 +1,6 @@
 // PickleX service worker: makes the app installable and shows a friendly page when the phone is offline.
 // Pages and Livewire requests always go to the network; live queues must never come from a cache.
-const CACHE = 'picklex-v1';
+const CACHE = 'picklex-v2';
 const OFFLINE = '/offline.html';
 
 self.addEventListener('install', (event) => {

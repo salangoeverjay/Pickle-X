@@ -40,6 +40,9 @@
             .em-hot-soft { background: rgba(255, 145, 82, .12) !important; border-color: rgba(255, 145, 82, .42) !important; }
             .em-hot { color: #FF9152 !important; }
             .em-court-bg { background: #2F62AD !important; border-color: #2F62AD !important; }
+            /* Wordmark: lime mark on dark (clients that support this media query). */
+            .em-light-only { display: none !important; }
+            .em-dark-only { display: block !important; max-height: none !important; }
         }
     </style>
 </head>
@@ -54,7 +57,7 @@
                             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                                 <tr>
                                     <td>
-                                        <a href="{{ url('/') }}" style="text-decoration: none; color: #12170F;" class="em-ink"><span style="font-family: 'Bricolage Grotesque', 'Arial Black', Helvetica, Arial, sans-serif; font-weight: 800; font-size: 24px; letter-spacing: -0.04em; line-height: 1; vertical-align: middle;">pickl</span><img src="{{ asset('images/email-mark.png') }}" width="26" height="27" alt="" style="display: inline-block; vertical-align: middle; margin: 0 1px; border: 0;"><span style="font-family: 'Bricolage Grotesque', 'Arial Black', Helvetica, Arial, sans-serif; font-weight: 800; font-size: 24px; letter-spacing: -0.04em; line-height: 1; vertical-align: middle;">x</span></a>
+                                        <a href="{{ url('/') }}" style="text-decoration: none;"><img src="{{ asset('images/email-wordmark.png') }}" width="106" height="24" alt="PickleX" class="em-light-only" style="display: block; border: 0;"><!--[if !mso]><!--><img src="{{ asset('images/email-wordmark-dark.png') }}" width="106" height="24" alt="PickleX" class="em-dark-only" style="display: none; max-height: 0; overflow: hidden; border: 0;"><!--<![endif]--></a>
                                     </td>
                                     <td align="right" class="em-ink3" style="font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-size-adjust: 0.58; font-variant-numeric: tabular-nums; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: #5B6257; white-space: nowrap;">@yield('label')</td>
                                 </tr>

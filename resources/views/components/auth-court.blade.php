@@ -14,7 +14,7 @@
     </div>
 @else
     <a href="{{ route('home') }}" wire:navigate aria-label="PickleX home" class="relative self-start">
-        <x-logo class="text-[28px]" />
+        <x-logo class="text-[28px]" mark="currentColor" />
     </a>
 
     <div class="relative aspect-[37/20] w-full max-w-190 transform-[perspective(1200px)_rotateX(24deg)_rotateZ(-6deg)]">

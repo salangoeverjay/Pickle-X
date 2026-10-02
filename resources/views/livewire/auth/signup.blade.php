@@ -3,7 +3,7 @@
         <div aria-hidden="true" class="cta-ball absolute top-30 -right-35 size-105 animate-spin-slow rounded-full"></div>
 
         <a href="{{ route('home') }}" wire:navigate aria-label="PickleX home" class="relative self-start">
-            <x-logo class="text-[28px]" />
+            <x-logo class="text-[28px]" mark="var(--color-lime-on-ink)" />
         </a>
 
         <div class="relative flex max-w-105 flex-col gap-6.5">

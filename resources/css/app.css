@@ -21,6 +21,8 @@
     --color-ink2: #464D42;
     --color-ink3: #5B6257;
     --color-lime: #D3F347;
+    /* The logo's X and queue dots (ink on light, lime on dark). */
+    --color-mark: #12170F;
     --color-lime-text: #496800;
     --color-lime-soft: #F0FAC8;
     --color-lime-on-ink: #D3F347;
@@ -70,6 +72,7 @@
     --color-ink2: #B1BBAA;
     --color-ink3: #8E988B;
     --color-lime: #D4F53C;
+    --color-mark: #D4F53C;
     --color-lime-text: #D4F53C;
     --color-lime-soft: rgba(212, 245, 60, .10);
     --color-lime-on-ink: #4A6A00;
@@ -227,6 +230,11 @@
     @keyframes px-ld-out { to { opacity: 0 } }
     @keyframes px-ld-spin { to { transform: rotate(360deg) } }
     @keyframes px-ld-breathe { 0%, 100% { transform: scale(1) } 50% { transform: scale(.9) } }
+
+    /* The two queue dots in the loader's mark take turns fading. */
+    .px-ld-breathe .px-q1, .px-ld-breathe .px-q2 { animation: px-ld-queue 1.6s ease-in-out infinite }
+    .px-ld-breathe .px-q2 { animation-delay: .2s }
+    @keyframes px-ld-queue { 0%, 100% { opacity: 1 } 45% { opacity: .28 } }
     @keyframes px-ld-in { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: none } }
     @keyframes px-ld-hide { from { opacity: 1 } to { opacity: 0 } }
     @keyframes px-ld-pop { from { opacity: 0; transform: scale(.4) } to { opacity: 1; transform: scale(1) } }
