@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
+use Spatie\LaravelPasskeys\Actions\FindPasskeyToAuthenticateAction;
+use Spatie\LaravelPasskeys\Actions\GeneratePasskeyAuthenticationOptionsAction;
 
 Route::livewire('/', Home::class)->name('home');
 Route::livewire('/about', About::class)->name('about');
@@ -25,6 +27,28 @@ Route::middleware('guest')->group(function () {
     Route::livewire('/login', Login::class)->name('login');
     Route::livewire('/signup', Signup::class)->name('signup');
     Route::livewire('/forgot-password', ForgotPassword::class)->name('password.request');
+
+    // Log in with a passkey (resources/js/passkeys.js): the browser asks for options, signs them on the device, posts the result.
+    Route::get('/passkeys/options', fn (GeneratePasskeyAuthenticationOptionsAction $options) => response($options->execute(), 200, ['Content-Type' => 'application/json']))
+        ->middleware('throttle:20,1')->name('passkeys.options');
+    Route::post('/passkeys/login', function (Request $request, FindPasskeyToAuthenticateAction $find) {
+        $request->validate(['response' => 'required|json']);
+        $options = $request->session()->pull('passkey-authentication-options');
+        $user = $options ? rescue(fn () => $find->execute($request->input('response'), $options)?->authenticatable, null, false) : null;
+        if (! $user) {
+            return response()->json(['message' => "That passkey didn't work. Try again, or log in with your password."], 422);
+        }
+        if ($user->isSuspended()) {
+            return response()->json(['message' => Login::SUSPENDED], 422);
+        }
+        Auth::login($user);
+        $request->session()->regenerate();
+        $request->session()->forget('mode');
+        $request->session()->flash('loader', ['kind' => 'login']);
+        $request->session()->flash('toast', 'Logged in with your passkey');
+
+        return response()->json(['redirect' => route($user->homeRoute())]);
+    })->middleware('throttle:10,1')->name('passkeys.login');
 });
 
 // One-tap demo accounts (seeded). Only exists when APP_DEMO=true.
@@ -41,6 +65,9 @@ Route::post('/demo-login', function (Request $request) {
     $request->session()->regenerate();
     $request->session()->forget('mode');
     $request->session()->flash('loader', ['kind' => 'login']);
+    if (Auth::user()->isAdmin()) {
+        $request->session()->flash('toast', 'Logged in as admin · '.User::where('organizer_status', 'pending')->count().' pending');
+    }
 
     return redirect()->route(Auth::user()->homeRoute());
 })->name('demo-login');
@@ -105,6 +132,7 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
         Route::livewire('/requests', Admin\Requests::class)->name('requests');
+        Route::livewire('/users', Admin\Users::class)->name('users');
         Route::livewire('/developers', Admin\Developers::class)->name('developers');
         Route::livewire('/sponsors', Admin\Sponsors::class)->name('sponsors');
     });

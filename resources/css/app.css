@@ -239,6 +239,36 @@
 
     @keyframes px-pwn-q { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0) } 50% { box-shadow: 0 0 0 6px rgba(255, 255, 255, .14) } }
 
+    /* Passkey dialogs: two rings pulse out while the device asks for a fingerprint, face or screen lock. */
+    .px-pk-wait {
+        position: relative;
+    }
+
+    .px-pk-wait::before,
+    .px-pk-wait::after {
+        content: '';
+        position: absolute;
+        inset: -10px;
+        border-radius: 50%;
+        border: 2px solid var(--color-lime);
+        opacity: 0;
+        animation: px-pk-ring 1.8s ease-out infinite;
+    }
+
+    .px-pk-wait::after {
+        animation-delay: .9s;
+    }
+
+    @keyframes px-pk-ring { 0% { transform: scale(.85); opacity: .7 } 100% { transform: scale(1.35); opacity: 0 } }
+
+    /* Account menu (desktop sidebar): pops up from the account card. */
+    .px-pm-pop {
+        transform-origin: 50% 100%;
+        animation: px-pm-in .18s cubic-bezier(.2, .8, .2, 1) both;
+    }
+
+    @keyframes px-pm-in { from { opacity: 0; transform: translateY(6px) scale(.98) } to { opacity: 1; transform: none } }
+
     /* Toast: slides up in, and down out before it unmounts; -b replays the entrance for a new message. */
     .px-toast {
         animation: px-toast .42s cubic-bezier(.2, .9, .3, 1.2) both;

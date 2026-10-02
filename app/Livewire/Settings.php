@@ -2,13 +2,20 @@
 
 namespace App\Livewire;
 
+use App\Livewire\Auth\ForgotPassword;
+use App\Livewire\Auth\Login;
 use App\Models\User;
 use App\Support\Looks;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Spatie\LaravelPasskeys\Actions\GeneratePasskeyRegisterOptionsAction;
+use Spatie\LaravelPasskeys\Actions\StorePasskeyAction;
 
 #[Title('Account settings · PickleX')]
 class Settings extends Component
@@ -58,9 +65,14 @@ class Settings extends Component
     // Collection tab showing in Your look (empty = the one with your current pick, or Shinobi).
     public string $lookCol = '';
 
+    // "Remember me is on" until this date on this device; null once forgotten.
+    public ?string $rememberedUntil = null;
+
     public function mount()
     {
         $user = $this->user();
+        $until = request()->cookie(Login::REMEMBERED);
+        $this->rememberedUntil = request()->hasCookie(Auth::guard()->getRecallerName()) && $until ? Carbon::parse($until)->format('M j, Y') : null;
 
         $this->fill([
             'name' => $user->name,
@@ -321,6 +333,67 @@ class Settings extends Component
         return Auth::user();
     }
 
+    // Passkeys: the one being named right after it was created, and the one waiting on Remove.
+    public ?int $naming = null;
+
+    public string $passkeyName = '';
+
+    public bool $replaced = false;
+
+    public ?int $removing = null;
+
+    /** Step 1 of adding a passkey: options the device signs (kept in the session for storePasskey). */
+    public function passkeyOptions(): string
+    {
+        $options = app(GeneratePasskeyRegisterOptionsAction::class)->execute($this->user());
+        session()->put('passkey-register-options', $options);
+
+        return $options;
+    }
+
+    /** Step 2: verify and save what the device created. $replaces: this device's old passkey, if any. Returns the new id. */
+    public function storePasskey(string $attestation, ?int $replaces = null): ?int
+    {
+        $user = $this->user();
+        $options = session()->pull('passkey-register-options');
+        $name = ForgotPassword::device((string) request()->userAgent());
+        $passkey = $options ? rescue(fn () => app(StorePasskeyAction::class)->execute($user, $attestation, $options, request()->getHost(), ['name' => $name]), null) : null;
+        if (! $passkey) {
+            return null;
+        }
+        $this->replaced = $replaces && $user->passkeys()->whereKey($replaces)->delete();
+        $this->naming = $passkey->id;
+        $this->passkeyName = $name;
+
+        return $passkey->id;
+    }
+
+    /** Step 3: a name to tell devices apart. */
+    public function namePasskey(): void
+    {
+        $passkey = $this->user()->passkeys()->findOrFail($this->naming);
+        $passkey->update(['name' => Str::limit(trim($this->passkeyName), 40, '') ?: $passkey->name]);
+        $this->dispatch('toast', message: $this->replaced ? 'Passkey on this device replaced' : 'Passkey saved · use it next time you log in');
+        $this->reset('naming', 'passkeyName', 'replaced');
+    }
+
+    public function removePasskey(): void
+    {
+        $passkey = $this->user()->passkeys()->findOrFail($this->removing);
+        $passkey->delete();
+        $this->removing = null;
+        $this->dispatch('toast', message: "Removed the passkey for {$passkey->name}");
+    }
+
+    /** Remember me: stop this device keeping you logged in (other devices keep theirs). */
+    public function forgetDevice(): void
+    {
+        Cookie::queue(Cookie::forget(Auth::guard()->getRecallerName()));
+        Cookie::queue(Cookie::forget(Login::REMEMBERED));
+        $this->rememberedUntil = null;
+        $this->dispatch('toast', message: "This device won't keep you logged in anymore");
+    }
+
     public function render()
     {
         $user = $this->user();
@@ -336,6 +409,7 @@ class Settings extends Component
         ];
 
         return view('livewire.settings', [
+            'passkeys' => $user->passkeys()->latest()->get(),
             'picker' => $picker,
             'user' => $user,
             'notifications' => $switches->filter(fn ($s, $key) => str_starts_with($key, 'notify.')),
@@ -350,6 +424,7 @@ class Settings extends Component
             'sections' => array_filter([
                 ['profile', 'Profile', 'user'],
                 ['security', 'Password', 'lock'],
+                ['passkeys', 'Passkeys', 'passkey'],
                 match ($user->mode()) {
                     'organizer' => ['club', 'Club defaults', 'court'],
                     'member' => ['host', 'Organize', 'court'],

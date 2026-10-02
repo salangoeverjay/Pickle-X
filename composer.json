@@ -15,6 +15,7 @@
         "laravel/framework": "^13.17",
         "laravel/tinker": "^3.0",
         "livewire/livewire": "^4.4",
+        "spatie/laravel-passkeys": "^1.8",
         "symfony/http-client": "^8.1",
         "symfony/mailgun-mailer": "^8.1"
     },

@@ -1,0 +1,182 @@
+@php
+    // Role pills: [background, text, border].
+    $pill = ['member' => 'bg-surface2 text-ink2 border-line', 'organizer' => 'bg-court text-white border-court', 'admin' => 'bg-ink text-bg border-ink'];
+    $roles = App\Livewire\Admin\Users::ROLES;
+    $badge = 'inline-flex h-6 shrink-0 items-center rounded-full border px-2.25 text-xs font-extrabold whitespace-nowrap';
+    $you = 'inline-flex h-5 shrink-0 items-center rounded-full bg-lime px-1.75 text-[10.5px] font-extrabold text-on-lime';
+    $btn = 'h-11 shrink-0 cursor-pointer rounded-full border-[1.5px] px-4 text-sm font-bold transition active:scale-97';
+@endphp
+
+<x-app-shell>
+    <x-page>
+        <x-page-header eyebrow="Admin" title="Users" description="Everyone with a PickleX account. Change roles, suspend or restore accounts, sign people out everywhere and delete accounts." />
+
+        <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            @foreach ($tiles as [$label, $n])
+                @php($hot = $label === 'Suspended' && $n)
+                <div @class(['flex flex-col gap-2 rounded-[22px] border p-4 lg:p-5', 'border-hot-line bg-hot-soft text-hot' => $hot, 'border-line bg-surface' => ! $hot])>
+                    <span class="font-mono text-[11px] tracking-widest uppercase">{{ $label }}</span>
+                    <span class="font-display text-[34px] leading-none font-extrabold tracking-[-0.04em] lg:text-[40px]">{{ $n }}</span>
+                </div>
+            @endforeach
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2.5">
+            <div role="tablist" aria-label="Show accounts" class="inline-flex max-w-full overflow-x-auto rounded-full border border-line bg-surface p-1 [scrollbar-width:none]">
+                @foreach ($tabs as $key => [$label, $n])
+                    @php($on = $tab === $key)
+                    <button type="button" role="tab" aria-selected="{{ $on ? 'true' : 'false' }}" wire:click="$set('tab', '{{ $key }}')"
+                            @class(['inline-flex h-10 shrink-0 cursor-pointer items-center gap-1.75 rounded-full px-3.5 text-sm font-bold whitespace-nowrap transition-colors', 'bg-ink text-bg' => $on, 'text-ink2' => ! $on])>
+                        {{ $label }}<span @class(['inline-flex h-5 min-w-5.5 items-center justify-center rounded-full px-1.5 font-mono text-xs font-bold', 'bg-lime text-on-lime' => $on, 'bg-surface2 text-ink2' => ! $on])>{{ $n }}</span>
+                    </button>
+                @endforeach
+            </div>
+            <div class="relative min-w-full flex-1 lg:min-w-60">
+                <label for="ua-q" class="sr-only">Search accounts</label>
+                <x-icon name="search" :size="18" class="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-ink3" />
+                <input id="ua-q" type="search" wire:model.live.debounce.250ms="q" placeholder="Search by name or email" autocomplete="off"
+                       class="h-11 w-full rounded-full border-[1.5px] border-line bg-surface pr-4 pl-10.5 text-sm text-ink outline-none focus:border-ink [&::-webkit-search-cancel-button]:hidden">
+            </div>
+        </div>
+
+        <section aria-label="Accounts" class="overflow-hidden rounded-3xl border border-line bg-surface">
+            <div class="flex items-baseline justify-between gap-2.5 border-b border-line px-5 py-3.5">
+                <span class="font-bold">Accounts</span>
+                <span class="font-mono text-[11px] tracking-widest text-ink3 uppercase">{{ $rows->count() === $total ? $total.' '.Str::plural('account', $total) : $rows->count().' of '.$total.' accounts' }}</span>
+            </div>
+            <div class="hidden grid-cols-[minmax(0,2.4fr)_minmax(0,1fr)_minmax(0,1.4fr)_minmax(0,.6fr)_minmax(0,.9fr)_minmax(0,.9fr)_104px] gap-3.5 border-b border-line px-5 py-3 font-mono text-[11px] tracking-widest text-ink3 uppercase lg:grid">
+                <span>User</span><span>Role</span><span>Home club</span><span>Games</span><span>Last active</span><span>Status</span><span></span>
+            </div>
+            @forelse ($rows as $u)
+                @php($r = $u->accountRole())
+                @php($me = $u->id === auth()->id())
+                <div wire:key="u-{{ $u->id }}" class="flex items-center gap-3 border-b border-line px-4 py-3.5 last:border-b-0 lg:grid lg:grid-cols-[minmax(0,2.4fr)_minmax(0,1fr)_minmax(0,1.4fr)_minmax(0,.6fr)_minmax(0,.9fr)_minmax(0,.9fr)_104px] lg:gap-3.5 lg:px-5 lg:py-3">
+                    <div class="flex min-w-0 flex-1 items-center gap-3">
+                        <x-avatar :src="$u->avatarUrl()" :frame="$u->frameClass()" :name="$u->name" :color="$u->color()" class="size-10.5 text-[13px] lg:size-10" />
+                        <div class="flex min-w-0 flex-col gap-0.5">
+                            <span class="flex min-w-0 items-center gap-2"><span class="truncate font-bold">{{ $u->name }}</span>@if ($me)<span class="{{ $you }}">YOU</span>@endif</span>
+                            <span class="truncate text-[12.5px] text-ink3 lg:text-[13px]">{{ $u->email }}</span>
+                            <span class="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 lg:hidden">
+                                <span class="{{ $badge }} {{ $pill[$r] }}">{{ $roles[$r] }}</span>
+                                @if ($u->isSuspended())<span class="{{ $badge }} border-hot-line bg-hot-soft text-hot">Suspended</span>@endif
+                            </span>
+                        </div>
+                    </div>
+                    <span class="hidden lg:block"><span class="{{ $badge }} {{ $pill[$r] }}">{{ $roles[$r] }}</span></span>
+                    <span class="hidden truncate text-sm text-ink2 lg:block">{{ $u->club ?: '-' }}</span>
+                    <span class="hidden font-mono text-[15px] font-semibold lg:block">{{ $games[$u->id] ?? 0 }}</span>
+                    <span class="hidden text-sm text-ink2 lg:block">{{ $lastActive($u) }}</span>
+                    <span class="hidden lg:block">
+                        @if ($u->isSuspended())
+                            <span class="{{ $badge }} border-hot-line bg-hot-soft text-hot">Suspended</span>
+                        @else
+                            <span class="inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink2"><span aria-hidden="true" class="size-2 rounded-full bg-lime-text"></span>Active</span>
+                        @endif
+                    </span>
+                    <button type="button" wire:click="open({{ $u->id }})" aria-label="Manage {{ $u->name }}" class="{{ $btn }} h-10 border-line2 text-ink hover:bg-surface2">Manage</button>
+                </div>
+            @empty
+                <p class="m-0 px-6 py-7 text-ink2">{{ trim($q) !== '' ? 'No accounts match "'.trim($q).'".' : 'No accounts here yet.' }}</p>
+            @endforelse
+        </section>
+    </x-page>
+
+    {{-- Manage an account: bottom sheet on mobile, centered on desktop. --}}
+    @if ($managed)
+        @php($r = $managed->accountRole())
+        @php($self = $managed->id === auth()->id())
+        <div wire:key="um-{{ $managed->id }}" x-data x-on:keydown.escape.window="$wire.close()" class="fixed inset-0 z-66 flex items-end justify-center lg:items-center lg:p-6">
+            <button type="button" wire:click="close" aria-label="Close" class="absolute inset-0 animate-fade cursor-pointer bg-[rgba(18,23,15,.45)] dark:bg-black/62"></button>
+            <div role="dialog" aria-modal="true" aria-labelledby="um-title" x-trap.noscroll="true" class="relative flex max-h-full w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] lg:w-170 lg:rounded-[28px]">
+                <div class="flex flex-col gap-5 overflow-y-auto px-6 pt-6 pb-6.5">
+                    <div class="flex items-start gap-3.5">
+                        <x-avatar :src="$managed->avatarUrl()" :frame="$managed->frameClass()" :name="$managed->name" :color="$managed->color()" class="size-14 text-lg" />
+                        <div class="flex min-w-0 flex-1 flex-col gap-1">
+                            <h2 id="um-title" class="m-0 font-display text-[26px] leading-[1.1] font-extrabold tracking-[-0.03em]">{{ $managed->name }}</h2>
+                            <span class="text-sm break-all text-ink2">{{ $managed->email }}</span>
+                            <span class="text-[13px] text-ink3">{{ collect([$managed->club, ($n = $games[$managed->id] ?? 0).' '.Str::plural('game', $n), 'Joined '.$managed->created_at->format('M Y'), 'Active '.Str::lcfirst($lastActive($managed))])->filter()->join(' · ') }}</span>
+                            <span class="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
+                                <span class="{{ $badge }} {{ $pill[$r] }}">{{ $roles[$r] }}</span>
+                                @if ($managed->isSuspended())
+                                    <span class="{{ $badge }} border-hot-line bg-hot-soft text-hot">Suspended</span>
+                                    <span class="text-[13px] text-hot">Suspended {{ $managed->suspended_at->format('M j') }}</span>
+                                @else
+                                    <span class="inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink2"><span aria-hidden="true" class="size-2 rounded-full bg-lime-text"></span>Active</span>
+                                @endif
+                                @if ($self)<span class="{{ $you }}">YOU</span>@endif
+                            </span>
+                        </div>
+                        <button type="button" wire:click="close" aria-label="Close" class="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-surface2 text-ink"><x-icon name="x" :size="18" /></button>
+                    </div>
+
+                    <section aria-labelledby="um-role-h" class="flex flex-col gap-2.5">
+                        <h3 id="um-role-h" class="m-0 font-display text-[19px] font-bold tracking-[-0.02em]">Role</h3>
+                        @if ($self)
+                            <p class="m-0 text-sm text-ink2">This is your account. Another admin has to change your role.</p>
+                        @endif
+                        <div role="radiogroup" aria-labelledby="um-role-h" class="grid grid-cols-1 gap-2 lg:grid-cols-3">
+                            @foreach ($roles as $key => $label)
+                                @php($on = $draft === $key)
+                                <button type="button" role="radio" aria-checked="{{ $on ? 'true' : 'false' }}" @disabled($self) wire:click="pickRole('{{ $key }}')"
+                                        @class(['flex min-h-18 cursor-pointer items-start gap-2.5 rounded-2xl border-[1.5px] px-3.5 py-3 text-left text-ink transition active:scale-97 disabled:cursor-not-allowed disabled:opacity-70', 'border-ink bg-surface' => $on, 'border-line' => ! $on])>
+                                    <span aria-hidden="true" class="mt-0.5 box-border flex size-4.5 shrink-0 items-center justify-center rounded-full border-2 border-ink2"><span @class(['size-2 rounded-full', 'bg-ink' => $on])></span></span>
+                                    <span class="flex flex-col gap-0.5"><span class="text-[15px] font-bold">{{ $label }}</span><span class="text-[13px] leading-[1.4] text-ink2">{{ $descriptions[$key] }}</span></span>
+                                </button>
+                            @endforeach
+                        </div>
+                        @unless ($self)
+                            <div class="flex justify-end">
+                                <button type="button" wire:click="saveRole" aria-disabled="{{ $draft === $r ? 'true' : 'false' }}"
+                                        @class(['h-12 cursor-pointer rounded-full px-5.5 text-[15px] font-extrabold transition active:scale-97', 'bg-lime text-on-lime' => $draft !== $r, 'bg-surface2 text-ink3' => $draft === $r])>Save role</button>
+                            </div>
+                        @endunless
+                    </section>
+
+                    <section aria-labelledby="um-acct-h" class="flex flex-col gap-2.5">
+                        <h3 id="um-acct-h" class="m-0 font-display text-[19px] font-bold tracking-[-0.02em]">Account</h3>
+                        <div class="divide-y divide-line overflow-hidden rounded-[18px] border border-line bg-surface">
+                            @php($row = 'flex flex-wrap items-center gap-x-3.5 gap-y-2.5 px-4 py-3.5')
+                            @php($text = 'flex min-w-0 flex-[1_1_240px] flex-col gap-0.5')
+                            <div class="{{ $row }}">
+                                <div class="{{ $text }}"><span class="text-[15px] font-bold">Send a password reset</span><span class="text-[13px] leading-[1.45] text-ink2">Emails {{ $managed->email }} a link to set a new password.</span></div>
+                                <button type="button" wire:click="sendReset" class="{{ $btn }} border-line2 text-ink hover:bg-surface2">Send reset</button>
+                            </div>
+                            @unless ($self)
+                                <div class="{{ $row }}">
+                                    <div class="{{ $text }}"><span class="text-[15px] font-bold">Sign out of all devices</span><span class="text-[13px] leading-[1.45] text-ink2">Ends every session and turns off Remember me. Their passkeys stay.</span></div>
+                                    <button type="button" wire:click="signOut" class="{{ $btn }} border-line2 text-ink hover:bg-surface2">Sign out everywhere</button>
+                                </div>
+                                @if ($managed->isSuspended())
+                                    <div class="{{ $row }}">
+                                        <div class="{{ $text }}"><span class="text-[15px] font-bold">Restore account</span><span class="text-[13px] leading-[1.45] text-ink2">Lets them log in and join open plays again.</span></div>
+                                        <button type="button" wire:click="restore" class="{{ $btn }} border-lime bg-lime text-on-lime hover:brightness-96">Restore</button>
+                                    </div>
+                                @else
+                                    <div class="{{ $row }}">
+                                        <div class="{{ $text }}"><span class="text-[15px] font-bold">Suspend account</span><span class="text-[13px] leading-[1.45] text-ink2">They can't log in or join open plays until you restore the account. Their games and stats stay.</span></div>
+                                        <button type="button" wire:click="suspend" class="{{ $btn }} border-hot-line bg-hot-soft text-hot hover:brightness-96">Suspend</button>
+                                    </div>
+                                @endif
+                                @if ($confirmDelete)
+                                    <div role="alert" class="flex animate-fade flex-col gap-3 bg-hot-soft p-4">
+                                        <span class="font-extrabold text-hot">Delete {{ $managed->name }}'s account?</span>
+                                        <span class="text-sm leading-normal text-ink2">This can't be undone. They lose their login, profile, passkeys and looks. Logged games stay in other players' history as Former player.</span>
+                                        <div class="flex flex-wrap gap-2">
+                                            <button type="button" wire:click="$set('confirmDelete', false)" class="{{ $btn }} border-line2 text-ink hover:bg-surface">Keep account</button>
+                                            <button type="button" wire:click="delete" class="{{ $btn }} border-hot bg-hot font-extrabold text-bg hover:brightness-96">Delete account</button>
+                                        </div>
+                                    </div>
+                                @else
+                                    <div class="{{ $row }}">
+                                        <div class="{{ $text }}"><span class="text-[15px] font-bold">Delete account</span><span class="text-[13px] leading-[1.45] text-ink2">Removes their login, profile and passkeys. Games they played stay in other players' history as Former player.</span></div>
+                                        <button type="button" wire:click="$set('confirmDelete', true)" class="{{ $btn }} border-hot-line text-hot hover:bg-hot-soft">Delete</button>
+                                    </div>
+                                @endif
+                            @endunless
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    @endif
+</x-app-shell>

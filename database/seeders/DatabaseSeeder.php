@@ -83,7 +83,9 @@ class DatabaseSeeder extends Seeder
         $this->organizer('Pia Lacson', 'pia@samaldinkers.ph', 'Samal Island Dinkers', 'Island Garden City of Samal', 2, 'pending',
             'Small group for now, hoping to grow to two nights a week.', '-3 days');
 
+        // Toni's account is suspended (can't log in).
         User::factory()->create(['name' => 'PickleX Admin', 'email' => 'admin@picklex.app', 'role' => 'admin']);
+        User::factory()->create(['name' => 'Toni Chan', 'email' => 'toni@picklex.app', 'avatar_color' => '#E2D2FF', 'club' => self::CLUB, 'suspended_at' => now()->subDays(3)]);
 
         // Eight weeks of Monday and Saturday sessions at the club.
         $start = Carbon::today()->subWeeks(8);

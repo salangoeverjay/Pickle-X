@@ -168,6 +168,9 @@
                                 <div class="flex min-w-0 flex-1 flex-col gap-1">
                                     <span class="font-display text-lg leading-[1.2] font-bold tracking-[-0.02em]">{{ $play->title }}</span>
                                     <span class="text-[13px] leading-[1.4] text-ink3">{{ $play->timeRange() }} · {{ $players }} {{ Str::plural('player', $players) }} · {{ $play->games_count }} {{ Str::plural('game', $play->games_count) }} · {{ $play->courts }} {{ Str::plural('court', $play->courts) }}</span>
+                                    @if ($play->auto_ended)
+                                        <span class="inline-flex min-h-6 items-center gap-1.25 self-start rounded-full border border-line bg-surface2 px-2.25 py-0.5 text-xs leading-[1.3] font-bold text-ink2"><x-icon name="clock" :size="13" />Ended automatically at {{ $play->ended_at->format('g:i A') }}, {{ App\Models\OpenPlay::AUTO_END_HOURS }} hours after its end time</span>
+                                    @endif
                                 </div>
                             </div>
                             <div class="flex flex-auto flex-wrap items-center justify-between gap-x-4 gap-y-2.5 lg:justify-end">

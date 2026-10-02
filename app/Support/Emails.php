@@ -153,6 +153,24 @@ class Emails
             ['play' => $play, 'user' => $user, 'results' => $results, 'mine' => $mine, 'pid' => $pid, 'next' => $next]);
     }
 
+    /** Recap emails once a session ends: one per player who logged games (unless turned off), one for the organizer. */
+    public static function sendRecaps(OpenPlay $play): void
+    {
+        $results = new Results($play);
+        $ids = collect($results->rows)->pluck('participant_id');
+        $play->participants()->whereIn('id', $ids)->whereNotNull('user_id')->with('user')->get()
+            ->pluck('user')->filter(fn ($u) => $u && $u->pref('notify.sessionRecap'))
+            ->each(function (User $u) use ($play, $results) {
+                if ($mail = self::recap($play, $u, $results)) {
+                    self::send($u, $mail);
+                }
+            });
+
+        if ($play->organizer) {
+            self::send($play->organizer, self::recapOrganizer($play, $results));
+        }
+    }
+
     public static function recapOrganizer(OpenPlay $play, Results $results): PickleXMail
     {
         $players = $results->players();
@@ -163,6 +181,21 @@ class Emails
 
         return new PickleXMail('recap-organizer', "{$play->title} recap: {$players} players, {$results->log->count()} games", $pre,
             ['play' => $play, 'results' => $results, 'players' => $players, 'money' => $money]);
+    }
+
+    /** To the organizer: a session nobody ended closed on its own 12 hours after its end time. */
+    public static function autoEnded(OpenPlay $play): PickleXMail
+    {
+        $games = $play->games()->count();
+        $end = $play->ends_at->format('g:i A');
+
+        return new PickleXMail('auto-ended', "{$play->title} ended automatically",
+            'It was still live '.OpenPlay::AUTO_END_HOURS." hours after its {$end} end time. All {$games} ".Str::plural('game', $games).' and the standings are saved.', [
+                'play' => $play, 'games' => $games, 'end' => $end, 'at' => $play->ended_at->format('g:i A'),
+                'players' => $play->activeParticipants()->count(),
+                'checkedIn' => $play->activeParticipants()->whereNotNull('checked_in_at')->count(),
+                'ran' => max(1, (int) round($play->started_at->diffInMinutes($play->ended_at) / 60)).'h',
+            ]);
     }
 
     /**

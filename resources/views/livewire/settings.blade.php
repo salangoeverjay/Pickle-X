@@ -98,6 +98,63 @@
                     </div>
                 </section>
 
+                {{-- Passkeys (resources/js/passkeys.js): log in with the device's fingerprint, face or screen lock. --}}
+                <section id="set-passkeys" aria-labelledby="set-passkeys-h" x-data="passkeySettings({{ $user->id }}, @js($passkeys->pluck('id')))" class="{{ $card }} border border-line gap-4">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div class="min-w-0 flex-[1_1_320px]">
+                            <h2 id="set-passkeys-h" class="{{ $h2 }}">Passkeys</h2>
+                            <p class="{{ $lede }}">Log in with your fingerprint, face or screen lock instead of typing your password. A passkey stays on your device and can't be phished or reused.</p>
+                        </div>
+                        <button type="button" x-on:click="add()" class="{{ $ghost }} inline-flex h-11 items-center gap-2 px-4.5 text-sm"><x-icon name="plus" :size="16" :stroke="2.4" /><span x-text="here.length ? 'Replace on this device' : 'Add a passkey'">Add a passkey</span></button>
+                    </div>
+
+                    @if ($passkeys->isNotEmpty())
+                        <ul aria-label="Your passkeys" class="m-0 list-none divide-y divide-line overflow-hidden rounded-[18px] border border-line p-0">
+                            @foreach ($passkeys as $pk)
+                                <li wire:key="pk-{{ $pk->id }}" class="flex items-center gap-3.5 px-4 py-3.5">
+                                    <span aria-hidden="true" class="flex size-11 shrink-0 items-center justify-center rounded-[14px] bg-surface2 text-ink2"><x-icon :name="Str::contains($pk->name, ['iPhone', 'iOS', 'Android', 'iPad']) ? 'phone' : 'laptop'" :size="20" :stroke="1.9" /></span>
+                                    <div class="flex min-w-0 flex-1 flex-col gap-0.5">
+                                        <div class="flex min-w-0 flex-wrap items-center gap-2"><span class="truncate font-bold">{{ $pk->name }}</span><span x-show="isHere({{ $pk->id }})" x-cloak class="inline-flex h-5.5 shrink-0 items-center rounded-full bg-lime px-2 text-[11px] font-extrabold text-on-lime">This device</span></div>
+                                        <span class="text-[13px] text-ink3">{{ $pk->created_at->isToday() ? 'Added today' : 'Added '.$pk->created_at->format('M j') }} · {{ $pk->last_used_at ? 'Last used '.($pk->last_used_at->isToday() ? 'today' : $pk->last_used_at->format('M j')) : 'Not used yet' }}</span>
+                                    </div>
+                                    <button type="button" wire:click="$set('removing', {{ $pk->id }})" aria-label="Remove the passkey for {{ $pk->name }}" class="{{ $ghost }} h-10 shrink-0 px-3.5 text-[13px] text-hot">Remove</button>
+                                </li>
+                            @endforeach
+                        </ul>
+                        <p x-show="! here.length" x-cloak class="m-0 text-[13px] leading-[1.45] text-ink2">This device doesn't have a passkey yet. Add one to skip your password here too.</p>
+                    @else
+                        <div class="flex items-center gap-3 rounded-[18px] border-[1.5px] border-dashed border-line2 px-4 py-3.5">
+                            <span aria-hidden="true" class="text-ink3"><x-icon name="passkey" :size="22" :stroke="1.9" /></span>
+                            <span class="text-sm leading-[1.45] text-ink2">No passkeys yet. Add one on this device, then tap Log in with a passkey next time.</span>
+                        </div>
+                    @endif
+
+                    @if ($rememberedUntil)
+                        <div class="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-[18px] bg-surface2 px-4 py-3">
+                            <x-icon name="clock" :size="18" class="text-ink2" />
+                            <span class="min-w-0 flex-[1_1_240px] text-sm text-ink2">Remember me is on. This device keeps you logged in until {{ $rememberedUntil }}.</span>
+                            <button type="button" wire:click="forgetDevice" class="{{ $ghost }} h-10 px-3.5 text-[13px]">Forget this device</button>
+                        </div>
+                    @endif
+
+                    {{-- Waiting on the device's prompt to create the passkey. --}}
+                    <template x-teleport="body">
+                        <div x-show="step === 'wait'" x-cloak class="fixed inset-0 z-66 flex items-end justify-center lg:items-center lg:p-6">
+                            <div class="absolute inset-0 animate-fade bg-[rgba(18,23,15,.45)] dark:bg-black/62"></div>
+                            <div role="dialog" aria-modal="true" aria-labelledby="pka-title" aria-describedby="pka-desc" class="relative flex w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] lg:w-115 lg:rounded-[28px]">
+                                <div class="flex flex-col items-center gap-4.5 px-6 pt-7 pb-5 text-center">
+                                    <span aria-hidden="true" class="px-pk-wait flex size-18 items-center justify-center rounded-full bg-lime-soft text-lime-text"><x-icon name="passkey" :size="34" :stroke="1.8" /></span>
+                                    <div class="flex flex-col gap-1.5">
+                                        <h2 id="pka-title" class="m-0 font-display text-[26px] leading-[1.1] font-extrabold tracking-[-0.03em]">Create a passkey</h2>
+                                        <p id="pka-desc" role="status" class="m-0 text-[15px] leading-normal text-ink2">Your device will ask for your fingerprint, face or screen lock to save a passkey for {{ $user->email }}.</p>
+                                    </div>
+                                </div>
+                                <div class="flex border-t border-line px-5 py-4"><button type="button" x-on:click="step = null" class="h-12 flex-1 cursor-pointer rounded-full border-[1.5px] border-line2 text-[15px] font-bold text-ink transition hover:bg-surface2">Cancel</button></div>
+                            </div>
+                        </div>
+                    </template>
+                </section>
+
                 {{-- Organizer defaults --}}
                 @if ($mode === 'organizer')
                     <section id="set-club" aria-labelledby="set-club-h" class="{{ $card }} border border-line gap-4.5">
@@ -244,4 +301,44 @@
             </div>
         </div>
     </x-page>
+
+    {{-- Passkey dialogs sit outside x-page: its entrance transform would pin fixed children to it. --}}
+    @if ($naming)
+        <div class="fixed inset-0 z-66 flex items-end justify-center lg:items-center lg:p-6">
+            <div class="absolute inset-0 animate-fade bg-[rgba(18,23,15,.45)] dark:bg-black/62"></div>
+            <form wire:submit="namePasskey" role="dialog" aria-modal="true" aria-labelledby="pkn-title" aria-describedby="pkn-desc" x-trap.noscroll="true" class="relative flex w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] lg:w-115 lg:rounded-[28px]">
+                <div class="flex flex-col gap-4.5 px-6 pt-7 pb-5">
+                    <span aria-hidden="true" class="flex size-14 items-center justify-center rounded-full bg-lime text-on-lime"><x-icon name="check" :size="26" :stroke="2.6" /></span>
+                    <div class="flex flex-col gap-1.5">
+                        <h2 id="pkn-title" class="m-0 font-display text-[26px] leading-[1.1] font-extrabold tracking-[-0.03em]">Passkey saved</h2>
+                        <p id="pkn-desc" class="m-0 text-[15px] leading-normal text-ink2">Next time, tap Log in with a passkey. Give it a name so you can tell your devices apart.</p>
+                    </div>
+                    <x-field label="Passkey name" id="pkn-name" maxlength="40" autocomplete="off" wire:model="passkeyName" />
+                </div>
+                <div class="flex border-t border-line px-5 py-4"><button type="submit" class="{{ $primary }} flex-1">Done</button></div>
+            </form>
+        </div>
+    @endif
+
+    @if ($removing && ($pkGone = $passkeys->firstWhere('id', $removing)))
+        <div x-data x-on:keydown.escape.window="$wire.set('removing', null)" class="fixed inset-0 z-66 flex items-end justify-center lg:items-center lg:p-6">
+            <button type="button" wire:click="$set('removing', null)" aria-label="Keep passkey" class="absolute inset-0 animate-fade cursor-pointer bg-[rgba(18,23,15,.45)] dark:bg-black/62"></button>
+            <div role="alertdialog" aria-modal="true" aria-labelledby="pkd-title" aria-describedby="pkd-desc" x-trap.noscroll="true" class="relative flex w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] lg:w-115 lg:rounded-[28px]">
+                <div class="flex flex-col gap-4 px-6 pt-7 pb-5">
+                    <span aria-hidden="true" class="flex size-14 items-center justify-center rounded-full bg-hot-soft text-hot"><x-icon name="passkey" :size="26" :stroke="1.9" /></span>
+                    <div class="flex flex-col gap-1.5">
+                        <h2 id="pkd-title" class="m-0 font-display text-[26px] leading-[1.1] font-extrabold tracking-[-0.03em]">Remove this passkey?</h2>
+                        <p id="pkd-desc" class="m-0 text-[15px] leading-normal text-ink2">You won't be able to log in with <strong class="text-ink">{{ $pkGone->name }}</strong> anymore. Your password still works, and you can add the passkey again any time.</p>
+                    </div>
+                    @if ($passkeys->count() === 1)
+                        <p class="m-0 rounded-[14px] bg-surface2 px-3.5 py-3 text-sm text-ink2">It's your only passkey, so you'll log in with your password until you add another.</p>
+                    @endif
+                </div>
+                <div class="flex gap-2 border-t border-line px-5 py-4">
+                    <button type="button" wire:click="$set('removing', null)" class="{{ $ghost }} h-12 flex-1 text-[15px]">Keep passkey</button>
+                    <button type="button" wire:click="removePasskey" class="h-12 flex-1 cursor-pointer rounded-full bg-hot text-[15px] font-extrabold text-bg transition hover:brightness-96 active:scale-97">Remove passkey</button>
+                </div>
+            </div>
+        </div>
+    @endif
 </x-app-shell>

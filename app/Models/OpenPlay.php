@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Emails;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -42,6 +43,7 @@ class OpenPlay extends Model
             'ends_at' => 'datetime',
             'started_at' => 'datetime',
             'ended_at' => 'datetime',
+            'auto_ended' => 'boolean',
             'auto_fill' => 'boolean',
             'board' => 'array',
         ];
@@ -510,6 +512,27 @@ class OpenPlay extends Model
     public function end(): void
     {
         $this->update(['status' => 'done', 'ended_at' => now()]);
+    }
+
+    /** A live session nobody ended closes on its own this long after its end time. */
+    public const AUTO_END_HOURS = 12;
+
+    public function autoEndAt(): CarbonInterface
+    {
+        return $this->ends_at->copy()->addHours(self::AUTO_END_HOURS);
+    }
+
+    /**
+     * Ends a session still live 12 hours after its end time, the same as End session (games and
+     * standings saved, recaps sent), and tells the organizer. Run by open-plays:auto-end.
+     */
+    public function endAutomatically(): void
+    {
+        $this->forceFill(['auto_ended' => true])->end();
+        Emails::sendRecaps($this->fresh());
+        if ($this->organizer) {
+            Emails::send($this->organizer, Emails::autoEnded($this->fresh()));
+        }
     }
 
     public function setAutoFill(bool $on): void

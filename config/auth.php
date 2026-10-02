@@ -41,6 +41,8 @@ return [
         'web' => [
             'driver' => 'session',
             'provider' => 'users',
+            // "Remember me" on the login form keeps someone logged in on that device for 30 days (minutes).
+            'remember' => 60 * 24 * 30,
         ],
     ],
 

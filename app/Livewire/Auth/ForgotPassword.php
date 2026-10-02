@@ -75,17 +75,23 @@ class ForgotPassword extends Component
         RateLimiter::hit($key, 3600);
 
         if ($user = User::where('email', $this->email)->first()) {
-            $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-            DB::table('password_reset_tokens')->upsert(
-                [['email' => $user->email, 'token' => Hash::make($code), 'created_at' => now()]], ['email'], ['token', 'created_at'],
-            );
+            self::sendCode($user, self::device((string) request()->userAgent()));
             RateLimiter::clear($this->triesKey());
-            Emails::send($user, Emails::reset($user, $code, now()->addMinutes(self::TTL), self::device((string) request()->userAgent())));
         }
 
         $this->step = 'code';
         $this->sentAt = time();
         $this->code = '';
+    }
+
+    /** Emails a fresh 6-digit code; its button links back here with the code filled in. Also used by Admin › Users. */
+    public static function sendCode(User $user, string $device): void
+    {
+        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        DB::table('password_reset_tokens')->upsert(
+            [['email' => $user->email, 'token' => Hash::make($code), 'created_at' => now()]], ['email'], ['token', 'created_at'],
+        );
+        Emails::send($user, Emails::reset($user, $code, now()->addMinutes(self::TTL), $device));
     }
 
     public function resend(): void

@@ -6,7 +6,6 @@ use App\Models\OpenPlay;
 use App\Models\User;
 use App\Support\AccountMatch;
 use App\Support\Emails;
-use App\Support\Results;
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
 use Illuminate\Support\Collection;
@@ -87,29 +86,11 @@ class CourtBoard extends Component
         $play = $this->play();
         $games = $play->games()->count();
         $play->end();
-        self::sendRecaps($play->fresh());
+        Emails::sendRecaps($play->fresh());
 
         session()->flash('toast', "Session ended · {$games} ".($games === 1 ? 'game' : 'games').' logged');
 
         return $this->redirectRoute('organizer.plays', navigate: true);
-    }
-
-    /** Recap emails once a session ends: one per player who logged games (unless turned off), one for the organizer. */
-    public static function sendRecaps(OpenPlay $play): void
-    {
-        $results = new Results($play);
-        $ids = collect($results->rows)->pluck('participant_id');
-        $play->participants()->whereIn('id', $ids)->whereNotNull('user_id')->with('user')->get()
-            ->pluck('user')->filter(fn ($u) => $u && $u->pref('notify.sessionRecap'))
-            ->each(function (User $u) use ($play, $results) {
-                if ($mail = Emails::recap($play, $u, $results)) {
-                    Emails::send($u, $mail);
-                }
-            });
-
-        if ($play->organizer) {
-            Emails::send($play->organizer, Emails::recapOrganizer($play, $results));
-        }
     }
 
     public function fillCourt(int $n): void
@@ -400,6 +381,14 @@ class CourtBoard extends Component
     {
         $play = auth()->user()->openPlays()->status('live')->first();
 
+        // Still live 12 hours after its end time (no scheduler run yet): end it now, as the scheduler would.
+        if ($play && now()->gte($play->autoEndAt())) {
+            $play->endAutomatically();
+            session()->flash('toast', "{$play->title} ended automatically, ".OpenPlay::AUTO_END_HOURS." hours after its {$play->ends_at->format('g:i A')} end time");
+            $this->redirectRoute('organizer.plays', navigate: true);
+            $play = null;
+        }
+
         if (! $play) {
             return view('livewire.organizer.court-board', ['play' => null]);
         }
@@ -465,7 +454,21 @@ class CourtBoard extends Component
         $hits = $rows->filter(fn ($r) => $in($r, $qf) && ($q === '' || str_contains($r['search'], $q)))->values();
         $qShow = max(self::QUEUE_PAGE, $this->qShow);
 
+        $endsAt = $play->autoEndAt();
+        $left = (int) ceil(now()->diffInSeconds($endsAt) / 60);
+        $after = OpenPlay::AUTO_END_HOURS.' hours after the '.$play->ends_at->format('g:i A').' end time';
+
         return view('livewire.organizer.court-board', [
+            // Ends on its own: a note under the title, and a warning in the last hour.
+            'autoEnd' => [
+                'soon' => $left <= 60,
+                'note' => 'Ends on its own at '.$endsAt->format('g:i A').' '.match (true) {
+                    $endsAt->isToday() => 'today',
+                    $endsAt->isTomorrow() => 'tomorrow',
+                    default => 'on '.$endsAt->format('D, M j'),
+                }.", {$after}.",
+                'warning' => 'Ends automatically in '.($left <= 1 ? 'under a minute' : $left.' minutes')." ({$after}). Every logged game and the standings are saved when it does.",
+            ],
             'play' => $play,
             'courts' => $courts,
             'queue' => $queue,

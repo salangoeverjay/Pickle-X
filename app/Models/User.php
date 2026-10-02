@@ -11,13 +11,17 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Spatie\LaravelPasskeys\Models\Concerns\HasPasskeys;
+use Spatie\LaravelPasskeys\Models\Concerns\InteractsWithPasskeys;
 
 #[Fillable(['name', 'email', 'password', 'role', 'organizer_status', 'club', 'city', 'courts', 'organizer_note', 'phone', 'avatar_color', 'avatar', 'preferences', 'display_name', 'show_display_name'])]
 #[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable
+class User extends Authenticatable implements HasPasskeys
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, InteractsWithPasskeys, Notifiable;
 
     // Mirror the column default so new, unsaved-refresh models know they're players.
     protected $attributes = ['role' => 'member'];
@@ -83,6 +87,7 @@ class User extends Authenticatable
             'preferences' => 'array',
             'is_developer' => 'boolean',
             'show_display_name' => 'boolean',
+            'suspended_at' => 'datetime',
         ];
     }
 
@@ -111,6 +116,28 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
+    }
+
+    public function isSuspended(): bool
+    {
+        return $this->suspended_at !== null;
+    }
+
+    /** One of member | organizer | admin, as Admin › Users shows and sets it. */
+    public function accountRole(): string
+    {
+        return match (true) {
+            $this->isAdmin() => 'admin',
+            $this->isOrganizer() => 'organizer',
+            default => 'member',
+        };
+    }
+
+    /** Ends every session and invalidates "Remember me" cookies (passkeys stay). */
+    public function signOutEverywhere(): void
+    {
+        DB::table('sessions')->where('user_id', $this->id)->delete();
+        $this->forceFill(['remember_token' => Str::random(60)])->save();
     }
 
     /**

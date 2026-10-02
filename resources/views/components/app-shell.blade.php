@@ -19,6 +19,7 @@
         ],
         'admin' => [
             ['admin.requests', 'Requests', 'shield', \App\Models\User::where('organizer_status', 'pending')->count() ?: null],
+            ['admin.users', 'Users', 'users', null],
             ['admin.developers', 'Developers', 'code', null],
             ['admin.sponsors', 'Sponsors', 'heart', null],
         ],
@@ -79,19 +80,6 @@
 
         <div class="flex-1"></div>
 
-        @php($on = $isPage('settings'))
-        <a href="{{ route('about') }}" wire:navigate class="flex h-12 items-center gap-3 rounded-[14px] px-3 text-[15px] font-bold text-ink2 transition hover:bg-surface2 hover:text-ink">
-            <x-icon name="love" /><span class="flex-1">Meet the developer</span>
-        </a>
-
-        <a href="{{ route('settings') }}" wire:navigate @if ($on) aria-current="page" @endif @class([
-            'flex h-12 items-center gap-3 rounded-[14px] px-3 text-[15px] font-bold transition active:scale-97',
-            'bg-lime text-on-lime' => $on,
-            'text-ink2 hover:bg-surface2 hover:text-ink' => ! $on,
-        ])>
-            <x-icon name="settings" /><span class="flex-1">Account settings</span>
-        </a>
-
         <button type="button" onclick="setTheme()" x-data="{ dark: document.documentElement.dataset.theme === 'dark' }" x-on:click="dark = ! dark" role="switch" x-bind:aria-checked="dark" aria-label="Dark mode"
                 class="flex h-12 cursor-pointer items-center gap-3 rounded-[14px] px-3 text-left text-sm font-semibold text-ink2 transition hover:bg-surface2">
             <x-icon name="moon" class="dark:hidden" /><x-icon name="sun" class="hidden dark:block" />
@@ -101,16 +89,37 @@
             </span>
         </button>
 
-        <div class="flex items-center gap-2.5 rounded-2xl border border-line bg-surface2 p-2.5">
-            <x-avatar :src="$user->avatarUrl()" :frame="$user->frameClass()" :name="$user->name" :color="$user->color()" class="size-9.5 text-[13px]" />
-            <div class="flex min-w-0 flex-1 flex-col">
-                <span class="truncate text-sm font-bold">{{ $user->name }}</span>
-                <span class="truncate text-xs text-ink3">{{ $user->email }}</span>
+        {{-- Account card: opens a menu with Account settings and Meet the developer. --}}
+        @php($acct = $isPage('settings') || $isPage('about'))
+        <div class="relative" x-data="{ open: false }" x-on:keydown.escape="open = false">
+            <template x-if="open">
+                <div>
+                    <button type="button" tabindex="-1" aria-hidden="true" x-on:click="open = false" class="fixed inset-0 z-40 cursor-default"></button>
+                    <div id="px-pm" role="menu" aria-label="Your account" class="px-pm-pop absolute inset-x-0 bottom-[calc(100%+8px)] z-41 flex flex-col gap-0.5 rounded-[18px] border border-line bg-surface p-1.5 shadow-card">
+                        @foreach ([['settings', 'Account settings', 'settings'], ['about', 'Meet the developer', 'love']] as [$route, $label, $icon])
+                            <a href="{{ route($route) }}" wire:navigate role="menuitem" @if ($isPage($route)) aria-current="page" @endif
+                               @class(['flex h-11.5 items-center gap-3 rounded-xl px-3 text-sm font-bold text-ink transition hover:bg-surface2 active:scale-97', 'bg-lime-soft' => $isPage($route)])>
+                                <x-icon :name="$icon" /><span class="flex-1">{{ $label }}</span>
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+            </template>
+            <div x-bind:class="open && 'bg-surface'" @class(['flex items-center gap-1 rounded-2xl border p-1.5 transition-colors', 'border-ink bg-surface' => $acct, 'border-line bg-surface2' => ! $acct])>
+                <button type="button" x-on:click="open = ! open" aria-haspopup="menu" x-bind:aria-expanded="open" aria-controls="px-pm" aria-label="Account menu for {{ $user->name }}"
+                        class="flex min-h-12 min-w-0 flex-1 cursor-pointer items-center gap-2.5 rounded-xl p-1 text-left text-ink active:scale-97">
+                    <x-avatar :src="$user->avatarUrl()" :frame="$user->frameClass()" :name="$user->name" :color="$user->color()" class="size-9.5 text-[13px]" />
+                    <span class="flex min-w-0 flex-1 flex-col">
+                        <span class="truncate text-sm font-bold">{{ $user->name }}</span>
+                        <span class="truncate text-xs text-ink3">{{ $user->email }}</span>
+                    </span>
+                    <x-icon name="chevron-down" :size="16" :stroke="2.2" class="shrink-0 text-ink3 transition-transform duration-200" x-bind:class="open && 'rotate-180'" />
+                </button>
+                <form method="POST" action="{{ route('logout') }}" x-data x-on:submit="$dispatch('px-loading', { kind: 'logout', first: @js($user->firstName()) })">
+                    @csrf
+                    <button type="submit" aria-label="Log out" class="flex size-9.5 cursor-pointer items-center justify-center rounded-xl text-ink2 transition hover:bg-surface2 active:scale-97"><x-icon name="logout" /></button>
+                </form>
             </div>
-            <form method="POST" action="{{ route('logout') }}" x-data x-on:submit="$dispatch('px-loading', { kind: 'logout', first: @js($user->firstName()) })">
-                @csrf
-                <button type="submit" aria-label="Log out" class="flex size-9.5 cursor-pointer items-center justify-center rounded-xl text-ink2 transition hover:bg-surface active:scale-97"><x-icon name="logout" /></button>
-            </form>
         </div>
     </aside>
 

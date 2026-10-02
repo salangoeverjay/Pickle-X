@@ -91,5 +91,6 @@ class AuthTest extends TestCase
         config(['app.demo' => true]);
         $this->post(route('demo-login'), ['role' => 'admin'])->assertRedirect(route('admin.requests'));
         $this->assertAuthenticatedAs(User::firstWhere('email', 'admin@picklex.app'));
+        $this->assertSame('Logged in as admin · '.User::where('organizer_status', 'pending')->count().' pending', session('toast'));
     }
 }

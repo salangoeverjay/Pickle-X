@@ -24,6 +24,9 @@
                         <span class="text-[13px] text-ink3">{{ $started }} · {{ $play->rotationLabel() }} · Race to {{ $play->race_to }}</span>
                     </div>
                     <h1 class="m-0 font-display text-[32px] leading-none font-extrabold tracking-[-0.04em] lg:text-[44px]">{{ $play->title }}</h1>
+                    @unless ($autoEnd['soon'])
+                        <span class="inline-flex items-center gap-1.5 text-[13px] text-ink2"><x-icon name="clock" :size="15" />{{ $autoEnd['note'] }}</span>
+                    @endunless
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
                     <button type="button" role="switch" aria-checked="{{ $play->auto_fill ? 'true' : 'false' }}" wire:click="toggleAutoFill"
@@ -45,6 +48,14 @@
                     </button>
                 </div>
             </div>
+
+            @if ($autoEnd['soon'])
+                <div role="status" class="flex animate-fade flex-wrap items-center gap-x-3.5 gap-y-2.5 rounded-[18px] border border-hot-line bg-hot-soft px-4 py-3.5 text-hot">
+                    <x-icon name="clock" :size="20" />
+                    <span class="flex-[1_1_280px] text-sm leading-[1.45] font-semibold">{{ $autoEnd['warning'] }}</span>
+                    <button type="button" x-on:click="confirmEnd = true" class="h-11 shrink-0 cursor-pointer rounded-full bg-hot px-4 text-sm font-extrabold text-bg transition hover:brightness-96 active:scale-97">End it now</button>
+                </div>
+            @endif
 
             {{-- Stats --}}
             <div class="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
