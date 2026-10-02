@@ -56,6 +56,15 @@ services:
             - '${FORWARD_MAILPIT_DASHBOARD_PORT:-8025}:8025'
         networks:
             - sail
+    ngrok-bypass:
+        image: igops/ngrok-skip-browser-warning:latest
+        container_name: ngrok_bypass_proxy
+        ports:
+            - "8080:80"  # This is the port ngrok should point to
+        environment:
+            - NGROK_HOST=https://fancied-evacuate-untoasted.ngrok-free.dev/ # Replace with your ngrok URL
+        depends_on:
+            - laravel.test
 networks:
     sail:
         driver: bridge
