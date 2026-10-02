@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin;
 
+use App\Livewire\Concerns\Pages;
 use App\Models\GamePlayer;
 use App\Models\User;
 use App\Support\Looks;
@@ -12,6 +13,8 @@ use Livewire\Component;
 #[Title('Sponsors · PickleX')]
 class Sponsors extends Component
 {
+    use Pages;
+
     public string $q = '';
 
     /** Tier a new sponsor is added at. */
@@ -67,6 +70,7 @@ class Sponsors extends Component
 
         return view('livewire.admin.sponsors', [
             'sponsors' => $sponsors,
+            'sponsorsPage' => $this->pageOf($sponsors, 5, 'sponsorsPage'),
             'counts' => $sponsors->countBy('sponsor_tier'),
             'results' => $q === '' ? collect() : User::where('role', 'member')->whereNull('sponsor_tier')
                 ->where(fn ($w) => $w->whereRaw('LOWER(name) LIKE ?', [$like])->orWhereRaw('LOWER(email) LIKE ?', [$like]))

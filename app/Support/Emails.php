@@ -58,6 +58,50 @@ class Emails
             "We couldn't approve it this time. You can still play, and you can apply again any time.", ['user' => $user]);
     }
 
+    public static function passkeyAdded(User $user, string $name, string $device): PickleXMail
+    {
+        return new PickleXMail('passkey-added', 'A passkey was added to your PickleX account',
+            "{$name} can now log in to {$user->email} without your password.", [
+                'user' => $user, 'name' => $name, 'device' => $device, 'at' => now(), 'count' => $user->passkeys()->count(),
+            ], security: true);
+    }
+
+    public static function passkeyRemoved(User $user, string $name, CarbonInterface $added, string $device): PickleXMail
+    {
+        return new PickleXMail('passkey-removed', 'A passkey was removed from your PickleX account',
+            "{$name} can't log in to {$user->email} anymore. Your password still works.", [
+                'user' => $user, 'name' => $name, 'added' => $added, 'device' => $device, 'at' => now(), 'left' => $user->passkeys()->count(),
+            ], security: true);
+    }
+
+    /** $was and $role: member | organizer | admin (User::accountRole()). */
+    public static function roleChanged(User $user, string $was, string $role): PickleXMail
+    {
+        $label = ['member' => 'Member', 'organizer' => 'Organizer', 'admin' => 'Admin'][$role];
+
+        return new PickleXMail('role-changed', "Your PickleX role changed to {$label}", match ($role) {
+            'organizer' => 'A PickleX admin made you an Organizer for '.($user->club ?: 'your club').'. You can host open plays now.',
+            'admin' => 'A PickleX admin made you an Admin. You can review organizer requests and manage accounts now.',
+            default => 'A PickleX admin made you a Member. You still play on the same account.',
+        }, ['user' => $user, 'was' => $was, 'role' => $role]);
+    }
+
+    public static function accountSuspended(User $user): PickleXMail
+    {
+        return new PickleXMail('account-suspended', 'Your PickleX account is suspended',
+            "You can't log in or join open plays for now. Here's what that means, and how to ask for another look.", ['user' => $user]);
+    }
+
+    /** Built before the account is deleted; send it to the address, not the gone account. */
+    public static function accountDeleted(User $user, bool $byAdmin): PickleXMail
+    {
+        return $byAdmin
+            ? new PickleXMail('account-deleted', 'Your PickleX account was deleted',
+                "A PickleX admin deleted {$user->email}. You can't log in with it anymore.", ['user' => $user, 'byAdmin' => true, 'at' => now()])
+            : new PickleXMail('account-deleted', 'Your PickleX account is deleted',
+                "You deleted {$user->email}. Thanks for playing with us.", ['user' => $user, 'byAdmin' => false, 'at' => now()]);
+    }
+
     // ------------------------------------------------------------ open plays
 
     public static function newPlay(OpenPlay $play, User $to): PickleXMail

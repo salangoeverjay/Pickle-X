@@ -196,6 +196,7 @@
                         </div>
                     @endforeach
                 </div>
+                <x-pager :page="$past" noun="open plays" class="pt-0.5" />
             </section>
         @endif
     </x-page>

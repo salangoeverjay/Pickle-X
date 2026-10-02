@@ -172,7 +172,7 @@
                     @endif
 
                     <div @class(['hidden lg:block' => $tab === 'courts'])>
-                        <x-standings :play="$play" :rows="$standings" :fresh="$podNew" heading="standings-board" class="rounded-3xl" />
+                        <x-standings :play="$play" :rows="$standings" :page="$standingsPage" :fresh="$podNew" heading="standings-board" class="rounded-3xl" />
                     </div>
                 </div>
 

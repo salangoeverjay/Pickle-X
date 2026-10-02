@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin;
 
+use App\Livewire\Concerns\Pages;
 use App\Models\GamePlayer;
 use App\Models\OpenPlay;
 use App\Models\User;
@@ -13,6 +14,8 @@ use Livewire\Component;
 #[Title('Organizer requests · PickleX')]
 class Requests extends Component
 {
+    use Pages;
+
     public const TABS = ['pending' => 'Pending', 'approved' => 'Approved', 'declined' => 'Declined'];
 
     #[Url]
@@ -51,6 +54,14 @@ class Requests extends Component
         return $user;
     }
 
+    /** A new tab starts on page 1. */
+    public function updated(string $property): void
+    {
+        if (in_array($property, ['tab'])) {
+            $this->resetPage('requestsPage');
+        }
+    }
+
     public function render()
     {
         if (! array_key_exists($this->tab, self::TABS)) {
@@ -66,10 +77,11 @@ class Requests extends Component
             'members' => User::where('role', 'member')->count(),
             'live' => OpenPlay::status('live')->count(),
             // has_played: this account already plays (joined an open play or has games), same account.
-            'requests' => User::where('organizer_status', $this->tab)
+            'requests' => $requests = User::where('organizer_status', $this->tab)
                 ->withExists(['participations as has_played'])
                 ->addSelect(['has_games' => GamePlayer::selectRaw('1')->whereColumn('user_id', 'users.id')->limit(1)])
                 ->latest()->latest('id')->get(),
+            'requestsPage' => $this->pageOf($requests, 6, 'requestsPage'),
         ]);
     }
 }

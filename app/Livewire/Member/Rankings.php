@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Member;
 
+use App\Livewire\Concerns\Pages;
 use App\Support\MemberStats;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Title;
@@ -11,12 +12,22 @@ use Livewire\Component;
 #[Title('Rankings · PickleX')]
 class Rankings extends Component
 {
+    use Pages;
+
     #[Url]
     public string $period = 'month'; // month | all
 
     // One table per club whose open plays you joined, plus 'all' (every club added up, all time). Empty: your home club.
     #[Url(except: '')]
     public string $club = '';
+
+    /** A new table starts on page 1. */
+    public function updated(string $property): void
+    {
+        if (in_array($property, ['period', 'club'])) {
+            $this->resetPage('rankPage');
+        }
+    }
 
     public function render()
     {
@@ -41,6 +52,7 @@ class Rankings extends Component
         return view('livewire.member.rankings', [
             'user' => $user,
             'rows' => $rows,
+            'rowsPage' => $this->pageOf($rows, 10, 'rankPage'),
             'me' => $me,
             'all' => $all,
             'scopes' => $clubs->map(fn ($c) => ['id' => $c->name, 'name' => $c->name, 'sub' => $c->name === $user->club ? 'Home club' : $c->plays.' '.Str::plural('open play', $c->plays)])

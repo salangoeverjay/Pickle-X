@@ -4,17 +4,26 @@ namespace Tests\Feature;
 
 use App\Livewire\Auth\Login;
 use App\Livewire\Settings;
+use App\Mail\PickleXMail;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
 use Spatie\LaravelPasskeys\Actions\FindPasskeyToAuthenticateAction;
+use Spatie\LaravelPasskeys\Actions\StorePasskeyAction;
 use Spatie\LaravelPasskeys\Models\Passkey;
 use Tests\TestCase;
 
 class PasskeysTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Mail::fake();
+    }
 
     private function passkey(User $user, string $name): int
     {
@@ -74,6 +83,19 @@ class PasskeysTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_a_new_passkey_sends_a_security_email(): void
+    {
+        $user = User::factory()->create();
+        $this->mock(StorePasskeyAction::class)->shouldReceive('execute')
+            ->andReturnUsing(fn () => Passkey::find($this->passkey($user, 'Chrome on macOS')));
+
+        Livewire::actingAs($user)
+            ->test(Settings::class)->call('passkeyOptions')->call('storePasskey', '{}')
+            ->assertSee('Passkey saved')->assertSee('Next time, tap Log in with a passkey.');
+        Mail::assertSent(PickleXMail::class, fn ($m) => $m->template === 'passkey-added' && $m->hasTo($user->email) && $m->security
+            && str_contains($m->render(), 'A new passkey can log in to your account') && str_contains($m->render(), '1 on your account'));
+    }
+
     public function test_settings_lists_names_and_removes_passkeys(): void
     {
         $user = User::factory()->create();
@@ -86,9 +108,11 @@ class PasskeysTest extends TestCase
         Livewire::actingAs($user)->test(Settings::class)
             ->assertSee('MacBook · Chrome')->assertSee('Not used yet')->assertDontSee('Not mine')
             ->set('naming', $id)->set('passkeyName', 'Work laptop')->call('namePasskey')
-            ->assertDispatched('toast', message: 'Passkey saved · use it next time you log in')
+            ->assertDispatched('toast', message: "Passkey saved · we emailed {$user->email} about it")
             ->set('removing', $id)->assertSee('Remove this passkey?')->assertSee('only passkey')
-            ->call('removePasskey')->assertDispatched('toast', message: 'Removed the passkey for Work laptop');
+            ->call('removePasskey')->assertDispatched('toast', message: "Removed the passkey for Work laptop · we emailed {$user->email} about it");
+        Mail::assertSent(PickleXMail::class, fn ($m) => $m->template === 'passkey-removed' && $m->hasTo($user->email)
+            && str_contains($m->render(), 'Work laptop') && str_contains($m->render(), 'Your password still works.'));
         $this->assertDatabaseMissing('passkeys', ['id' => $id]);
 
         // Someone else's passkey is out of reach.

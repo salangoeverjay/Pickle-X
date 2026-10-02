@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Livewire\Auth\ForgotPassword;
 use App\Livewire\Auth\Login;
 use App\Models\User;
+use App\Support\Emails;
 use App\Support\Looks;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -293,11 +294,13 @@ class Settings extends Component
     {
         $user = $this->user();
 
+        $mail = Emails::accountDeleted($user, byAdmin: false);
         Auth::logout();
-        $user->delete();
+        $user->deleteAccount();
+        Emails::send($user->email, $mail);
         session()->invalidate();
         session()->regenerateToken();
-        session()->flash('toast', 'Account deleted');
+        session()->flash('toast', 'Account deleted · we emailed you a confirmation');
 
         return $this->redirect(route('home'));
     }
@@ -362,6 +365,7 @@ class Settings extends Component
             return null;
         }
         $this->replaced = $replaces && $user->passkeys()->whereKey($replaces)->delete();
+        Emails::send($user, Emails::passkeyAdded($user, $name, $name));
         $this->naming = $passkey->id;
         $this->passkeyName = $name;
 
@@ -373,16 +377,18 @@ class Settings extends Component
     {
         $passkey = $this->user()->passkeys()->findOrFail($this->naming);
         $passkey->update(['name' => Str::limit(trim($this->passkeyName), 40, '') ?: $passkey->name]);
-        $this->dispatch('toast', message: $this->replaced ? 'Passkey on this device replaced' : 'Passkey saved · use it next time you log in');
+        $this->dispatch('toast', message: ($this->replaced ? 'Passkey on this device replaced' : 'Passkey saved')." · we emailed {$this->user()->email} about it");
         $this->reset('naming', 'passkeyName', 'replaced');
     }
 
     public function removePasskey(): void
     {
-        $passkey = $this->user()->passkeys()->findOrFail($this->removing);
+        $user = $this->user();
+        $passkey = $user->passkeys()->findOrFail($this->removing);
         $passkey->delete();
+        Emails::send($user, Emails::passkeyRemoved($user, $passkey->name, $passkey->created_at, ForgotPassword::device((string) request()->userAgent())));
         $this->removing = null;
-        $this->dispatch('toast', message: "Removed the passkey for {$passkey->name}");
+        $this->dispatch('toast', message: "Removed the passkey for {$passkey->name} · we emailed {$user->email} about it");
     }
 
     /** Remember me: stop this device keeping you logged in (other devices keep theirs). */

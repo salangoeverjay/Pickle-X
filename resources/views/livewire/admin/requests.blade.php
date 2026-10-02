@@ -42,7 +42,7 @@
         @endif
 
         <div class="grid gap-3.5 lg:grid-cols-2 2xl:grid-cols-3">
-            @foreach ($requests as $request)
+            @foreach ($requestsPage as $request)
                 @php($fresh = $request->created_at?->gt(now()->subDay()))
                 <div wire:key="req-{{ $request->id }}" @class(['flex animate-fade flex-col gap-3.5 rounded-3xl border-[1.5px] bg-surface p-4.5 lg:p-6', 'border-lime' => $fresh, 'border-line' => ! $fresh])>
                     <div class="flex items-center gap-3">
@@ -89,5 +89,6 @@
                 </div>
             @endforeach
         </div>
+        <x-pager :page="$requestsPage" noun="requests" class="pt-0.5" />
     </x-page>
 </x-app-shell>

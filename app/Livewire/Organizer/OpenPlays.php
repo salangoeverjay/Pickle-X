@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Organizer;
 
+use App\Livewire\Concerns\Pages;
 use App\Models\Game;
 use App\Models\GamePlayer;
 use App\Models\OpenPlay;
@@ -21,6 +22,8 @@ use Livewire\Component;
 #[Title('Your open plays · PickleX')]
 class OpenPlays extends Component
 {
+    use Pages;
+
     // Create dialog; ?create=1 opens it (sidebar "Create open play" link).
     #[Url(except: false)]
     public bool $create = false;
@@ -533,6 +536,15 @@ class OpenPlays extends Component
         $this->rosterId = $this->editable($id)->id;
         $this->rosterQ = '';
         $this->rosterF = 'all';
+        $this->resetPage('rosterPage');
+    }
+
+    /** A new roster filter or search starts on page 1. */
+    public function updated(string $property): void
+    {
+        if (in_array($property, ['rosterQ', 'rosterF'])) {
+            $this->resetPage('rosterPage');
+        }
     }
 
     public function closeRoster(): void
@@ -592,7 +604,7 @@ class OpenPlays extends Component
         } && ($q === '' || str_contains(mb_strtolower($r['p']->name.' '.$r['p']->fullName()), $q) || str_contains(mb_strtolower((string) $r['p']->user?->email), $q)))->values();
 
         return [
-            'play' => $play, 'free' => $free, 'rows' => $rows, 'counts' => $counts, 'tabs' => $tabs, 'f' => $f, 'q' => trim($this->rosterQ),
+            'play' => $play, 'free' => $free, 'rows' => $rows, 'page' => $this->pageOf($rows, 10, 'rosterPage'), 'counts' => $counts, 'tabs' => $tabs, 'f' => $f, 'q' => trim($this->rosterQ),
             'fee' => (float) preg_replace('/[^\d.]/', '', (string) $play->fee),
             'sent' => $all->where('sent', true)->count(),
             'account' => $play->hasPaymentQr() ? $play->payMethodLabel() : 'account',
@@ -742,8 +754,7 @@ class OpenPlays extends Component
             'hasPlays' => auth()->user()->openPlays()->exists(),
             'live' => $plays->where('status', 'live'),
             'upcoming' => $plays->where('status', 'upcoming'),
-            // Recent history only; the totals cover every concluded session.
-            'past' => $query()->status('done')->latest('starts_at')->limit(10)->get(),
+            'past' => $query()->status('done')->latest('starts_at')->paginate(5, pageName: 'pastPage'),
             'hosted' => $this->hostedTotals(),
             'paidPreview' => $this->create ? $this->paidRows() : [],
             'lastQrUrl' => $this->lastPayPlay()?->payQrUrl(),

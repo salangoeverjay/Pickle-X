@@ -101,7 +101,7 @@
         @endif
 
         <div class="overflow-hidden rounded-3xl border border-line bg-surface">
-            @foreach ($rows as $r)
+            @foreach ($rowsPage as $r)
                 <div wire:key="row-{{ $r->user->id }}" @class(['flex items-center gap-2.5 border-b border-line px-3.5 py-3 lg:gap-3.5 lg:px-6', 'bg-lime-soft' => $r->me])>
                     <span class="flex w-6.5 shrink-0 justify-center">
                         @if ($r->rank <= 3)
@@ -153,6 +153,7 @@
             @if ($rows->isEmpty())
                 <p class="m-0 px-6 py-7 text-ink2">{{ $empty }}</p>
             @endif
+            <x-pager :page="$rowsPage" noun="players" class="px-5 py-3" />
         </div>
 
         <div class="flex flex-wrap items-center gap-2.5 rounded-[20px] border-[1.5px] border-dashed border-line2 px-4.5 py-4">

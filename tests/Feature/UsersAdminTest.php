@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Livewire\Admin\Users;
 use App\Livewire\Auth\Login;
+use App\Mail\PickleXMail;
 use App\Models\Game;
 use App\Models\GamePlayer;
 use App\Models\OpenPlay;
@@ -25,6 +26,7 @@ class UsersAdminTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Mail::fake();
         $this->super = User::factory()->create(['name' => 'Pat Admin', 'role' => 'admin']);
     }
 
@@ -54,16 +56,33 @@ class UsersAdminTest extends TestCase
             ->set('q', 'zzz')->assertSee('No accounts match "zzz".');
     }
 
+    public function test_the_list_pages_by_ten(): void
+    {
+        foreach (range(1, 11) as $i) {
+            User::factory()->create(['name' => sprintf('Player %02d', $i)]);
+        }
+
+        Livewire::actingAs($this->super)->test(Users::class)
+            ->assertSee('Showing 1-10 of 12 accounts')->assertSee('Page 1 of 2')->assertSee('Player 09')->assertDontSee('Player 11')
+            ->call('nextPage', 'usersPage')->assertSee('Showing 11-12 of 12 accounts')->assertSee('Player 11')->assertDontSee('Player 09')
+            ->set('q', 'player 1')->assertSee('Showing 1-2 of 2 accounts')->assertSee('Page 1 of 1');
+    }
+
     public function test_roles_change_but_never_your_own(): void
     {
         $kai = User::factory()->create(['name' => 'Kai Santos', 'club' => 'Panabo']);
 
         Livewire::actingAs($this->super)->test(Users::class)
             ->call('open', $kai->id)->assertSee('Also hosts open plays and runs the court board for Panabo.')
-            ->call('pickRole', 'organizer')->call('saveRole')->assertDispatched('toast', message: 'Kai Santos is now an Organizer')
+            ->call('pickRole', 'organizer')->call('saveRole')->assertDispatched('toast', message: 'Kai Santos is now an Organizer · we emailed Kai')
             ->call('pickRole', 'admin')->assertSee('Reviews organizer requests and manages users, developers and sponsors.')
-            ->call('saveRole')->assertDispatched('toast', message: 'Kai Santos is now an Admin');
+            ->call('saveRole')->assertDispatched('toast', message: 'Kai Santos is now an Admin · we emailed Kai');
         $this->assertSame('admin', $kai->fresh()->accountRole());
+        Mail::assertSent(PickleXMail::class, fn ($m) => $m->template === 'role-changed' && $m->hasTo($kai->email)
+            && $m->heading === 'Your PickleX role changed to Organizer' && str_contains($m->render(), "You're now an Organizer, Kai")
+            && str_contains($m->render(), 'host open plays for Panabo'));
+        Mail::assertSent(PickleXMail::class, fn ($m) => $m->template === 'role-changed' && $m->data['was'] === 'organizer' && $m->data['role'] === 'admin'
+            && str_contains($m->render(), 'Open the admin dashboard'));
 
         Livewire::actingAs($this->super)->test(Users::class)->call('open', $this->super->id)
             ->assertSee('This is your account. Another admin has to change your role.')
@@ -75,9 +94,15 @@ class UsersAdminTest extends TestCase
     {
         $kai = User::factory()->create(['email' => 'kai@example.com', 'password' => 'password', 'remember_token' => 'old-token']);
         DB::table('sessions')->insert(['id' => 's1', 'user_id' => $kai->id, 'payload' => '', 'last_activity' => time()]);
+        $next = OpenPlay::create(['organizer_id' => $this->super->id, 'title' => 'Friday', 'club' => 'Club', 'venue' => 'Gym',
+            'starts_at' => now()->addDay(), 'ends_at' => now()->addDay()->addHours(2), 'courts' => 1, 'cap' => 8]);
+        $next->join($kai);
 
         Livewire::actingAs($this->super)->test(Users::class)->call('open', $kai->id)->call('suspend')
-            ->assertDispatched('toast', message: "{$kai->name} is suspended and can't log in")->assertSee('Restore');
+            ->assertDispatched('toast', message: "{$kai->name} is suspended and can't log in · we emailed {$kai->firstName()}")->assertSee('Restore');
+        $this->assertSame(0, $next->activeParticipants()->count());
+        Mail::assertSent(PickleXMail::class, fn ($m) => $m->template === 'account-suspended' && $m->hasTo('kai@example.com')
+            && str_contains($m->render(), 'Your account is suspended'));
         $this->assertTrue($kai->fresh()->isSuspended());
         $this->assertSame(0, DB::table('sessions')->where('user_id', $kai->id)->count());
         $this->assertNotSame('old-token', $kai->fresh()->remember_token);
@@ -126,7 +151,9 @@ class UsersAdminTest extends TestCase
 
         Livewire::actingAs($this->super)->test(Users::class)->call('open', $kai->id)
             ->set('confirmDelete', true)->assertSee("Delete Kai Santos's account?", false)
-            ->call('delete')->assertDispatched('toast', message: "Deleted Kai Santos's account");
+            ->call('delete')->assertDispatched('toast', message: "Deleted Kai Santos's account · we emailed Kai");
+        Mail::assertSent(PickleXMail::class, fn ($m) => $m->template === 'account-deleted' && $m->hasTo($kai->email) && $m->data['byAdmin']
+            && str_contains($m->render(), 'Your account was deleted'));
 
         $this->assertModelMissing($kai);
         $this->assertSame('Former player', $p->fresh()->name);

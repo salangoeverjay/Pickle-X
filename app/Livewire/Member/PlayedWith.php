@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Member;
 
+use App\Livewire\Concerns\Pages;
 use App\Support\MemberStats;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Title;
@@ -11,6 +12,8 @@ use Livewire\Component;
 #[Title('Played with · PickleX')]
 class PlayedWith extends Component
 {
+    use Pages;
+
     #[Url]
     public string $tab = 'partners'; // partners | opponents
 
@@ -19,6 +22,14 @@ class PlayedWith extends Component
 
     #[Url(as: 'q', except: '')]
     public string $search = '';
+
+    /** A new tab, sort or search starts on page 1. */
+    public function updated(string $property): void
+    {
+        if (in_array($property, ['tab', 'sort', 'search'])) {
+            $this->resetPage('playersPage');
+        }
+    }
 
     public function render()
     {
@@ -39,6 +50,7 @@ class PlayedWith extends Component
             'guide' => $guide,
             'stats' => $stats,
             'rows' => $rows,
+            'rowsPage' => $this->pageOf($rows, 10, 'playersPage'),
             'best' => $stats->bestPartner(),
             'tough' => $stats->toughestOpponent(),
         ]);

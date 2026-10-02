@@ -47,7 +47,7 @@
             <div class="hidden grid-cols-[minmax(0,2.4fr)_minmax(0,1fr)_minmax(0,1.4fr)_minmax(0,.6fr)_minmax(0,.9fr)_minmax(0,.9fr)_104px] gap-3.5 border-b border-line px-5 py-3 font-mono text-[11px] tracking-widest text-ink3 uppercase lg:grid">
                 <span>User</span><span>Role</span><span>Home club</span><span>Games</span><span>Last active</span><span>Status</span><span></span>
             </div>
-            @forelse ($rows as $u)
+            @forelse ($rowsPage as $u)
                 @php($r = $u->accountRole())
                 @php($me = $u->id === auth()->id())
                 <div wire:key="u-{{ $u->id }}" class="flex items-center gap-3 border-b border-line px-4 py-3.5 last:border-b-0 lg:grid lg:grid-cols-[minmax(0,2.4fr)_minmax(0,1fr)_minmax(0,1.4fr)_minmax(0,.6fr)_minmax(0,.9fr)_minmax(0,.9fr)_104px] lg:gap-3.5 lg:px-5 lg:py-3">
@@ -78,6 +78,7 @@
             @empty
                 <p class="m-0 px-6 py-7 text-ink2">{{ trim($q) !== '' ? 'No accounts match "'.trim($q).'".' : 'No accounts here yet.' }}</p>
             @endforelse
+            <x-pager :page="$rowsPage" noun="accounts" class="border-t border-line px-5 py-3" />
         </section>
     </x-page>
 

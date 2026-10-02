@@ -2,12 +2,15 @@
 
 namespace App\Livewire;
 
+use App\Livewire\Concerns\Pages;
 use App\Models\OpenPlay;
 use Livewire\Component;
 
 /** Public, read-only board for a live open play (QR / share-link target). Names only, no contact details. */
 class LiveView extends Component
 {
+    use Pages;
+
     /** Spots in line the big screen lists before "+ N more". */
     public const QUEUE_CAP = 12;
 
@@ -84,7 +87,8 @@ class LiveView extends Component
 
         return $view->with([
             'me' => $me,
-            'standings' => $play->standings(),
+            'standings' => $standings = $play->standings(),
+            'standingsPage' => $this->pageOf($standings, 10, 'standingsPage'),
             'myPid' => $me ? $play->participantMap()->firstWhere('user_id', $me->id)?->id : null,
             'courts' => $courts,
             'queue' => $queue->take(self::QUEUE_CAP),

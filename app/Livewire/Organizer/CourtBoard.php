@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Organizer;
 
+use App\Livewire\Concerns\Pages;
 use App\Models\OpenPlay;
 use App\Models\User;
 use App\Support\AccountMatch;
@@ -16,6 +17,8 @@ use Livewire\Component;
 #[Title('Court board · PickleX')]
 class CourtBoard extends Component
 {
+    use Pages;
+
     /** Mobile only: which column shows (courts|queue). */
     public string $tab = 'courts';
 
@@ -520,7 +523,8 @@ class CourtBoard extends Component
             ] : null,
             'scoring' => $this->scoreCourt ? collect($courts)->first(fn ($c) => $c['n'] === $this->scoreCourt && $c['a']) : null,
             'freshGame' => $this->freshGame,
-            'standings' => $play->standings(),
+            'standings' => $standings = $play->standings(),
+            'standingsPage' => $this->pageOf($standings, 10, 'standingsPage'),
             'podNew' => $this->podNew,
         ]);
     }

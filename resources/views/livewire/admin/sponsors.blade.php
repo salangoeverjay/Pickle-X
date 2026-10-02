@@ -45,7 +45,7 @@
                     <p class="m-0 rounded-[18px] border-[1.5px] border-dashed border-line2 p-4.5 text-sm text-ink2">No sponsors yet. Search for an account to acknowledge them.</p>
                 @else
                     <div role="list" class="flex flex-col gap-2.5">
-                        @foreach ($sponsors as $s)
+                        @foreach ($sponsorsPage as $s)
                             @php($t = $s->sponsor_tier)
                             @php($tl = App\Support\Looks::TIERS[$t])
                             @php($wf = str_starts_with((string) $s->frame, 'sp-'))
@@ -73,6 +73,7 @@
                             </div>
                         @endforeach
                     </div>
+                    <x-pager :page="$sponsorsPage" noun="sponsors" class="pt-0.5" />
                 @endif
                 <p class="m-0 text-[13px] leading-[1.45] text-ink3">Changing a tier swaps their look to the new tier. Removing a sponsor locks the look again.</p>
             </section>

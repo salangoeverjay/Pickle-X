@@ -1,8 +1,9 @@
 {{--
     Tonight's standings: podium for the top 3 plus every player's stats. Rows come from OpenPlay::standings().
     $me highlights the viewer's row (participant id); $fresh are participant ids that just moved onto the podium.
+    $page (optional) is this page of $rows for the table, from Concerns\Pages; the podium always uses $rows.
 --}}
-@props(['play', 'rows', 'me' => null, 'fresh' => [], 'heading' => 'standings-title', 'title' => "Tonight's standings", 'plain' => false])
+@props(['play', 'rows', 'me' => null, 'fresh' => [], 'heading' => 'standings-title', 'title' => "Tonight's standings", 'plain' => false, 'page' => null])
 
 @php
     $games = $play->games()->count();
@@ -65,7 +66,7 @@
                 <span role="columnheader" title="Point difference" class="text-right">+/−</span>
                 <span role="columnheader" class="text-right">Win %</span>
             </div>
-            @foreach ($rows as $r)
+            @foreach ($page ?? $rows as $r)
                 @php($p = $play->participant($r['participant_id']))
                 @php($top = $r['rank'] <= 3)
                 @php($mine = $r['participant_id'] === $me)
@@ -100,5 +101,8 @@
                 </div>
             @endforeach
         </div>
+        @if ($page)
+            <x-pager :page="$page" noun="players" class="pt-0.5" />
+        @endif
     @endif
 </section>

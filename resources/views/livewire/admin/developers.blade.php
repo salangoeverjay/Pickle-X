@@ -34,7 +34,7 @@
                     <p class="m-0 rounded-[18px] border-[1.5px] border-dashed border-line2 p-4.5 text-sm text-ink2">No developer accounts yet. Search for an account to mark it.</p>
                 @else
                     <div role="list" class="flex flex-col gap-2.5">
-                        @foreach ($devs as $d)
+                        @foreach ($devsPage as $d)
                             @php($wf = $d->frame === 'dev')
                             @php($wq = $d->queue_bg === 'dev')
                             <div role="listitem" wire:key="dev-{{ $d->id }}" class="flex animate-fade items-center gap-3 rounded-[18px] border border-line bg-surface2 py-3 pr-3 pl-3.5">
@@ -52,6 +52,7 @@
                             </div>
                         @endforeach
                     </div>
+                    <x-pager :page="$devsPage" noun="accounts" class="pt-0.5" />
                 @endif
                 <p class="m-0 text-[13px] leading-[1.45] text-ink3">Removing developer locks the look again. If they were wearing it, their border and queue background go back to none.</p>
             </section>

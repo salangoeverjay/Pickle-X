@@ -69,7 +69,7 @@
                         </div>
                     @endif
 
-                    <x-standings :play="$play" :rows="$results->rows" :me="$pid" heading="results-standings" title="Final standings" :plain="true" />
+                    <x-standings :play="$play" :rows="$results->rows" :page="$resultsPage" :me="$pid" heading="results-standings" title="Final standings" :plain="true" />
                 </div>
             </div>
         </div>

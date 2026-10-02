@@ -69,7 +69,7 @@
                 </div>
                 @if ($roster['rows']->isNotEmpty())
                     <div role="list" aria-label="Players who joined">
-                        @foreach ($roster['rows'] as $r)
+                        @foreach ($roster['page'] as $r)
                             @php($p = $r['p'])
                             <div role="listitem" wire:key="rr-{{ $p->id }}" class="flex flex-wrap items-center gap-x-2.5 gap-y-2 border-t border-line {{ $pad }} py-3 lg:flex-nowrap lg:gap-x-3.5">
                                 <span class="w-5 shrink-0 font-mono text-xs text-ink3">{{ $r['n'] }}</span>
@@ -113,6 +113,7 @@
                             </div>
                         @endforeach
                     </div>
+                    <x-pager :page="$roster['page']" noun="players" class="border-t border-line {{ $pad }} py-3" />
                 @elseif ($c['all'])
                     <p class="m-0 border-t border-line {{ $pad }} py-5.5 text-sm text-ink2">
                         {{ $roster['q'] !== '' ? 'No one here matches “'.$roster['q'].'”.' : match ($roster['f']) { 'unpaid' => 'Everyone has paid.', 'guests' => 'No guests on this open play.', default => 'No players in this group.' } }}

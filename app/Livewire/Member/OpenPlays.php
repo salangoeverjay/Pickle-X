@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Member;
 
+use App\Livewire\Concerns\Pages;
 use App\Models\OpenPlay;
 use App\Support\Emails;
 use App\Support\Results;
@@ -13,6 +14,8 @@ use Livewire\Component;
 #[Title('Open plays · PickleX')]
 class OpenPlays extends Component
 {
+    use Pages;
+
     // Open play whose payment QR dialog is showing.
     public ?int $payFor = null;
 
@@ -134,7 +137,8 @@ class OpenPlays extends Component
             'paidIds' => $user->participations()->whereNull('left_at')->where('paid', true)->pluck('open_play_id')->all(),
             'claimedIds' => DB::table('pay_claims')->where('user_id', $user->id)->pluck('open_play_id')->all(),
             'payPlay' => $this->payFor ? $plays->firstWhere('id', $this->payFor) : null,
-            'history' => Results::memberHistory($user),
+            'history' => $history = Results::memberHistory($user),
+            'historyPage' => $this->pageOf($history['rows'], 5, 'pastPage'),
         ]);
     }
 }

@@ -140,6 +140,23 @@ class User extends Authenticatable implements HasPasskeys
         $this->forceFill(['remember_token' => Str::random(60)])->save();
     }
 
+    /** Frees the spots this account holds in upcoming open plays (suspended or deleted accounts). */
+    public function releaseUpcomingSpots(): void
+    {
+        OpenPlay::status('upcoming')->whereHas('activeParticipants', fn ($q) => $q->where('user_id', $this->id))->get()->each->leave($this);
+    }
+
+    /** Deletes the account. Games stay in other players' history as "Former player". */
+    public function deleteAccount(): void
+    {
+        DB::transaction(function () {
+            $this->releaseUpcomingSpots();
+            Participant::where('user_id', $this->id)->update(['name' => 'Former player']);
+            DB::table('sessions')->where('user_id', $this->id)->delete();
+            $this->delete();
+        });
+    }
+
     /**
      * The mode the app is showing: admin, organizer or member (player).
      * Approved organizers default to organizer mode; routes set it via EnsureRole.

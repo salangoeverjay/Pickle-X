@@ -37,6 +37,9 @@
             .em-lime-text { color: #D4F53C !important; }
             .em-lime-soft { background: rgba(212, 245, 60, .10) !important; }
             .em-ink-bg { background: #EDF2E3 !important; color: #131A15 !important; }
+            .em-hot-soft { background: rgba(255, 145, 82, .12) !important; border-color: rgba(255, 145, 82, .42) !important; }
+            .em-hot { color: #FF9152 !important; }
+            .em-court-bg { background: #2F62AD !important; border-color: #2F62AD !important; }
         }
     </style>
 </head>

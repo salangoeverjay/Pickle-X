@@ -162,7 +162,7 @@
                     <div class="grid grid-cols-[minmax(0,2.2fr)_minmax(0,.8fr)_minmax(0,.8fr)_minmax(0,1.6fr)_minmax(0,1fr)] gap-4 border-b border-line px-6 py-3.5 font-mono text-[11px] tracking-widest text-ink3 uppercase">
                         <span>Player</span><span>Games</span><span>Record</span><span>Win rate {{ $tab === 'partners' ? 'together' : 'against' }}</span><span>Last played</span>
                     </div>
-                    @foreach ($rows as $r)
+                    @foreach ($rowsPage as $r)
                         <div wire:key="d-{{ $r->user->id }}" class="grid grid-cols-[minmax(0,2.2fr)_minmax(0,.8fr)_minmax(0,.8fr)_minmax(0,1.6fr)_minmax(0,1fr)] items-center gap-4 border-b border-line px-6 py-3.5">
                             <div class="flex min-w-0 items-center gap-3">
                                 <x-avatar :src="$r->user->avatarUrl()" :frame="$r->user->frameClass()" :name="$r->user->shownName()" :color="$r->user->color()" class="size-10 text-[13px]" />
@@ -181,7 +181,7 @@
 
                 {{-- Mobile rows --}}
                 <div class="lg:hidden">
-                    @foreach ($rows as $r)
+                    @foreach ($rowsPage as $r)
                         <div wire:key="m-{{ $r->user->id }}" class="flex items-center gap-3 border-b border-line px-4 py-3.5">
                             <x-avatar :src="$r->user->avatarUrl()" :frame="$r->user->frameClass()" :name="$r->user->shownName()" :color="$r->user->color()" class="size-10.5 text-[13px]" />
                             <div class="flex min-w-0 flex-1 flex-col gap-1.5">
@@ -198,6 +198,7 @@
                 @if ($rows->isEmpty())
                     <p class="m-0 px-6 py-7 text-ink2">{{ trim($search) !== '' ? 'No one matches that search yet.' : ($tab === 'opponents' ? 'No opponents yet. Everyone you face in a logged game shows up here.' : 'No partners yet. Everyone you team up with in a logged game shows up here.') }}</p>
                 @endif
+                <x-pager :page="$rowsPage" :noun="$tab === 'partners' ? 'partners' : 'opponents'" class="px-5 py-3" />
             </div>
         @endif
     </x-page>

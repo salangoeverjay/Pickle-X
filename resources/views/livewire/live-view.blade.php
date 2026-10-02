@@ -94,7 +94,7 @@
                         </div>
                     @endif
 
-                    <x-standings :play="$play" :rows="$standings" :me="$myPid" heading="standings-view" class="rounded-[22px]" />
+                    <x-standings :play="$play" :rows="$standings" :page="$standingsPage" :me="$myPid" heading="standings-view" class="rounded-[22px]" />
                 </div>
 
                 {{-- Up next + queue (first on mobile) --}}

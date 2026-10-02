@@ -3,9 +3,10 @@
 namespace App\Livewire\Admin;
 
 use App\Livewire\Auth\ForgotPassword;
+use App\Livewire\Concerns\Pages;
 use App\Models\GamePlayer;
-use App\Models\Participant;
 use App\Models\User;
+use App\Support\Emails;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -17,6 +18,8 @@ use Livewire\Component;
 #[Title('Users · PickleX')]
 class Users extends Component
 {
+    use Pages;
+
     public const ROLES = ['member' => 'Member', 'organizer' => 'Organizer', 'admin' => 'Admin'];
 
     #[Url(except: 'all')]
@@ -58,7 +61,8 @@ class Users extends Component
     public function saveRole(): void
     {
         $user = $this->other();
-        if (! $this->role || $this->role === $user->accountRole()) {
+        $was = $user->accountRole();
+        if (! $this->role || $this->role === $was) {
             return;
         }
         $user->forceFill(match ($this->role) {
@@ -66,9 +70,10 @@ class Users extends Component
             'organizer' => ['role' => 'member', 'organizer_status' => 'approved'],
             'admin' => ['role' => 'admin'],
         })->save();
+        Emails::send($user, Emails::roleChanged($user, $was, $this->role));
         $label = self::ROLES[$this->role];
         $this->role = null;
-        $this->dispatch('toast', message: "{$user->name} is now ".(in_array($label, ['Admin', 'Organizer']) ? 'an ' : 'a ').$label);
+        $this->dispatch('toast', message: "{$user->name} is now ".(in_array($label, ['Admin', 'Organizer']) ? 'an ' : 'a ').$label." · we emailed {$user->firstName()}");
     }
 
     public function sendReset(): void
@@ -90,7 +95,9 @@ class Users extends Component
         $user = $this->other();
         $user->forceFill(['suspended_at' => now()])->save();
         $user->signOutEverywhere();
-        $this->dispatch('toast', message: "{$user->name} is suspended and can't log in");
+        $user->releaseUpcomingSpots();
+        Emails::send($user, Emails::accountSuspended($user));
+        $this->dispatch('toast', message: "{$user->name} is suspended and can't log in · we emailed {$user->firstName()}");
     }
 
     public function restore(): void
@@ -104,13 +111,19 @@ class Users extends Component
     public function delete(): void
     {
         $user = $this->other();
-        DB::transaction(function () use ($user) {
-            Participant::where('user_id', $user->id)->update(['name' => 'Former player']);
-            DB::table('sessions')->where('user_id', $user->id)->delete();
-            $user->delete();
-        });
+        $mail = Emails::accountDeleted($user, byAdmin: true);
+        $user->deleteAccount();
+        Emails::send($user->email, $mail);
         $this->close();
-        $this->dispatch('toast', message: "Deleted {$user->name}'s account");
+        $this->dispatch('toast', message: "Deleted {$user->name}'s account · we emailed {$user->firstName()}");
+    }
+
+    /** A new tab or search starts on page 1. */
+    public function updated(string $property): void
+    {
+        if (in_array($property, ['tab', 'q'])) {
+            $this->resetPage('usersPage');
+        }
     }
 
     public function render()
@@ -136,6 +149,7 @@ class Users extends Component
 
         return view('livewire.admin.users', [
             'rows' => $rows,
+            'rowsPage' => $this->pageOf($rows, 10, 'usersPage'),
             'total' => $all->count(),
             'tabs' => collect(['all' => 'All', 'member' => 'Members', 'organizer' => 'Organizers', 'admin' => 'Admins', 'suspended' => 'Suspended'])->map(fn ($label, $tab) => [$label, $count($tab)]),
             'tiles' => [['Accounts', $all->count()], ['Organizers', $count('organizer')], ['Admins', $count('admin')], ['Suspended', $count('suspended')]],

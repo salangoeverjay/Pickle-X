@@ -145,7 +145,7 @@
                     <x-stat-tile label="Best finish" :value="'#'.$history['best']['row']['rank']" :sub="$history['best']['play']->title.' · '.$history['best']['play']->starts_at->format('D, M j')" />
                 </div>
                 <div class="flex flex-col gap-2.5">
-                    @foreach ($history['rows'] as ['play' => $p, 'row' => $r])
+                    @foreach ($historyPage as ['play' => $p, 'row' => $r])
                         @php($top = $r['rank'] <= 3)
                         <div wire:key="past-{{ $p->id }}" class="flex flex-wrap items-center gap-x-4.5 gap-y-3.5 rounded-[22px] border border-line bg-surface p-3.5 transition duration-300 hover:-translate-y-1 hover:shadow-card lg:px-5 lg:py-4">
                             <div class="flex min-w-0 flex-[1_1_260px] items-center gap-3.5">
@@ -174,6 +174,7 @@
                         </div>
                     @endforeach
                 </div>
+                <x-pager :page="$historyPage" noun="open plays" class="pt-0.5" />
             </section>
         @endif
     </x-page>

@@ -4,10 +4,12 @@ namespace Tests\Feature;
 
 use App\Livewire\Admin\Requests;
 use App\Livewire\Settings;
+use App\Mail\PickleXMail;
 use App\Models\OpenPlay;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -127,7 +129,12 @@ class SettingsAndAdminTest extends TestCase
 
     public function test_delete_account(): void
     {
-        $user = User::factory()->create(['role' => 'member']);
+        Mail::fake();
+        $user = User::factory()->create(['role' => 'member', 'name' => 'Kai Santos']);
+        $org = User::factory()->create(['organizer_status' => 'approved']);
+        $next = OpenPlay::create(['organizer_id' => $org->id, 'title' => 'Friday', 'club' => 'Club', 'venue' => 'Gym',
+            'starts_at' => now()->addDay(), 'ends_at' => now()->addDay()->addHours(2), 'courts' => 1, 'cap' => 8]);
+        $next->join($user);
 
         Livewire::actingAs($user)->test(Settings::class)
             ->set('confirmingDelete', true)->assertSee("Delete {$user->name}")
@@ -135,6 +142,11 @@ class SettingsAndAdminTest extends TestCase
 
         $this->assertModelMissing($user);
         $this->assertGuest();
+        $this->assertSame('Account deleted · we emailed you a confirmation', session('toast'));
+        $this->assertSame(0, $next->activeParticipants()->count());
+        $this->assertSame('Former player', $next->participants()->first()->name);
+        Mail::assertSent(PickleXMail::class, fn ($m) => $m->template === 'account-deleted' && $m->hasTo($user->email) && ! $m->data['byAdmin']
+            && str_contains($m->render(), 'Your account is deleted, Kai'));
     }
 
     public function test_admin_requests_page_and_decisions(): void

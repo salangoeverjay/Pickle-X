@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Livewire\Concerns\Pages;
 use App\Models\OpenPlay;
 use App\Support\Results;
 use Livewire\Attributes\On;
@@ -14,6 +15,8 @@ use Livewire\Component;
  */
 class PastResults extends Component
 {
+    use Pages;
+
     #[Url(as: 'results', except: null)]
     public ?int $playId = null;
 
@@ -21,6 +24,7 @@ class PastResults extends Component
     public function show(int $id): void
     {
         $this->playId = $id;
+        $this->resetPage('resultsPage');
     }
 
     public function close(): void
@@ -53,6 +57,7 @@ class PastResults extends Component
         return view('livewire.past-results', [
             'play' => $play,
             'results' => $results,
+            'resultsPage' => $results ? $this->pageOf($results->rows, 10, 'resultsPage') : null,
             'pid' => $pid,
             'mine' => $results?->mine($pid),
         ]);

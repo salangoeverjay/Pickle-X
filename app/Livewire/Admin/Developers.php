@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin;
 
+use App\Livewire\Concerns\Pages;
 use App\Models\GamePlayer;
 use App\Models\User;
 use Livewire\Attributes\Title;
@@ -11,6 +12,8 @@ use Livewire\Component;
 #[Title('Developers · PickleX')]
 class Developers extends Component
 {
+    use Pages;
+
     public string $q = '';
 
     public function makeDeveloper(int $id): void
@@ -39,7 +42,8 @@ class Developers extends Component
         $like = '%'.addcslashes(mb_strtolower($q), '%_\\').'%';
 
         return view('livewire.admin.developers', [
-            'devs' => User::where('is_developer', true)->orderBy('name')->get(),
+            'devs' => $devs = User::where('is_developer', true)->orderBy('name')->get(),
+            'devsPage' => $this->pageOf($devs, 5, 'devsPage'),
             'results' => $q === '' ? collect() : User::where('role', 'member')->where('is_developer', false)
                 ->where(fn ($w) => $w->whereRaw('LOWER(name) LIKE ?', [$like])->orWhereRaw('LOWER(email) LIKE ?', [$like]))
                 ->orderBy('name')->limit(5)->get(),
