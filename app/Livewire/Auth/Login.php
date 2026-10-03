@@ -15,8 +15,6 @@ class Login extends Component
 {
     public const REMEMBERED = 'px_remembered_until';
 
-    public const SUSPENDED = 'This account is suspended. If you think this is a mistake, contact the PickleX team at support@picklex.app.';
-
     public string $email = '';
 
     public string $password = '';
@@ -54,9 +52,10 @@ class Login extends Component
         RateLimiter::clear($key);
 
         if (Auth::user()->isSuspended()) {
+            $message = Auth::user()->suspensionMessage();
             Auth::logout();
 
-            throw ValidationException::withMessages(['email' => self::SUSPENDED]);
+            throw ValidationException::withMessages(['email' => $message]);
         }
 
         // One account, two modes: organizer requests never block playing.

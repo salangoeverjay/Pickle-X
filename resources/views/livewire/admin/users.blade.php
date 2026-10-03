@@ -5,6 +5,9 @@
     $badge = 'inline-flex h-6 shrink-0 items-center rounded-full border px-2.25 text-xs font-extrabold whitespace-nowrap';
     $you = 'inline-flex h-5 shrink-0 items-center rounded-full bg-lime px-1.75 text-[10.5px] font-extrabold text-on-lime';
     $btn = 'h-11 shrink-0 cursor-pointer rounded-full border-[1.5px] px-4 text-sm font-bold transition active:scale-97';
+    // "No-shows · until Oct 26" for a suspended account.
+    $until = fn ($u) => $u->suspended_until ? 'until '.$u->suspended_until->format('M j') : 'until restored';
+    $why = fn ($u) => $u->suspensionReason()[0].' · '.$until($u);
 @endphp
 
 <x-app-shell>
@@ -60,15 +63,18 @@
                                 <span class="{{ $badge }} {{ $pill[$r] }}">{{ $roles[$r] }}</span>
                                 @if ($u->isSuspended())<span class="{{ $badge }} border-hot-line bg-hot-soft text-hot">Suspended</span>@endif
                             </span>
+                            @if ($u->isSuspended())<span class="text-[12.5px] font-semibold text-hot lg:hidden">{{ $why($u) }}</span>@endif
                         </div>
                     </div>
                     <span class="hidden lg:block"><span class="{{ $badge }} {{ $pill[$r] }}">{{ $roles[$r] }}</span></span>
                     <span class="hidden truncate text-sm text-ink2 lg:block">{{ $u->club ?: '-' }}</span>
                     <span class="hidden font-mono text-[15px] font-semibold lg:block">{{ $games[$u->id] ?? 0 }}</span>
                     <span class="hidden text-sm text-ink2 lg:block">{{ $lastActive($u) }}</span>
-                    <span class="hidden lg:block">
+                    <span class="hidden min-w-0 flex-col items-start gap-0.75 lg:flex">
                         @if ($u->isSuspended())
                             <span class="{{ $badge }} border-hot-line bg-hot-soft text-hot">Suspended</span>
+                            <span class="max-w-full truncate text-[12.5px] font-semibold text-ink2">{{ $u->suspensionReason()[0] }}</span>
+                            <span class="text-xs whitespace-nowrap text-ink3">{{ Str::ucfirst($until($u)) }}</span>
                         @else
                             <span class="inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink2"><span aria-hidden="true" class="size-2 rounded-full bg-lime-text"></span>Active</span>
                         @endif
@@ -100,7 +106,7 @@
                                 <span class="{{ $badge }} {{ $pill[$r] }}">{{ $roles[$r] }}</span>
                                 @if ($managed->isSuspended())
                                     <span class="{{ $badge }} border-hot-line bg-hot-soft text-hot">Suspended</span>
-                                    <span class="text-[13px] text-hot">Suspended {{ $managed->suspended_at->format('M j') }}</span>
+                                    <span class="text-[13px] text-hot">{{ $why($managed) }}</span>
                                 @else
                                     <span class="inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink2"><span aria-hidden="true" class="size-2 rounded-full bg-lime-text"></span>Active</span>
                                 @endif
@@ -148,14 +154,78 @@
                                     <button type="button" wire:click="signOut" class="{{ $btn }} border-line2 text-ink hover:bg-surface2">Sign out everywhere</button>
                                 </div>
                                 @if ($managed->isSuspended())
-                                    <div class="{{ $row }}">
-                                        <div class="{{ $text }}"><span class="text-[15px] font-bold">Restore account</span><span class="text-[13px] leading-[1.45] text-ink2">Lets them log in and join open plays again.</span></div>
-                                        <button type="button" wire:click="restore" class="{{ $btn }} border-lime bg-lime text-on-lime hover:brightness-96">Restore</button>
+                                    @php($first = $managed->firstName())
+                                    <div id="um-susinfo" class="flex flex-col gap-3 bg-hot-soft p-4">
+                                        <div class="flex flex-col gap-1">
+                                            <span class="font-mono text-[11px] tracking-[.12em] text-hot uppercase">Suspended · {{ $managed->suspensionReason()[0] }}</span>
+                                            <span class="text-base leading-[1.3] font-extrabold">{{ $managed->suspended_until ? 'Lifts on its own '.$managed->suspended_until->format('D, M j').' · '.($left = max(1, (int) ceil(now()->diffInDays($managed->suspended_until)))).' '.Str::plural('day', $left).' left' : 'Until an admin restores it' }}</span>
+                                            <span class="text-[13px] leading-[1.45] text-ink2">Since {{ $managed->suspended_at->format('D, M j') }} · by {{ $managed->suspended_by === auth()->id() ? 'you' : ($managed->suspender?->name ?? 'an admin') }} · {{ $first }} was emailed the reason</span>
+                                        </div>
+                                        @if ($managed->suspension_note)
+                                            <div class="flex flex-col gap-1 rounded-r-xl border-l-3 border-hot bg-bg px-3.5 py-2.5">
+                                                <span class="text-xs font-bold text-ink3">Note sent with the email</span>
+                                                <span class="text-sm leading-normal">{{ $managed->suspension_note }}</span>
+                                            </div>
+                                        @endif
+                                        <div class="flex flex-wrap items-center gap-x-3.5 gap-y-2.5">
+                                            <span class="min-w-0 flex-[1_1_220px] text-[13px] leading-[1.45] text-ink2">Restoring lets them log in and join open plays again. We email them that it's lifted.</span>
+                                            <button type="button" wire:click="restore" class="{{ $btn }} border-lime bg-lime text-on-lime hover:brightness-96">Restore now</button>
+                                        </div>
+                                    </div>
+                                @elseif ($suspending)
+                                    @php($first = $managed->firstName())
+                                    @php($lift = $susLength === 'open' ? null : today()->addDays((int) $susLength))
+                                    @php($noteReq = $susReason === 'other')
+                                    @php($off = $susReason === '' || ($noteReq && trim($susNote) === ''))
+                                    <div role="group" aria-labelledby="um-sus-h" class="flex animate-fade flex-col gap-4.5 bg-surface2 px-4 pt-4.5 pb-4">
+                                        <div class="flex flex-col gap-1">
+                                            <span id="um-sus-h" class="font-display text-lg font-extrabold tracking-[-0.02em]">Suspend {{ $first }}'s account</span>
+                                            <span class="text-[13px] leading-[1.45] text-ink2">They can't log in, join open plays or check in. Their games and stats stay, and spots they hold in upcoming open plays are freed.</span>
+                                        </div>
+                                        <div class="flex flex-col gap-2">
+                                            <span id="um-sus-r" class="text-sm font-bold">Reason</span>
+                                            <div role="radiogroup" aria-labelledby="um-sus-r" class="grid grid-cols-1 gap-2 lg:grid-cols-2">
+                                                @foreach (App\Models\User::SUSPENSION_REASONS as $key => [$label, $desc])
+                                                    @php($on = $susReason === $key)
+                                                    <button type="button" role="radio" aria-checked="{{ $on ? 'true' : 'false' }}" wire:click="$set('susReason', '{{ $key }}')"
+                                                            @class(['flex min-h-14.5 cursor-pointer items-start gap-2.5 rounded-[14px] border-[1.5px] px-3 py-2.5 text-left text-ink transition active:scale-97', 'border-ink bg-surface' => $on, 'border-line' => ! $on])>
+                                                        <span aria-hidden="true" class="mt-0.5 box-border flex size-4.5 shrink-0 items-center justify-center rounded-full border-2 border-ink2"><span @class(['size-2 rounded-full', 'bg-ink' => $on])></span></span>
+                                                        <span class="flex min-w-0 flex-col gap-0.5"><span class="text-sm font-bold">{{ $label }}</span><span class="text-[12.5px] leading-[1.35] text-ink2">{{ $desc }}</span></span>
+                                                    </button>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                        <div class="flex flex-col gap-2">
+                                            <span id="um-sus-l" class="text-sm font-bold">Length</span>
+                                            <div role="radiogroup" aria-labelledby="um-sus-l" class="grid grid-cols-[minmax(0,.8fr)_minmax(0,.85fr)_minmax(0,1.35fr)] gap-1 rounded-full border border-line bg-bg p-1 lg:grid-cols-3">
+                                                @foreach (['7' => '7 days', '30' => '30 days', 'open' => 'Until restored'] as $key => $label)
+                                                    <button type="button" role="radio" aria-checked="{{ $susLength === (string) $key ? 'true' : 'false' }}" wire:click="$set('susLength', '{{ $key }}')"
+                                                            @class(['h-10 min-w-0 cursor-pointer rounded-full px-2 text-sm font-bold whitespace-nowrap transition active:scale-97', 'bg-ink text-bg' => $susLength === (string) $key, 'text-ink2' => $susLength !== (string) $key])>{{ $label }}</button>
+                                                @endforeach
+                                            </div>
+                                            <span class="text-[13px] text-ink2">{{ $lift ? 'Lifts on its own on '.$lift->format('D, M j').'. You can restore it sooner.' : 'Stays until an admin restores it.' }}</span>
+                                        </div>
+                                        <label class="flex flex-col gap-2" x-data="{ n: {{ mb_strlen($susNote) }} }">
+                                            <span class="flex items-baseline justify-between gap-2"><span class="text-sm font-bold">Note to {{ $first }} {{ $noteReq ? '(required)' : '(optional)' }}</span><span class="text-xs font-semibold text-ink3 tabular-nums" x-text="n + ' / 300'">{{ mb_strlen($susNote) }} / 300</span></span>
+                                            <textarea wire:model.live.debounce.400ms="susNote" x-on:input="n = $event.target.value.length" rows="3" maxlength="300" aria-describedby="um-sus-nh" placeholder="{{ (App\Models\User::SUSPENSION_REASONS[$susReason] ?? App\Models\User::SUSPENSION_REASONS['other'])[3] }}" class="input h-auto resize-y rounded-[14px] py-3 leading-normal"></textarea>
+                                            <span id="um-sus-nh" class="text-[12.5px] leading-[1.45] text-ink3">Goes in the email. Be specific: which open plays, what happened, what to do next.</span>
+                                        </label>
+                                        @if ($susError)
+                                            <p role="alert" class="m-0 text-sm font-semibold text-hot">{{ $susError }}</p>
+                                        @endif
+                                        <div class="flex items-start gap-2.5 rounded-[14px] border border-line bg-bg px-3.5 py-3">
+                                            <x-icon name="mail" :size="18" class="mt-px shrink-0 text-ink2" />
+                                            <span class="text-[13px] leading-[1.45] text-ink2">We'll email {{ $managed->email }} the reason{{ $lift ? ', the date it lifts' : '' }}{{ trim($susNote) !== '' ? ', your note' : '' }} and how to ask for another look.</span>
+                                        </div>
+                                        <div class="flex flex-wrap justify-end gap-2">
+                                            <button type="button" wire:click="$set('suspending', false)" class="{{ $btn }} border-line2 text-ink hover:bg-surface">Cancel</button>
+                                            <button type="button" wire:click="suspend" aria-disabled="{{ $off ? 'true' : 'false' }}" @class([$btn, 'border-0 font-extrabold', 'bg-hot text-bg hover:brightness-96' => ! $off, 'bg-surface text-ink3' => $off])>{{ $lift ? 'Suspend for '.$susLength.' days' : 'Suspend account' }}</button>
+                                        </div>
                                     </div>
                                 @else
                                     <div class="{{ $row }}">
-                                        <div class="{{ $text }}"><span class="text-[15px] font-bold">Suspend account</span><span class="text-[13px] leading-[1.45] text-ink2">They can't log in or join open plays until you restore the account. Their games and stats stay.</span></div>
-                                        <button type="button" wire:click="suspend" class="{{ $btn }} border-hot-line bg-hot-soft text-hot hover:brightness-96">Suspend</button>
+                                        <div class="{{ $text }}"><span class="text-[15px] font-bold">Suspend account</span><span class="text-[13px] leading-[1.45] text-ink2">Pick a reason and how long. They can't log in or join open plays until it lifts, and we email them why.</span></div>
+                                        <button type="button" wire:click="startSuspend" class="{{ $btn }} border-hot-line bg-hot-soft text-hot hover:brightness-96">Suspend…</button>
                                     </div>
                                 @endif
                                 @if ($confirmDelete)
@@ -170,7 +240,7 @@
                                 @else
                                     <div class="{{ $row }}">
                                         <div class="{{ $text }}"><span class="text-[15px] font-bold">Delete account</span><span class="text-[13px] leading-[1.45] text-ink2">Removes their login, profile and passkeys. Games they played stay in other players' history as Former player.</span></div>
-                                        <button type="button" wire:click="$set('confirmDelete', true)" class="{{ $btn }} border-hot-line text-hot hover:bg-hot-soft">Delete</button>
+                                        <button type="button" wire:click="askDelete" class="{{ $btn }} border-hot-line text-hot hover:bg-hot-soft">Delete</button>
                                     </div>
                                 @endif
                             @endunless

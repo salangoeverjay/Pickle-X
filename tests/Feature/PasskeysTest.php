@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Livewire\Auth\Login;
 use App\Livewire\Settings;
 use App\Mail\PickleXMail;
 use App\Models\User;
@@ -76,10 +75,10 @@ class PasskeysTest extends TestCase
         $this->withSession(['passkey-authentication-options' => '{}'])
             ->postJson(route('passkeys.login'), ['response' => '{}'])->assertUnprocessable();
 
-        $this->deviceSignsAs(User::factory()->create(['suspended_at' => now()]));
+        $this->deviceSignsAs($toni = User::factory()->create(['suspended_at' => now(), 'suspension_reason' => 'unpaid']));
         $this->withSession(['passkey-authentication-options' => '{}'])
             ->postJson(route('passkeys.login'), ['response' => '{}'])
-            ->assertUnprocessable()->assertJson(['message' => Login::SUSPENDED]);
+            ->assertUnprocessable()->assertJson(['message' => $toni->suspensionMessage()]);
         $this->assertGuest();
     }
 

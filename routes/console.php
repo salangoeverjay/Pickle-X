@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\OpenPlay;
+use App\Models\User;
+use App\Support\Emails;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -18,3 +20,16 @@ Artisan::command('open-plays:auto-end', function () {
 })->purpose('End live open plays still running 12 hours after their end time');
 
 Schedule::command('open-plays:auto-end')->everyMinute();
+
+// A 7 or 30 day suspension lifts on its own on its end date; the person gets an "active again" email.
+Artisan::command('users:lift-suspensions', function () {
+    $due = User::whereNotNull('suspended_at')->where('suspended_until', '<=', now())->get();
+    $due->each(function (User $user) {
+        $mail = Emails::accountRestored($user, early: false);
+        $user->liftSuspension();
+        Emails::send($user, $mail);
+    });
+    $this->info("Lifted {$due->count()} ".Str::plural('suspension', $due->count()).'.');
+})->purpose('Lift timed suspensions whose end date has passed');
+
+Schedule::command('users:lift-suspensions')->everyMinute();

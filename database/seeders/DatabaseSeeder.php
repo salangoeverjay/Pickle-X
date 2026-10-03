@@ -83,9 +83,14 @@ class DatabaseSeeder extends Seeder
         $this->organizer('Pia Lacson', 'pia@samaldinkers.ph', 'Samal Island Dinkers', 'Island Garden City of Samal', 2, 'pending',
             'Small group for now, hoping to grow to two nights a week.', '-3 days');
 
-        // Toni's account is suspended (can't log in).
-        User::factory()->create(['name' => 'PickleX Admin', 'email' => 'admin@picklex.app', 'role' => 'admin']);
-        User::factory()->create(['name' => 'Toni Chan', 'email' => 'toni@picklex.app', 'avatar_color' => '#E2D2FF', 'club' => self::CLUB, 'suspended_at' => now()->subDays(3)]);
+        // Two suspended accounts (can't log in): Toni for 30 days (no-shows), Jun until an admin restores it (conduct).
+        $admin = User::factory()->create(['name' => 'PickleX Admin', 'email' => 'admin@picklex.app', 'role' => 'admin']);
+        User::factory()->create(['name' => 'Toni Chan', 'email' => 'toni@picklex.app', 'avatar_color' => '#E2D2FF', 'club' => self::CLUB,
+            'suspended_at' => now()->subDays(4), 'suspended_until' => today()->subDays(4)->addDays(30), 'suspension_reason' => 'noshow', 'suspended_by' => $admin->id,
+            'suspension_note' => 'You missed 4 of your last 5 open plays at '.self::CLUB.' without leaving them first.']);
+        User::factory()->create(['name' => 'Jun Ocampo', 'email' => 'jun@picklex.app', 'avatar_color' => '#FFD9C2', 'club' => self::CLUB,
+            'suspended_at' => now()->subDays(3), 'suspension_reason' => 'conduct', 'suspended_by' => $admin->id,
+            'suspension_note' => "An organizer reported you shouting at and insulting other players during Sunday's open play."]);
 
         // Eight weeks of Monday and Saturday sessions at the club.
         $start = Carbon::today()->subWeeks(8);

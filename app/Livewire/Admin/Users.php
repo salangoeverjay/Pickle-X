@@ -34,6 +34,17 @@ class Users extends Component
 
     public bool $confirmDelete = false;
 
+    // The Suspend form in Manage: reason (User::SUSPENSION_REASONS), length (7 | 30 | open) and a note for the email.
+    public bool $suspending = false;
+
+    public string $susReason = '';
+
+    public string $susLength = '7';
+
+    public string $susNote = '';
+
+    public string $susError = '';
+
     public function mount(): void
     {
         abort_unless(auth()->user()->isAdmin(), 403);
@@ -42,13 +53,25 @@ class Users extends Component
     public function open(int $id): void
     {
         $this->manage = $this->account($id)->id;
-        $this->role = null;
-        $this->confirmDelete = false;
+        $this->reset('role', 'confirmDelete', 'suspending', 'susReason', 'susLength', 'susNote', 'susError');
     }
 
     public function close(): void
     {
-        $this->reset('manage', 'role', 'confirmDelete');
+        $this->reset('manage', 'role', 'confirmDelete', 'suspending', 'susReason', 'susLength', 'susNote', 'susError');
+    }
+
+    public function startSuspend(): void
+    {
+        $this->reset('susReason', 'susLength', 'susNote', 'susError');
+        $this->suspending = true;
+        $this->confirmDelete = false;
+    }
+
+    public function askDelete(): void
+    {
+        $this->confirmDelete = true;
+        $this->suspending = false;
     }
 
     public function pickRole(string $role): void
@@ -93,18 +116,30 @@ class Users extends Component
     public function suspend(): void
     {
         $user = $this->other();
-        $user->forceFill(['suspended_at' => now()])->save();
-        $user->signOutEverywhere();
-        $user->releaseUpcomingSpots();
-        Emails::send($user, Emails::accountSuspended($user));
-        $this->dispatch('toast', message: "{$user->name} is suspended and can't log in · we emailed {$user->firstName()}");
+        $note = trim(mb_substr($this->susNote, 0, 300));
+        $this->susError = match (true) {
+            ! isset(User::SUSPENSION_REASONS[$this->susReason]) => 'Pick a reason first.',
+            $this->susReason === 'other' && $note === '' => "Add a note so {$user->firstName()} knows what happened.",
+            default => '',
+        };
+        if ($this->susError) {
+            return;
+        }
+        $user->suspend($this->susReason, $this->susLength === 'open' ? null : (int) $this->susLength, $note, auth()->user());
+        Emails::send($user, Emails::accountSuspended($user->fresh()));
+        $this->suspending = false;
+        $until = $user->suspended_until ? 'until '.$user->suspended_until->format('D, M j') : 'until you restore it';
+        $this->dispatch('toast', message: "{$user->name} is suspended {$until} · we emailed {$user->firstName()}");
     }
 
+    /** Lifts it now, before any end date. */
     public function restore(): void
     {
         $user = $this->other();
-        $user->forceFill(['suspended_at' => null])->save();
-        $this->dispatch('toast', message: "{$user->name} can log in again");
+        $mail = Emails::accountRestored($user, early: true);
+        $user->liftSuspension();
+        Emails::send($user, $mail);
+        $this->dispatch('toast', message: "{$user->name} can log in again · we emailed {$user->firstName()}");
     }
 
     /** Their logged games stay in other players' history as Former player. */

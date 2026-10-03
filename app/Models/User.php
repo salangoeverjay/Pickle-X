@@ -8,6 +8,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -88,6 +89,7 @@ class User extends Authenticatable implements HasPasskeys
             'is_developer' => 'boolean',
             'show_display_name' => 'boolean',
             'suspended_at' => 'datetime',
+            'suspended_until' => 'datetime',
         ];
     }
 
@@ -118,9 +120,66 @@ class User extends Authenticatable implements HasPasskeys
         return $this->role === 'admin';
     }
 
+    /**
+     * Why an admin suspended an account: [label, picker hint, phrase for "suspended for ...", note placeholder,
+     * the email's reason title, the email's line on why it matters].
+     */
+    public const SUSPENSION_REASONS = [
+        'noshow' => ['No-shows', "Joins open plays and doesn't turn up", 'repeated no-shows', 'e.g. You missed 3 of your last 4 open plays without leaving them first.',
+            'Repeated no-shows at open plays you joined', 'Organizers hold a spot for every player who joins, so missing several in a row keeps others off the courts.'],
+        'unpaid' => ['Unpaid fees', 'Owes organizers for open plays', 'unpaid open play fees', 'e.g. You still owe ₱360 for three Friday Socials. Settle it with the organizer.',
+            'Unpaid open play fees', 'Organizers pay for the courts up front, so open plays only work when every player settles their fee.'],
+        'conduct' => ['Unsportsmanlike conduct', 'Abuse, threats or harassment', 'unsportsmanlike conduct', "e.g. Two players reported you shouting at them during Sunday's open play.",
+            'Unsportsmanlike conduct', "Abuse, threats or harassment of players or organizers aren't allowed at open plays on PickleX."],
+        'fake' => ['Fake or duplicate account', 'Not a real person, or a second account', 'a fake or duplicate account', 'e.g. This is a second account. Please use the one you joined with first.',
+            'A fake or duplicate account', 'Every player gets one account, so the queue, stats and rankings stay fair for everyone.'],
+        'spam' => ['Spam or scams', 'Selling, scams or spam in open plays', 'spam or scams', 'e.g. You posted paddle sale links in three open plays.',
+            'Spam or scams', "Selling, scams and spam aren't allowed in open plays or anywhere else on PickleX."],
+        'other' => ['Something else', 'Explain it in the note', 'breaking the community guidelines', 'Say what happened and what they can do next.',
+            'Breaking the community guidelines', "The admin's note below explains what happened."],
+    ];
+
+    /** A timed suspension stops counting once its end date passes, even before users:lift-suspensions clears it. */
     public function isSuspended(): bool
     {
-        return $this->suspended_at !== null;
+        return $this->suspended_at !== null && ! $this->suspended_until?->isPast();
+    }
+
+    /** The admin who suspended this account. */
+    public function suspender(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'suspended_by');
+    }
+
+    /** SUSPENSION_REASONS row for this account (older suspensions without one count as "other"). */
+    public function suspensionReason(): array
+    {
+        return self::SUSPENSION_REASONS[$this->suspension_reason] ?? self::SUSPENSION_REASONS['other'];
+    }
+
+    /** $days: 7 or 30, or null until an admin restores it. Lifts on its own at the start of the end day. */
+    public function suspend(string $reason, ?int $days, ?string $note, User $by): void
+    {
+        $this->forceFill([
+            'suspended_at' => now(), 'suspension_reason' => $reason, 'suspension_note' => $note ?: null,
+            'suspended_until' => $days ? today()->addDays($days) : null, 'suspended_by' => $by->id,
+        ])->save();
+        $this->signOutEverywhere();
+        $this->releaseUpcomingSpots();
+    }
+
+    public function liftSuspension(): void
+    {
+        $this->forceFill(['suspended_at' => null, 'suspension_reason' => null, 'suspension_note' => null, 'suspended_until' => null, 'suspended_by' => null])->save();
+    }
+
+    /** Shown on the log in screen (password or passkey). */
+    public function suspensionMessage(): string
+    {
+        $why = $this->suspensionReason()[2];
+
+        return 'This account is suspended '.($this->suspended_until ? 'until '.$this->suspended_until->format('D, M j')." for {$why}" : "for {$why} until an admin restores it")
+            .". We emailed {$this->email} the details. Reply to that email if you think it's a mistake.";
     }
 
     /** One of member | organizer | admin, as Admin › Users shows and sets it. */

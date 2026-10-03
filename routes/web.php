@@ -39,7 +39,7 @@ Route::middleware('guest')->group(function () {
             return response()->json(['message' => "That passkey didn't work. Try again, or log in with your password."], 422);
         }
         if ($user->isSuspended()) {
-            return response()->json(['message' => Login::SUSPENDED], 422);
+            return response()->json(['message' => $user->suspensionMessage()], 422);
         }
         Auth::login($user);
         $request->session()->regenerate();

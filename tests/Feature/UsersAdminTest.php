@@ -90,31 +90,74 @@ class UsersAdminTest extends TestCase
         $this->assertSame('admin', $this->super->fresh()->accountRole());
     }
 
-    public function test_suspended_accounts_are_signed_out_and_cannot_log_in(): void
+    public function test_suspending_needs_a_reason_and_a_note_for_something_else(): void
     {
-        $kai = User::factory()->create(['email' => 'kai@example.com', 'password' => 'password', 'remember_token' => 'old-token']);
+        $kai = User::factory()->create(['name' => 'Kai Santos']);
+
+        Livewire::actingAs($this->super)->test(Users::class)->call('open', $kai->id)
+            ->call('startSuspend')->assertSee("Suspend Kai's account", false)->assertSee('Lifts on its own on')
+            ->call('suspend')->assertSet('susError', 'Pick a reason first.')
+            ->set('susReason', 'other')->assertSee('Note to Kai (required)')->call('suspend')->assertSet('susError', 'Add a note so Kai knows what happened.')
+            ->set('susLength', 'open')->assertSee('Stays until an admin restores it.')->assertSee('Suspend account');
+        $this->assertFalse($kai->fresh()->isSuspended());
+    }
+
+    public function test_a_timed_suspension_signs_out_blocks_login_and_lifts_on_its_own(): void
+    {
+        $this->travelTo(now()->parse('2026-09-28 10:00'));
+        $kai = User::factory()->create(['name' => 'Kai Santos', 'email' => 'kai@example.com', 'password' => 'password', 'remember_token' => 'old-token']);
         DB::table('sessions')->insert(['id' => 's1', 'user_id' => $kai->id, 'payload' => '', 'last_activity' => time()]);
         $next = OpenPlay::create(['organizer_id' => $this->super->id, 'title' => 'Friday', 'club' => 'Club', 'venue' => 'Gym',
             'starts_at' => now()->addDay(), 'ends_at' => now()->addDay()->addHours(2), 'courts' => 1, 'cap' => 8]);
         $next->join($kai);
 
-        Livewire::actingAs($this->super)->test(Users::class)->call('open', $kai->id)->call('suspend')
-            ->assertDispatched('toast', message: "{$kai->name} is suspended and can't log in · we emailed {$kai->firstName()}")->assertSee('Restore');
+        Livewire::actingAs($this->super)->test(Users::class)->call('open', $kai->id)
+            ->call('startSuspend')->set('susReason', 'noshow')->set('susNote', 'You missed 3 open plays.')->call('suspend')
+            ->assertDispatched('toast', message: 'Kai Santos is suspended until Mon, Oct 5 · we emailed Kai')
+            ->assertSee('Lifts on its own Mon, Oct 5 · 7 days left')->assertSee('You missed 3 open plays.')->assertSee('No-shows · until Oct 5');
+        $kai->refresh();
+        $this->assertTrue($kai->isSuspended());
         $this->assertSame(0, $next->activeParticipants()->count());
-        Mail::assertSent(PickleXMail::class, fn ($m) => $m->template === 'account-suspended' && $m->hasTo('kai@example.com')
-            && str_contains($m->render(), 'Your account is suspended'));
-        $this->assertTrue($kai->fresh()->isSuspended());
         $this->assertSame(0, DB::table('sessions')->where('user_id', $kai->id)->count());
-        $this->assertNotSame('old-token', $kai->fresh()->remember_token);
+        $this->assertNotSame('old-token', $kai->remember_token);
+        Mail::assertSent(PickleXMail::class, fn ($m) => $m->template === 'account-suspended' && $m->hasTo('kai@example.com')
+            && $m->heading === 'Your PickleX account is suspended until Oct 5' && str_contains($m->render(), 'Repeated no-shows at open plays you joined')
+            && str_contains($m->render(), 'You missed 3 open plays.') && str_contains($m->render(), 'Pat Admin · PickleX admin'));
 
         Auth::logout();
         Livewire::test(Login::class)->set('email', 'kai@example.com')->set('password', 'password')->call('login')
-            ->assertHasErrors(['email' => Login::SUSPENDED]);
+            ->assertHasErrors(['email' => "This account is suspended until Mon, Oct 5 for repeated no-shows. We emailed kai@example.com the details. Reply to that email if you think it's a mistake."]);
         $this->assertGuest();
 
-        Livewire::actingAs($this->super)->test(Users::class)->call('open', $kai->id)->call('restore');
-        Auth::logout();
+        // The end date lets them in even before the scheduler clears it, then the scheduler sends the "active again" email.
+        $this->travelTo(now()->parse('2026-10-05 00:01'));
+        $this->assertFalse($kai->fresh()->isSuspended());
+        $this->artisan('users:lift-suspensions')->expectsOutput('Lifted 1 suspension.');
+        $this->assertNull($kai->fresh()->suspended_at);
+        Mail::assertSent(PickleXMail::class, fn ($m) => $m->template === 'account-restored' && ! $m->data['early']
+            && str_contains($m->render(), 'Your suspension ended') && str_contains($m->render(), "Can't make it to an open play?"));
         Livewire::test(Login::class)->set('email', 'kai@example.com')->set('password', 'password')->call('login')->assertHasNoErrors();
+    }
+
+    public function test_suspended_until_restored_and_restored_early(): void
+    {
+        $kai = User::factory()->create(['name' => 'Kai Santos', 'email' => 'kai@example.com', 'password' => 'password']);
+
+        Livewire::actingAs($this->super)->test(Users::class)->call('open', $kai->id)
+            ->call('startSuspend')->set('susReason', 'conduct')->set('susLength', 'open')->call('suspend')
+            ->assertDispatched('toast', message: 'Kai Santos is suspended until you restore it · we emailed Kai')
+            ->assertSee('Until an admin restores it');
+        Mail::assertSent(PickleXMail::class, fn ($m) => $m->template === 'account-suspended' && $m->heading === 'Your PickleX account is suspended'
+            && str_contains($m->render(), 'How to ask for another look') && str_contains($m->render(), 'the organizer&#039;s report'));
+        $this->assertSame("This account is suspended for unsportsmanlike conduct until an admin restores it. We emailed kai@example.com the details. Reply to that email if you think it's a mistake.",
+            $kai->fresh()->suspensionMessage());
+
+        Livewire::actingAs($this->super)->test(Users::class)->call('open', $kai->id)->call('restore')
+            ->assertDispatched('toast', message: 'Kai Santos can log in again · we emailed Kai');
+        $this->assertFalse($kai->fresh()->isSuspended());
+        $this->assertNull($kai->fresh()->suspension_reason);
+        Mail::assertSent(PickleXMail::class, fn ($m) => $m->template === 'account-restored' && $m->data['early']
+            && str_contains($m->render(), 'lifted your suspension, so') && str_contains($m->render(), 'Unsportsmanlike conduct'));
     }
 
     public function test_remember_me_sets_a_30_day_cookie(): void

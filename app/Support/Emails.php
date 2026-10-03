@@ -86,10 +86,35 @@ class Emails
         }, ['user' => $user, 'was' => $was, 'role' => $role]);
     }
 
+    /** Built after User::suspend(): the reason, how long and the admin's note. */
     public static function accountSuspended(User $user): PickleXMail
     {
-        return new PickleXMail('account-suspended', 'Your PickleX account is suspended',
-            "You can't log in or join open plays for now. Here's what that means, and how to ask for another look.", ['user' => $user]);
+        $until = $user->suspended_until;
+        $days = $until ? (int) round($user->suspended_at->copy()->startOfDay()->diffInDays($until)) : null;
+        $why = $user->suspensionReason()[2];
+
+        return new PickleXMail('account-suspended', 'Your PickleX account is suspended'.($until ? ' until '.$until->format('M j') : ''),
+            $until ? "Suspended for {$days} days for {$why}. Here's what that means and how to ask for another look."
+                : 'Suspended for '.$why.' until an admin restores it. Reply to tell us your side.', [
+                    'user' => $user, 'at' => $user->suspended_at, 'until' => $until, 'days' => $days,
+                    'reason' => $user->suspensionReason(), 'note' => $user->suspension_note, 'by' => $user->suspender?->name,
+                ]);
+    }
+
+    /** Built before User::liftSuspension() clears the details. $early: an admin restored it (not the end date). */
+    public static function accountRestored(User $user, bool $early): PickleXMail
+    {
+        $back = now();
+
+        return new PickleXMail('account-restored', 'Your PickleX account is active again', match (true) {
+            ! $early => 'Your suspension ended. Log in and join an open play anytime.',
+            (bool) $user->suspended_until => 'Your suspension was lifted early. Log in and join an open play anytime.',
+            default => 'Your suspension was lifted. Log in and join an open play anytime.',
+        }, [
+            'user' => $user, 'early' => $early, 'at' => $user->suspended_at, 'until' => $user->suspended_until, 'back' => $back,
+            'days' => max(1, (int) round($user->suspended_at->copy()->startOfDay()->diffInDays($back->copy()->startOfDay()))),
+            'reason' => $user->suspensionReason(), 'reasonKey' => $user->suspension_reason,
+        ]);
     }
 
     /** Built before the account is deleted; send it to the address, not the gone account. */
