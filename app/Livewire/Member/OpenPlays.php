@@ -5,8 +5,10 @@ namespace App\Livewire\Member;
 use App\Livewire\Concerns\Pages;
 use App\Models\OpenPlay;
 use App\Support\Emails;
+use App\Support\MemberStats;
 use App\Support\Results;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -18,6 +20,13 @@ class OpenPlays extends Component
 
     // Open play whose payment QR dialog is showing.
     public ?int $payFor = null;
+
+    // "See who's in" (upcoming) or "See who's here" (live): the open play, the search and the filter tab.
+    public ?int $whoFor = null;
+
+    public string $whoQ = '';
+
+    public string $whoF = 'all';
 
     public function openPay(int $id): void
     {
@@ -95,6 +104,77 @@ class OpenPlays extends Component
         $this->dispatch('toast', message: "You're back in the rotation");
     }
 
+    public function openWho(int $id): void
+    {
+        $this->whoFor = $this->joinable($id)->id;
+        $this->whoQ = '';
+        $this->whoF = 'all';
+        $this->resetPage('whoPage');
+    }
+
+    public function closeWho(): void
+    {
+        $this->whoFor = null;
+    }
+
+    /** A new filter or search starts on page 1. */
+    public function updated(string $property): void
+    {
+        if (in_array($property, ['whoQ', 'whoF'])) {
+            $this->resetPage('whoPage');
+        }
+    }
+
+    /**
+     * The read-only player list: names as each player shares them, home clubs, who they've played with you
+     * and, when live, where they are tonight. Never emails or payments.
+     */
+    private function who(): ?array
+    {
+        $play = $this->whoFor ? OpenPlay::public()->whereIn('status', ['live', 'upcoming'])->find($this->whoFor) : null;
+        if (! $play) {
+            return null;
+        }
+        $me = auth()->id();
+        $live = $play->isLive();
+        $stats = new MemberStats(auth()->user());
+        $partner = $stats->partners->mapWithKeys(fn ($r) => [$r->user->id => $r->games]);
+        $opponent = $stats->opponents->mapWithKeys(fn ($r) => [$r->user->id => $r->games]);
+        $record = $live ? collect($play->standings())->keyBy('participant_id') : collect();
+
+        $all = $play->whoIsIn()->map(function ($r) use ($me, $live, $partner, $opponent, $record, $play) {
+            $p = $r['p'];
+            $uid = $p->user_id;
+            [$pa, $op] = [$uid === $me ? 0 : (int) $partner->get($uid), $uid === $me ? 0 : (int) $opponent->get($uid)];
+            $with = $pa && $op ? "Partner {$pa}× · opponent {$op}×" : ($pa ? 'Your partner '.$pa.' '.Str::plural('time', $pa) : ($op ? 'Played against you '.$op.' '.Str::plural('time', $op) : ''));
+            $rec = $record->get($p->id);
+            $sub = ! $uid ? ($live ? 'Walk-in guest' : 'Guest · added by the organizer')
+                : collect([$rec ? "{$rec['w']}-{$rec['l']} tonight" : $p->user?->club, $with])->filter()->join(' · ');
+
+            return $r + ['guest' => ! $uid, 'me' => $uid && $uid === $me, 'host' => $uid && $uid === $play->organizer_id, 'played' => (bool) ($pa || $op), 'sub' => $sub];
+        });
+
+        $inLine = fn ($r) => in_array($r['st'], ['line', 'out']);
+        $tabs = $live
+            ? ['all' => 'All', 'court' => 'On court', 'line' => 'In line', 'away' => '<span class="lg:hidden">Not in yet</span><span class="hidden lg:inline">Not checked in</span>']
+            : ['all' => 'All', 'played' => 'Played with you'] + ($all->contains('guest', true) ? ['guests' => 'Guests'] : []);
+        $test = fn ($f) => fn ($r) => match ($f) {
+            'court' => $r['st'] === 'court', 'line' => $inLine($r), 'away' => $r['st'] === 'away', 'played' => $r['played'], 'guests' => $r['guest'], default => true,
+        };
+        $counts = collect($tabs)->map(fn ($l, $f) => $all->filter($test($f))->count());
+        $f = isset($tabs[$this->whoF]) ? $this->whoF : 'all';
+        $q = mb_strtolower(trim($this->whoQ));
+        // Names only: players never search by someone's full name or email.
+        $rows = $all->filter($test($f))->filter(fn ($r) => $q === '' || str_contains(mb_strtolower($r['p']->name), $q))->values();
+
+        return [
+            'play' => $play, 'live' => $live, 'all' => $all, 'rows' => $rows, 'page' => $this->pageOf($rows, 10, 'whoPage'),
+            'tabs' => $tabs, 'counts' => $counts, 'f' => $f, 'q' => trim($this->whoQ),
+            'onCourt' => $counts['court'] ?? 0, 'inLine' => $all->filter($inLine)->count(), 'away' => $counts['away'] ?? 0, 'played' => $counts['played'] ?? 0,
+            'joined' => $all->contains('me', true),
+        ];
+    }
+
     /** Members only act on public sessions that haven't ended. */
     private function joinable(int $id): OpenPlay
     {
@@ -136,6 +216,7 @@ class OpenPlays extends Component
             'joined' => $joined,
             'paidIds' => $user->participations()->whereNull('left_at')->where('paid', true)->pluck('open_play_id')->all(),
             'claimedIds' => DB::table('pay_claims')->where('user_id', $user->id)->pluck('open_play_id')->all(),
+            'who' => $this->who(),
             'payPlay' => $this->payFor ? $plays->firstWhere('id', $this->payFor) : null,
             'history' => $history = Results::memberHistory($user),
             'historyPage' => $this->pageOf($history['rows'], 5, 'pastPage'),

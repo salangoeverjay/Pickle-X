@@ -284,6 +284,39 @@ class OpenPlay extends Model
         return collect($this->queue())->filter(fn ($e) => self::isAvailable($e, $ready))->sum(fn ($e) => count($e['ids']));
     }
 
+    /**
+     * Who's in, as players see it. Live: on court, then the queue, then anyone who joined but isn't on the board,
+     * each with 'st' court | line | out (stepped out) | away (not checked in), plus 'court' or 'pos'.
+     * Upcoming: everyone in the order they joined ('st' => 'in').
+     *
+     * @return \Illuminate\Support\Collection<int, array{p: Participant, st: string, court?: int, pos?: int}>
+     */
+    public function whoIsIn(): \Illuminate\Support\Collection
+    {
+        $active = $this->participantMap()->whereNull('left_at');
+        if (! $this->isLive()) {
+            return $active->sortBy(fn ($p) => [$p->created_at, $p->id])->values()->map(fn ($p) => ['p' => $p, 'st' => 'in']);
+        }
+
+        $out = [];
+        foreach ($this->boardCourts() as $c) {
+            foreach ($c['a'] ? [...$c['a']['ids'], ...$c['b']['ids']] : [] as $id) {
+                $out[$id] ??= ['st' => 'court', 'court' => $c['n']];
+            }
+        }
+        foreach ($this->queue() as $i => $e) {
+            foreach ($e['ids'] as $id) {
+                $here = $active->get($id)?->checked_in_at;
+                $out[$id] ??= ['st' => ($e['paused'] ?? false) ? 'out' : ($here ? 'line' : 'away'), 'pos' => $i + 1];
+            }
+        }
+        foreach ($active->keys() as $id) {
+            $out[$id] ??= ['st' => 'away'];
+        }
+
+        return collect($out)->filter(fn ($r, $id) => $active->has($id))->map(fn ($r, $id) => ['p' => $active->get($id)] + $r)->values();
+    }
+
     /** Public view-mode URL (QR target). */
     public function shareUrl(): ?string
     {

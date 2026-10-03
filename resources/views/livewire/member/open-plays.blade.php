@@ -181,6 +181,10 @@
 
     <livewire:past-results />
 
+    @if ($who)
+        @include('livewire.member.partials.who')
+    @endif
+
     {{-- Pay for an open play: bottom sheet on mobile, centered on desktop. --}}
     @if ($payPlay)
         @php($sent = in_array($payPlay->id, $claimedIds))

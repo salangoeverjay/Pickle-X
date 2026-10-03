@@ -51,6 +51,24 @@
         </div>
     </div>
 
+    {{-- Who's in (upcoming) or here (live): the first five faces, then the dialog. --}}
+    <button type="button" wire:click="openWho({{ $play->id }})" @disabled(! $count)
+            aria-label="{{ $play->isLive() ? 'See who is here at' : 'See who joined' }} {{ $play->title }}"
+            class="inline-flex min-h-11.5 cursor-pointer items-center gap-2.5 self-stretch rounded-full border-[1.5px] border-line2 bg-bg py-1.25 pr-4 pl-1.5 text-ink transition hover:brightness-96 active:scale-97 disabled:cursor-default disabled:hover:brightness-100 disabled:active:scale-100 lg:self-start">
+        @if ($count)
+            <span aria-hidden="true" class="flex pr-0.5">
+                @foreach ($play->whoIsIn()->take(5) as ['p' => $p])
+                    <x-avatar :src="$p->avatarUrl()" :frame="$p->frameClass()" :name="$p->name" :color="$p->user ? $p->color() : '#E6E3D6'" class="-mr-2.25 size-8.5 border-2 border-bg text-[11px]" />
+                @endforeach
+                @if ($count > 5)
+                    <span class="flex h-8.5 min-w-8.5 items-center justify-center rounded-full border-2 border-bg bg-ink px-1.5 font-mono text-[11px] font-semibold text-bg">+{{ $count - 5 }}</span>
+                @endif
+            </span>
+        @endif
+        <span class="ml-1.5 flex-1 text-left text-sm font-bold whitespace-nowrap">{{ ! $count ? 'No one yet' : ($play->isLive() ? "See who's here" : "See who's in") }}</span>
+        <x-icon name="chevron-right" :size="16" :stroke="2.2" />
+    </button>
+
     <div class="flex flex-wrap gap-2">
         @if ($joined)
             <button type="button" wire:click="leavePlay({{ $play->id }})" aria-pressed="true" class="h-12 min-w-40 flex-1 cursor-pointer rounded-full border-[1.5px] border-line2 bg-transparent text-[15px] font-bold text-ink transition hover:brightness-96 active:scale-97">You're in · Leave</button>
