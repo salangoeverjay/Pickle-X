@@ -6,6 +6,7 @@ use App\Livewire\Organizer\OpenPlays as OrganizerPlays;
 use App\Mail\PickleXMail;
 use App\Models\OpenPlay;
 use App\Models\User;
+use App\Support\PaidList;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -109,6 +110,34 @@ class EditOpenPlayTest extends TestCase
         $html = html_entity_decode($mail->render(), ENT_QUOTES);
         $this->assertStringContainsString('Was ', $html);
         $this->assertStringContainsString('Your ₱120 payment still counts.', $html);
+    }
+
+    public function test_taking_players_off_the_paid_list_removes_them(): void
+    {
+        $play = $this->play(['fee' => '₱120']);
+        $mika = User::factory()->create(['name' => 'Mika Lim']);
+        $play->join($mika); // joined in the app, then marked paid
+        $play->participants()->where('user_id', $mika->id)->update(['paid' => true]);
+        $rico = User::factory()->create(['name' => 'Rico Dizon']);
+        $play->addPaidPlayers(PaidList::rows($rico->email."\nGrace Ong", [PaidList::key($rico->email) => $rico->id, PaidList::key('Grace Ong') => 'guest']));
+        DB::table('pay_claims')->insert(['open_play_id' => $play->id, 'user_id' => $mika->id, 'created_at' => now(), 'updated_at' => now()]);
+
+        Livewire::actingAs($this->org)->test(OrganizerPlays::class)
+            ->call('edit', $play->id)
+            ->set('paid', '')
+            ->call('showReview')
+            ->assertSee('1 change to review')
+            ->assertSee('Taken off the paid list, so they leave this open play: Grace Ong and Rico Dizon.')
+            ->assertSee('Mika Lim joined in the app, so they stay in and are marked as not paid.')
+            ->call('publish');
+
+        $this->assertSame([$mika->id], $play->activeParticipants()->pluck('user_id')->all());
+        $this->assertFalse((bool) $play->participants()->where('user_id', $mika->id)->value('paid'));
+        $this->assertSame(0, DB::table('pay_claims')->count());
+
+        // Keeping a line keeps the player.
+        Livewire::actingAs($this->org)->test(OrganizerPlays::class)->call('edit', $play->id)->set('paid', 'Pia Cruz')->call('showReview')->call('publish');
+        $this->assertSame(2, $play->activeParticipants()->count());
     }
 
     public function test_cap_changes_and_cap_only_edits_dont_email(): void

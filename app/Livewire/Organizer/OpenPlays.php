@@ -12,6 +12,7 @@ use App\Support\Emails;
 use App\Support\PaidList;
 use App\Support\UpNext;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -163,6 +164,13 @@ class OpenPlays extends Component
             if ($told && collect($rows)->contains('notify', true)) {
                 $notes[] = $told.' '.($told === 1 ? 'player who joined gets' : 'players who joined get').' an email about what changed.';
             }
+            [$out, $unpaid] = $form['dropped']->partition(fn ($p) => self::leavesWhenDropped($p));
+            if ($out->isNotEmpty()) {
+                $notes[] = 'Taken off the paid list, so they leave this open play: '.$out->map(fn ($p) => $p->fullName())->join(', ', ' and ').'.';
+            }
+            if ($unpaid->isNotEmpty()) {
+                $notes[] = $unpaid->map(fn ($p) => $p->fullName())->join(', ', ' and ').' joined in the app, so they stay in and are marked as not paid.';
+            }
             if (collect($rows)->contains(fn ($r) => $r['key'] === 'fee' && $r['changed']) && $form['rows']) {
                 $notes[] = 'Players already marked as paid keep their Paid status. Settle any difference in the fee with them directly.';
             }
@@ -308,15 +316,18 @@ class OpenPlays extends Component
             return null;
         }
 
-        // Editing: paid lines already in the open play aren't added twice, and the cap can't drop below who's in.
+        // Editing: paid lines already in the open play aren't added twice, lines taken out drop those players,
+        // and the cap can't drop below who's in.
         $newRows = $play ? self::newPaidRows($play, $rows) : $rows;
-        if ($play && ($in = $play->activeParticipants()->count() + count($newRows)) > $this->cap) {
+        $dropped = $play ? self::droppedPaid($play, $rows) : collect();
+        $leaving = $dropped->filter(fn ($p) => self::leavesWhenDropped($p))->count();
+        if ($play && ($in = $play->activeParticipants()->count() - $leaving + count($newRows)) > $this->cap) {
             $this->error = "{$in} players are already in this open play. Set the player cap to at least {$in}.";
 
             return null;
         }
 
-        return compact('starts', 'ends', 'minutes', 'fee', 'png', 'rows', 'newRows');
+        return compact('starts', 'ends', 'minutes', 'fee', 'png', 'rows', 'newRows', 'dropped');
     }
 
     private function saveNew(array $form): void
@@ -388,6 +399,14 @@ class OpenPlays extends Component
         } else {
             $this->storeQr($play, $form['png']);
         }
+        foreach ($form['dropped'] as $p) {
+            if (self::leavesWhenDropped($p)) {
+                $p->update(['left_at' => now()]);
+            } else {
+                $p->update(['paid' => false]);
+                DB::table('pay_claims')->where(['open_play_id' => $play->id, 'user_id' => $p->user_id])->delete();
+            }
+        }
         $play->addPaidPlayers($form['newRows']);
         collect($form['newRows'])->pluck('user')->filter()->unique('id')->reject(fn ($u) => $u->id === auth()->id())
             ->each(fn ($u) => Emails::send($u, Emails::joined($play, $u)));
@@ -458,7 +477,7 @@ class OpenPlays extends Component
 
         if ($play) {
             $paidNow = $play->activeParticipants()->where('paid', true);
-            $now['paid'] = ['Paid players', $paidTotals($form['newRows'], (clone $paidNow)->count(), (clone $paidNow)->whereNotNull('user_id')->count())];
+            $now['paid'] = ['Paid players', $paidTotals($form['newRows'], (clone $paidNow)->count() - $form['dropped']->count(), (clone $paidNow)->whereNotNull('user_id')->count() - $form['dropped']->whereNotNull('user_id')->count())];
             $was = [
                 'title' => $play->title,
                 'when' => $play->starts_at->format('l, M j').' · '.$play->timeRange().' · '.OpenPlay::lengthLabel((int) $play->starts_at->diffInMinutes($play->ends_at)),
@@ -513,6 +532,22 @@ class OpenPlays extends Component
         $guests = $existing->whereNull('user_id')->map(fn ($p) => mb_strtolower($p->name))->all();
 
         return array_values(array_filter($rows, fn ($r) => $r['user'] ? ! in_array($r['user']->id, $users) : ! in_array(mb_strtolower($r['line']), $guests)));
+    }
+
+    /** Paid players in this open play whose line was taken out of the paid list. */
+    private static function droppedPaid(OpenPlay $play, array $rows): Collection
+    {
+        $users = collect($rows)->pluck('user')->filter()->pluck('id')->all();
+        $guests = collect($rows)->whereNull('user')->map(fn ($r) => mb_strtolower($r['line']))->all();
+
+        return $play->activeParticipants()->where('paid', true)->with('user')->get()
+            ->reject(fn ($p) => $p->user_id ? in_array($p->user_id, $users) : in_array(mb_strtolower($p->name), $guests))->values();
+    }
+
+    /** Guests and accounts added from the paid list leave when their line goes; members who joined in the app stay, marked not paid. */
+    private static function leavesWhenDropped(Participant $p): bool
+    {
+        return ! $p->user_id || $p->from_list;
     }
 
     /** An upcoming open play of yours that can still be edited or deleted. */
