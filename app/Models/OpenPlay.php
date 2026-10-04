@@ -230,13 +230,15 @@ class OpenPlay extends Model
         $games = GamePlayer::query()->whereIn('game_id', $this->games()->select('id'))->get(['game_id', 'team', 'participant_id'])
             ->groupBy('game_id')->map(fn ($ps) => [$ps->where('team', 'a')->pluck('participant_id')->all(), $ps->where('team', 'b')->pluck('participant_id')->all()])
             ->values()->all();
-        $sg = [];
+        // Games per player, plus the games late arrivals were credited with (levelUp).
+        $board ??= $this->board;
+        $sg = $board['par'] ?? [];
         foreach ($games as [$a, $b]) {
             foreach ([...$a, ...$b] as $id) {
                 $sg[$id] = ($sg[$id] ?? 0) + 1;
             }
         }
-        foreach (($board ?? $this->board)['courts'] ?? [] as $c) {
+        foreach ($board['courts'] ?? [] as $c) {
             if ($c['a']) {
                 $games[] = [$c['a']['ids'], $c['b']['ids']];
             }
@@ -578,8 +580,10 @@ class OpenPlay extends Model
      * Everyone rotates, fairly:
      *  1. Fewest games tonight play first: anyone with fewer games than the fourth player in that order is in.
      *  2. Among players tied on games (the 8 who have waited longest), pick the group and split the teams so
-     *     partners repeat as little as possible, then by wait, then opponents. Over a night everyone partners
-     *     with as many different players as possible.
+     *     nobody goes straight back on after a game (the last 4 in line just came off), then partners repeat as
+     *     little as possible, then by wait, then opponents. Over a night everyone partners with as many
+     *     different players as possible.
+     *  Late arrivals start at par (see levelUp), so they rotate in instead of playing every game to catch up.
      * Locked pairs always play together and count as one pick. Null when fewer than 4 are ready,
      * false when no split works (line order takes over).
      */
@@ -611,9 +615,11 @@ class OpenPlay extends Model
         $tie = array_slice(array_values(array_filter($units, fn ($u) => $u['g'] === $cut['g'])), 0, 8);
         $need = 4 - array_sum(array_column($must, 'n'));
         $pc = fn ($t) => $book['pc'][self::pairKey($t[0], $t[1])] ?? 0;
+        // Rest comes before new partners: nobody plays back to back unless nobody else can go on.
+        $justOff = array_slice(array_merge(...array_map(fn ($e) => $e['ids'], $queue) ?: [[]]), -4);
 
         $best = null;
-        $try = function (array $grp) use (&$best, $pc, $book) {
+        $try = function (array $grp) use (&$best, $pc, $book, $justOff) {
             $lk = array_values(array_filter($grp, fn ($u) => $u['locked']));
             $sn = array_merge(...array_map(fn ($u) => $u['e']['ids'], array_values(array_filter($grp, fn ($u) => ! $u['locked']))) ?: [[]]);
             $splits = match (count($lk)) {
@@ -622,6 +628,7 @@ class OpenPlay extends Model
                 default => [[[$sn[0], $sn[1]], [$sn[2], $sn[3]], false, false], [[$sn[0], $sn[2]], [$sn[1], $sn[3]], false, false], [[$sn[0], $sn[3]], [$sn[1], $sn[2]], false, false]],
             };
             $wait = array_sum(array_column($grp, 'r'));
+            $tired = count(array_intersect(array_merge(...array_map(fn ($u) => $u['e']['ids'], $grp)), $justOff));
             foreach ($splits as $sp) {
                 $ps = 0;
                 foreach ([0, 1] as $t) {
@@ -636,7 +643,7 @@ class OpenPlay extends Model
                         $os += $book['oc'][self::pairKey($x, $y)] ?? 0;
                     }
                 }
-                $score = $ps * 1000 + $wait * 10 + $os;
+                $score = $tired * 1_000_000 + $ps * 1000 + $wait * 10 + $os;
                 if (! $best || $score < $best['score']) {
                     $best = ['score' => $score, 'sp' => $sp, 'grp' => $grp];
                 }
@@ -945,6 +952,7 @@ class OpenPlay extends Model
         return $this->mutate(function (array &$board, self $play) use ($name) {
             $p = $play->participants()->create(['name' => $name, 'checked_in_at' => now()]);
             $board['queue'][] = ['id' => ++$board['seq'], 'ids' => [$p->id], 'locked' => false];
+            self::levelUp($board, $play, [$p->id]);
 
             return $p;
         });
@@ -954,19 +962,24 @@ class OpenPlay extends Model
     public function checkIn(array $participantIds): void
     {
         $this->mutate(function (array &$board, self $play) use ($participantIds) {
-            $play->participants()->whereIn('id', $participantIds)->whereNull('checked_in_at')->update(['checked_in_at' => now()]);
+            $new = $play->participants()->whereIn('id', $participantIds)->whereNull('checked_in_at')->pluck('id')->all();
+            $play->participants()->whereIn('id', $new)->update(['checked_in_at' => now()]);
+            self::levelUp($board, $play, $new);
         });
     }
 
     /** Step an entry out (keeps its spot, skipped when calling games) or bring it back. */
     public function setPaused(int $entryId, bool $paused): void
     {
-        $this->mutate(function (array &$board) use ($entryId, $paused) {
+        $this->mutate(function (array &$board, self $play) use ($entryId, $paused) {
             foreach ($board['queue'] as &$e) {
                 if ($e['id'] === $entryId) {
                     $e['paused'] = $paused;
+                    $back = $paused ? [] : $e['ids'];
                 }
             }
+            unset($e);
+            self::levelUp($board, $play, $back ?? []);
         });
     }
 
@@ -1039,6 +1052,9 @@ class OpenPlay extends Model
             $play->adoptClub($user);
             if ($play->isLive()) {
                 $board['queue'][] = ['id' => ++$board['seq'], 'ids' => [$p->id], 'locked' => false];
+                if ($p->checked_in_at) {
+                    self::levelUp($board, $play, [$p->id]);
+                }
             }
 
             return $p;
@@ -1105,6 +1121,47 @@ class OpenPlay extends Model
 
             return $result;
         });
+    }
+
+    /**
+     * Late arrivals and players back from a break join the rotation at par: counted as having played as many
+     * games as the fewest anyone else here has, so everyone rotates doesn't keep them on court until they catch up.
+     */
+    private static function levelUp(array &$board, self $play, array $ids): void
+    {
+        if ($play->status !== 'live' || ! $ids) {
+            return;
+        }
+        $played = $play->gamesTonight();
+        $par = $board['par'] ?? [];
+        $games = fn ($id) => ($played[$id] ?? 0) + ($par[$id] ?? 0);
+        $here = array_diff(array_intersect(self::boardPlayerIds($board), $play->checkedInIds()), $ids);
+        if (! $here) {
+            return;
+        }
+        $floor = min(array_map($games, $here));
+        foreach ($ids as $id) {
+            if ($games($id) < $floor) {
+                $par[$id] = $floor - ($played[$id] ?? 0);
+            }
+        }
+        $board['par'] = $par;
+    }
+
+    /** Everyone on court or in the queue on this board. */
+    private static function boardPlayerIds(array $board): array
+    {
+        $ids = [];
+        foreach ($board['courts'] ?? [] as $c) {
+            if ($c['a']) {
+                array_push($ids, ...$c['a']['ids'], ...$c['b']['ids']);
+            }
+        }
+        foreach ($board['queue'] ?? [] as $e) {
+            array_push($ids, ...$e['ids']);
+        }
+
+        return $ids;
     }
 
     /** Fresh from the DB (not the cached map): used inside writes. */

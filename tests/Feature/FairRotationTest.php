@@ -56,6 +56,36 @@ class FairRotationTest extends TestCase
         $this->assertGreaterThan(12, $firstRepeat, 'partners mix before anyone repeats');
     }
 
+    public function test_a_late_walk_in_joins_the_rotation_at_par_instead_of_playing_every_game(): void
+    {
+        $play = $this->live(8);
+        for ($g = 0; $g < 10; $g++) {
+            $play->fresh()->recordScore(1, 11, 5); // everyone has played 5
+        }
+        $late = $play->fresh()->addWalkin('Late Larry')->id;
+
+        $streak = $played = 0;
+        for ($g = 0; $g < 9; $g++) {
+            $on = in_array($late, [...$play->fresh()->boardCourts()[0]['a']['ids'], ...$play->fresh()->boardCourts()[0]['b']['ids']]);
+            $streak = $on ? $streak + 1 : 0;
+            $played += $on;
+            $this->assertLessThan(2, $streak, "game {$g}: a late arrival still gets a rest between games");
+            $play->fresh()->recordScore(1, 11, 5);
+        }
+        $this->assertGreaterThanOrEqual(3, $played, 'and still gets their fair share');
+
+        // Back from a break: same rule.
+        $entry = collect($play->fresh()->queue())->first(fn ($e) => $e['ids'] === [$late]) ?? collect($play->fresh()->queue())->first();
+        $play->fresh()->setPaused($entry['id'], true);
+        foreach (range(1, 4) as $g) {
+            $play->fresh()->recordScore(1, 11, 5);
+        }
+        $play->fresh()->setPaused($entry['id'], false);
+        $book = $play->fresh()->fairBook();
+        $others = array_diff(array_keys($book['sg']), $entry['ids']);
+        $this->assertGreaterThanOrEqual(min(array_map(fn ($id) => $book['sg'][$id], $others)), $book['sg'][$entry['ids'][0]]);
+    }
+
     public function test_up_next_says_why_and_the_mode_switches_mid_session(): void
     {
         $play = $this->live(12, 2);

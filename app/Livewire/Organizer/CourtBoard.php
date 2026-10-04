@@ -493,7 +493,7 @@ class CourtBoard extends Component
         // Everyone rotates: why these four (fewest games, new partners) and who waits a turn.
         $why = null;
         if ($next['fair'] ?? false) {
-            $sg = $play->fairBook()['sg'];
+            $sg = $play->gamesTonight();
             $gs = array_map(fn ($id) => $sg[$id] ?? 0, [...$next['a']['ids'], ...$next['b']['ids']]);
             $games = min($gs) === max($gs) ? (min($gs) ? min($gs).' '.Str::plural('game', min($gs)).' each tonight' : 'first game tonight') : min($gs).' to '.max($gs).' games tonight';
             $open = collect([[$next['a'], $next['rep'][0]], [$next['b'], $next['rep'][1]]])->reject(fn ($t) => $t[0]['locked']);
