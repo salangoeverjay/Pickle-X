@@ -44,6 +44,9 @@ class CourtBoard extends Component
     /** Up-next queue entry whose sub panel is open. */
     public ?int $subFor = null;
 
+    /** Add or remove courts: ['step' => list|remove, 'num' => court number to add, 'court' => n being removed, 'how' => finish|now]. */
+    public ?array $crt = null;
+
     /** Sub on a live court: ['court' => n, 'out' => participant ids, 'in' => queue entry ids, 'after' => out|back|leave]. */
     public ?array $csub = null;
 
@@ -210,6 +213,90 @@ class CourtBoard extends Component
         }
         $play->setRotation($rotation);
         $this->dispatch('toast', message: $play->rotationLabel().' from the next game · games on court finish as they are');
+    }
+
+    public function openCourts(): void
+    {
+        $taken = collect($this->play()->boardCourts())->pluck('n')->all();
+        $this->crt = ['step' => 'list', 'num' => self::freeCourtNumber($taken, max([0, ...$taken]) + 1, 1) ?? 1];
+    }
+
+    /** Next free court number from $n going $d (+1 or -1), or null when there's none between 1 and 99. */
+    private static function freeCourtNumber(array $taken, int $n, int $d): ?int
+    {
+        while ($n >= 1 && $n <= 99 && in_array($n, $taken)) {
+            $n += $d;
+        }
+
+        return $n >= 1 && $n <= 99 ? $n : null;
+    }
+
+    public function stepCourtNumber(int $d): void
+    {
+        $n = $this->crt ? self::freeCourtNumber(collect($this->play()->boardCourts())->pluck('n')->all(), $this->crt['num'] + $d, $d) : null;
+        if ($n) {
+            $this->crt['num'] = $n;
+        }
+    }
+
+    public function addCourt(): void
+    {
+        $play = $this->play();
+        $n = (int) ($this->crt['num'] ?? 0);
+        if ($this->attempt(fn () => $play->addCourt($n)) === false) {
+            return;
+        }
+        $this->crt = null;
+        $court = collect($play->boardCourts())->firstWhere('n', $n);
+        $this->dispatch('toast', message: "Court {$n} added".match (true) {
+            (bool) $court['a'] => ' · '.$play->names($court['a']['ids']).' vs '.$play->names($court['b']['ids']).' are on',
+            (bool) $play->nextUpTeams() => ' · tap Fill to put the next group on',
+            default => ' · fill it once 4 checked-in players are ready',
+        });
+    }
+
+    /** Remove: an open court goes at once; a court with a game on asks what happens to the game. */
+    public function askRemoveCourt(int $n): void
+    {
+        $courts = collect($this->play()->boardCourts());
+        $court = $courts->firstWhere('n', $n);
+        if ($court && ! $courts->contains(fn ($c) => $c['n'] !== $n && empty($c['closing']))) {
+            $this->dispatch('toast', message: 'At least one court has to stay. To stop for the night, end the session instead.');
+        } elseif ($court && $court['a']) {
+            $this->crt = ['step' => 'remove', 'court' => $n, 'how' => 'finish'] + ($this->crt ?? ['num' => 1]);
+        } elseif ($court) {
+            $this->removeCourt($n, 'now');
+        }
+    }
+
+    public function removeCourt(?int $n = null, ?string $how = null): void
+    {
+        $play = $this->play();
+        $n ??= (int) ($this->crt['court'] ?? 0);
+        $how ??= ($this->crt['how'] ?? 'finish') === 'now' ? 'now' : 'finish';
+        $court = collect($play->boardCourts())->firstWhere('n', $n);
+        if (! $court || $this->attempt(fn () => $play->removeCourt($n, $how)) === false) {
+            return;
+        }
+        $this->crt = null;
+        if ($this->scoreCourt === $n && $how === 'now') {
+            $this->scoreCourt = null;
+        }
+        if (($this->csub['court'] ?? null) === $n) {
+            $this->csub = null;
+        }
+        $this->dispatch('toast', message: match (true) {
+            ! $court['a'] => "Court {$n} removed · ".count($play->boardCourts()).' '.Str::plural('court', count($play->boardCourts())).' tonight',
+            $how === 'finish' => "Court {$n} closes after this game · nobody new goes on it",
+            default => "Court {$n} removed · game not counted · ".$play->names([...$court['a']['ids'], ...$court['b']['ids']]).' are at the front of the line',
+        });
+    }
+
+    public function keepCourt(int $n): void
+    {
+        $play = $this->play();
+        $play->keepCourt($n);
+        $this->dispatch('toast', message: "Court {$n} stays open");
     }
 
     public function openCourtSub(int $n): void
@@ -406,6 +493,7 @@ class CourtBoard extends Component
         $top3 = fn () => array_column(array_slice($play->standings(), 0, 3), 'participant_id');
         $before = $top3();
 
+        $closing = ! empty(collect($play->boardCourts())->firstWhere('n', $n)['closing']);
         $game = $this->attempt(fn () => $play->recordScore($n, $this->scoreA, $this->scoreB));
         if ($game === false) {
             return;
@@ -422,7 +510,7 @@ class CourtBoard extends Component
         // wins > 0 only when winners-stay kept the winning team on this court.
         $stay = (collect($play->boardCourts())->firstWhere('n', $n)['wins'] ?? 0) > 0;
         $score = max($this->scoreA, $this->scoreB).'-'.min($this->scoreA, $this->scoreB);
-        $this->dispatch('toast', message: "Court {$n}: {$play->names($court[$game->winner]['ids'])} won {$score}".$podium.($stay ? ' · winners stay on' : ''));
+        $this->dispatch('toast', message: "Court {$n}: {$play->names($court[$game->winner]['ids'])} won {$score}".$podium.($stay ? ' · winners stay on' : '').($closing ? " · Court {$n} closed" : ''));
 
         $this->freshGame = $game->id;
         $this->closeScore();
@@ -602,6 +690,7 @@ class CourtBoard extends Component
                 'shown' => min($qShow, $hits->count()),
             ],
             'why' => $why,
+            'courtsDialog' => $this->crt ? $this->courtsDialog($play, $courts) : null,
             'subDialog' => $csub,
             'courtSubs' => collect($courts)->mapWithKeys(fn ($c) => [$c['n'] => ($c['subs'] ?? null) ? $this->subLine($play, $c['subs']).' · '.(($s = now()->timestamp - end($c['subs'])['at']) < 60 ? 'just now' : ago($s).' ago') : null]),
             'subOut' => $subOut,
@@ -625,6 +714,34 @@ class CourtBoard extends Component
             'standingsPage' => $this->pageOf($standings, 10, 'standingsPage'),
             'podNew' => $this->podNew,
         ]);
+    }
+
+    /** The Courts dialog: add a court by number, the list of courts tonight, or what happens to a game on a court being removed. */
+    private function courtsDialog(OpenPlay $play, array $courts): ?array
+    {
+        $taken = array_column($courts, 'n');
+        $num = $this->crt['num'] ?? 1;
+        $open = collect($courts)->filter(fn ($c) => empty($c['closing']))->count();
+        $remove = ($this->crt['step'] ?? null) === 'remove' ? collect($courts)->first(fn ($c) => $c['n'] === ($this->crt['court'] ?? null) && $c['a']) : null;
+        if (! $remove) {
+            $this->crt['step'] = 'list';
+        }
+        $next = $play->nextUpTeams();
+
+        return [
+            'remove' => $remove,
+            'num' => $num,
+            'prev' => self::freeCourtNumber($taken, $num - 1, -1),
+            'next' => self::freeCourtNumber($taken, $num + 1, 1),
+            'hint' => $next
+                ? ($play->auto_fill ? 'Auto-fill is on, so '.$play->names($next['a']['ids']).' vs '.$play->names($next['b']['ids'])." go straight on Court {$num}." : "Court {$num} opens empty. Up next: ".$play->names($next['a']['ids']).' vs '.$play->names($next['b']['ids']).'. Tap Fill to put them on.')
+                : "Court {$num} opens empty until 4 checked-in players are ready in the queue.",
+            'ready' => (bool) $next,
+            'busy' => collect($courts)->filter(fn ($c) => $c['a'])->count(),
+            'closing' => count($courts) - $open,
+            'lastOne' => $open <= 1,
+            'canRemove' => fn ($c) => collect($courts)->contains(fn ($o) => $o['n'] !== $c['n'] && empty($o['closing'])),
+        ];
     }
 
     /** "Ben in for Mika · Ana in for Rico". */

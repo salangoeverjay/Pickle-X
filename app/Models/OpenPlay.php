@@ -407,7 +407,7 @@ class OpenPlay extends Model
     /** Index of the court that has been playing longest (likely next to open). */
     public function longestCourtIndex(): ?int
     {
-        $busy = collect($this->boardCourts())->filter(fn ($c) => $c['a']);
+        $busy = collect($this->boardCourts())->filter(fn ($c) => $c['a'] && empty($c['closing']));
 
         return $busy->isEmpty() ? null : $busy->sortBy('started_at')->keys()->first();
     }
@@ -819,7 +819,8 @@ class OpenPlay extends Model
             $court = ['n' => $n, 'a' => null, 'b' => null, 'started_at' => null, 'wins' => 0];
             $wins = ($side === 'a' ? $board['courts'][$i]['wins'] : 0) + 1;
 
-            if ($play->rotation === 'winners' && $wins < 2) {
+            $closing = ! empty($board['courts'][$i]['closing']);
+            if ($play->rotation === 'winners' && $wins < 2 && ! $closing) {
                 // Winners stay on (as team A) for up to two straight games.
                 $requeue($lose);
                 if ($challenger = self::nextTeam($board['queue'], $play->checkedInIds())) {
@@ -840,9 +841,77 @@ class OpenPlay extends Model
                 array_splice($board['queue'], $from, count($back), $back);
             }
 
-            $board['courts'][$i] = $court;
+            // A court the organizer asked to close goes once its game is in.
+            if ($closing) {
+                array_splice($board['courts'], $i, 1);
+                $play->courts = count($board['courts']);
+            } else {
+                $board['courts'][$i] = $court;
+            }
 
             return $game;
+        });
+    }
+
+    /** Courts tonight that aren't closing. At least one has to stay. */
+    private static function openCourtCount(array $board, ?int $except = null): int
+    {
+        return collect($board['courts'])->filter(fn ($c) => $c['n'] !== $except && empty($c['closing']))->count();
+    }
+
+    /** The venue gave another court: it opens by its number, and auto-fill puts the next group on. */
+    public function addCourt(int $n): void
+    {
+        $this->mutate(function (array &$board, self $play) use ($n) {
+            if ($n < 1 || $n > 99 || collect($board['courts'])->contains('n', $n)) {
+                throw new InvalidArgumentException("Court {$n} is already on the board.");
+            }
+            $board['courts'][] = ['n' => $n, 'a' => null, 'b' => null, 'started_at' => null, 'wins' => 0];
+            usort($board['courts'], fn ($x, $y) => $x['n'] <=> $y['n']);
+            $play->courts = count($board['courts']);
+        });
+    }
+
+    /**
+     * Take a court off. An open court goes now. With a game on: 'finish' lets it finish (the court closes when
+     * the score goes in and nobody new goes on it), 'now' stops it (not counted, the four go to the front of the line).
+     */
+    public function removeCourt(int $n, string $how = 'finish'): void
+    {
+        $this->mutate(function (array &$board, self $play) use ($n, $how) {
+            $i = collect($board['courts'])->search(fn ($c) => $c['n'] === $n);
+            if ($i === false || ! self::openCourtCount($board, $n)) {
+                throw new InvalidArgumentException('At least one court has to stay. To stop for the night, end the session instead.');
+            }
+            $court = $board['courts'][$i];
+            if ($court['a'] && $how === 'finish') {
+                $board['courts'][$i]['closing'] = true;
+
+                return;
+            }
+            if ($court['a']) {
+                $front = [];
+                foreach ([$court['a'], $court['b']] as $team) {
+                    foreach ($team['locked'] && count($team['ids']) === 2 ? [$team['ids']] : array_map(fn ($id) => [$id], $team['ids']) as $ids) {
+                        $front[] = ['id' => ++$board['seq'], 'ids' => $ids, 'locked' => count($ids) === 2];
+                    }
+                }
+                $board['queue'] = [...$front, ...$board['queue']];
+            }
+            array_splice($board['courts'], $i, 1);
+            $play->courts = count($board['courts']);
+        });
+    }
+
+    /** Undo "closes after this game". */
+    public function keepCourt(int $n): void
+    {
+        $this->mutate(function (array &$board) use ($n) {
+            foreach ($board['courts'] as &$court) {
+                if ($court['n'] === $n) {
+                    unset($court['closing']);
+                }
+            }
         });
     }
 

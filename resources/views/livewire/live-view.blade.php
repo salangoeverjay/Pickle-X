@@ -50,7 +50,11 @@
                         @foreach ($courts as $i => $court)
                             <div wire:key="court-{{ $court['n'] }}" class="flex flex-col gap-2.5 rounded-[22px] border border-line bg-surface p-3">
                                 <div class="flex items-center justify-between gap-2.5 px-1 pt-0.5">
-                                    <span class="font-display text-[19px] font-extrabold tracking-[-0.03em]">Court {{ $court['n'] }}</span>
+                                    <span class="flex items-center gap-2"><span class="font-display text-[19px] font-extrabold tracking-[-0.03em]">Court {{ $court['n'] }}</span>
+                                        @if ($court['a'] && ! empty($court['closing']))
+                                            <span class="inline-flex h-6 items-center rounded-full bg-ink px-2.25 text-xs font-bold text-bg">Last game</span>
+                                        @endif
+                                    </span>
                                     @if ($court['a'])
                                         <x-live-timer :start="now()->timestamp - $court['started_at']" class="font-mono text-sm font-semibold text-ink2" />
                                     @else

@@ -37,6 +37,10 @@
                             <span @class(['absolute top-0.75 size-4.5 rounded-full transition-[left]', 'left-4.75 bg-on-lime' => $play->auto_fill, 'left-0.75 bg-white' => ! $play->auto_fill])></span>
                         </span>
                     </button>
+                    <button type="button" wire:click="openCourts" aria-haspopup="dialog" aria-label="Courts: {{ count($courts) }} {{ Str::plural('court', count($courts)) }} tonight. Add or remove a court"
+                            class="inline-flex h-11 cursor-pointer items-center gap-2 rounded-full border-[1.5px] border-line2 bg-surface pr-2 pl-4 text-sm font-bold text-ink transition hover:brightness-96 active:scale-97">
+                        <x-icon name="court" :size="16" :stroke="1.9" />Courts<span class="inline-flex h-6.5 min-w-6.5 items-center justify-center rounded-full bg-surface2 px-1.5 font-mono text-xs">{{ count($courts) }}</span>
+                    </button>
                     @if ($shareUrl)
                         <button type="button" x-on:click="share = true" aria-haspopup="dialog"
                                 class="inline-flex h-11 cursor-pointer items-center gap-2 rounded-full border-[1.5px] border-line2 bg-surface px-4 text-sm font-bold text-ink transition hover:brightness-96 active:scale-97">
@@ -90,7 +94,9 @@
                                 <div class="flex items-center justify-between gap-2.5 px-1 pt-0.5">
                                     <div class="flex items-center gap-2.5">
                                         <span class="font-display text-xl font-extrabold tracking-[-0.03em]">Court {{ $court['n'] }}</span>
-                                        @if ($court['a'])
+                                        @if ($court['a'] && ! empty($court['closing']))
+                                            <span class="inline-flex h-6 items-center rounded-full bg-ink px-2.25 text-xs font-bold text-bg">Last game</span>
+                                        @elseif ($court['a'])
                                             <span class="inline-flex h-6 items-center rounded-full bg-lime-soft px-2.25 text-xs font-bold text-lime-text">In play</span>
                                         @else
                                             <span class="inline-flex h-6 items-center rounded-full bg-hot-soft px-2.25 text-xs font-bold text-hot">Open</span>
@@ -122,6 +128,13 @@
                                             </div>
                                         @endforeach
                                     </div>
+                                    @if (! empty($court['closing']))
+                                        <div class="flex items-center gap-2.5 rounded-[14px] border border-line2 bg-surface2 py-1.5 pr-1.5 pl-3">
+                                            <span class="flex min-w-0 flex-1 items-start gap-1.5 text-xs leading-[1.4] font-semibold text-ink2"><x-icon name="logout" :size="15" class="mt-px shrink-0" />Court {{ $court['n'] }} closes after this game. Nobody new goes on it.</span>
+                                            <button type="button" wire:click="keepCourt({{ $court['n'] }})" aria-label="Keep Court {{ $court['n'] }} open after this game"
+                                                    class="h-9 shrink-0 cursor-pointer rounded-full border-[1.5px] border-line2 bg-surface px-3 text-xs font-bold text-ink transition hover:brightness-96 active:scale-97">Keep court</button>
+                                        </div>
+                                    @endif
                                     @if ($courtSubs[$court['n']])
                                         <span class="flex items-center gap-1.5 px-1 text-xs font-semibold text-ink2"><x-icon name="swap" :size="14" :stroke="2" class="shrink-0" /><span class="min-w-0">{{ $courtSubs[$court['n']] }}</span></span>
                                     @endif
@@ -152,6 +165,10 @@
                                 @endif
                             </div>
                         @endforeach
+                        <button type="button" wire:click="openCourts" aria-haspopup="dialog"
+                                class="flex min-h-14 cursor-pointer items-center justify-center gap-2.5 rounded-3xl border-[1.5px] border-dashed border-line2 px-4 text-[15px] font-bold text-ink2 transition hover:border-ink hover:text-ink active:scale-99 lg:col-span-2">
+                            <span aria-hidden="true" class="flex size-7 items-center justify-center rounded-full bg-surface2"><x-icon name="plus" :size="14" :stroke="2.6" /></span>Got another court? Add it
+                        </button>
                     </div>
 
                     @if ($results->isNotEmpty())
@@ -626,6 +643,143 @@
             </form>
         </div>
     @endif
+    {{-- Add or remove courts during a live session. Removing a court with a game on asks what happens to the game. --}}
+    @if ($play && $courtsDialog)
+        @php($cd = $courtsDialog)
+        @php($rc = $cd['remove'])
+        <div wire:key="courts-{{ $rc['n'] ?? 'list' }}" x-data x-on:keydown.escape.window="$wire.{{ $rc ? "set('crt.step', 'list')" : "set('crt', null)" }}" class="fixed inset-0 z-66 flex items-end justify-center lg:items-center lg:p-6">
+            <button type="button" wire:click="$set('crt', null)" aria-label="Close" class="absolute inset-0 animate-fade cursor-pointer bg-[rgba(18,23,15,.45)] dark:bg-black/62"></button>
+
+            <div role="dialog" aria-modal="true" aria-labelledby="crt-title" x-trap.noscroll="true"
+                 class="relative flex max-h-[92%] w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] lg:max-h-full lg:w-170 lg:rounded-[28px]">
+                <div class="flex shrink-0 items-center justify-between gap-3 border-b border-line pt-5 pr-5 pb-4 pl-6">
+                    <div class="flex min-w-0 flex-col gap-0.5">
+                        <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">{{ $rc ? 'Live session · remove a court' : 'Live session · courts' }}</span>
+                        <h2 id="crt-title" class="m-0 font-display text-[26px] font-extrabold tracking-[-0.03em]">{{ $rc ? "Remove Court {$rc['n']}?" : 'Add or remove courts' }}</h2>
+                        <span class="truncate text-[13px] text-ink3">
+                            @if ($rc)
+                                A game is on · {{ count($courts) - 1 }} {{ Str::plural('court', count($courts) - 1) }} left after this
+                            @else
+                                {{ count($courts) }} {{ Str::plural('court', count($courts)) }} · {{ $cd['busy'] }} in play{{ $cd['closing'] ? ' · '.$cd['closing'].' closing' : '' }}
+                            @endif
+                        </span>
+                    </div>
+                    <button type="button" wire:click="$set('crt', null)" aria-label="Close" class="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-line bg-surface text-ink transition hover:brightness-96 active:scale-97">
+                        <x-icon name="x" :size="18" />
+                    </button>
+                </div>
+
+                <div class="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 py-5">
+                    @if (! $rc)
+                        <section aria-labelledby="crt-add" class="flex flex-col gap-3">
+                            <h3 id="crt-add" class="m-0 text-[15px] font-extrabold">Add a court</h3>
+                            <div class="flex items-center gap-3">
+                                <button type="button" wire:click="stepCourtNumber(-1)" @disabled(! $cd['prev']) aria-label="{{ $cd['prev'] ? "Court {$cd['prev']} instead" : 'No lower court number free' }}"
+                                        class="flex size-12 shrink-0 cursor-pointer items-center justify-center rounded-full border-[1.5px] border-line2 bg-surface text-ink transition hover:brightness-96 active:scale-97 disabled:cursor-not-allowed disabled:opacity-40"><x-icon name="minus" :size="18" :stroke="2.4" /></button>
+                                <div class="flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-[18px] border border-line bg-surface py-2">
+                                    <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">Court number</span>
+                                    <span role="status" aria-live="polite" class="font-display text-[28px] leading-none font-extrabold tracking-[-0.03em]">Court {{ $cd['num'] }}</span>
+                                </div>
+                                <button type="button" wire:click="stepCourtNumber(1)" @disabled(! $cd['next']) aria-label="{{ $cd['next'] ? "Court {$cd['next']} instead" : 'No higher court number free' }}"
+                                        class="flex size-12 shrink-0 cursor-pointer items-center justify-center rounded-full border-[1.5px] border-line2 bg-surface text-ink transition hover:brightness-96 active:scale-97 disabled:cursor-not-allowed disabled:opacity-40"><x-icon name="plus" :size="18" :stroke="2.4" /></button>
+                            </div>
+                            <p class="m-0 text-[13px] text-ink3">Use the number on the court so players know where to go. Numbers already in use are skipped.</p>
+                            <p @class(['m-0 flex items-start gap-2 rounded-[14px] border px-3.5 py-3 text-[13px] leading-[1.45] font-semibold', 'border-lime bg-lime-soft text-ink' => $cd['ready'], 'border-line bg-surface text-ink2' => ! $cd['ready']])>
+                                <x-icon name="arrow-right" :size="16" class="mt-px shrink-0" /><span>{{ $cd['hint'] }}</span>
+                            </p>
+                            <button type="button" wire:click="addCourt"
+                                    class="inline-flex h-12.5 cursor-pointer items-center justify-center gap-2 rounded-full border-2 border-cta-border bg-lime text-[15px] font-extrabold text-on-lime shadow-cta transition hover:brightness-96 active:scale-97">
+                                <x-icon name="plus" :size="16" :stroke="2.6" />Add Court {{ $cd['num'] }}
+                            </button>
+                        </section>
+
+                        <section aria-labelledby="crt-list" class="flex flex-col gap-2.5">
+                            <div class="flex items-baseline justify-between gap-2.5">
+                                <h3 id="crt-list" class="m-0 text-[15px] font-extrabold">Courts tonight</h3>
+                                <span class="text-[13px] text-ink3">{{ $cd['busy'] }} of {{ count($courts) }} in play</span>
+                            </div>
+                            <ul class="m-0 flex list-none flex-col overflow-hidden rounded-[18px] border border-line bg-surface p-0">
+                                @foreach ($courts as $c)
+                                    @php($closing = $c['a'] && ! empty($c['closing']))
+                                    <li wire:key="crt-row-{{ $c['n'] }}" class="flex items-center gap-3 border-t border-line px-3.5 py-3 first:border-t-0">
+                                        <span aria-hidden="true" class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-surface2 font-display text-lg font-extrabold">{{ $c['n'] }}</span>
+                                        <span class="flex min-w-0 flex-1 flex-col gap-0.5">
+                                            <span class="flex flex-wrap items-center gap-2">
+                                                <strong class="text-[15px]">Court {{ $c['n'] }}</strong>
+                                                <span @class(['inline-flex h-5.5 items-center rounded-full px-2 text-[11px] font-bold', 'bg-ink text-bg' => $closing, 'bg-lime-soft text-lime-text' => $c['a'] && ! $closing, 'bg-hot-soft text-hot' => ! $c['a']])>
+                                                    @if ($c['a'])
+                                                        {{ $closing ? 'Last game' : 'In play' }} · <x-live-timer :start="now()->timestamp - $c['started_at']" />
+                                                    @else
+                                                        Open
+                                                    @endif
+                                                </span>
+                                            </span>
+                                            <span class="truncate text-xs text-ink3">{{ $closing ? 'Closes after ' : '' }}{{ $c['a'] ? $play->names($c['a']['ids']).' vs '.$play->names($c['b']['ids']) : 'Nobody on it · removing it is instant' }}</span>
+                                        </span>
+                                        @if ($closing)
+                                            <button type="button" wire:click="keepCourt({{ $c['n'] }})" aria-label="Keep Court {{ $c['n'] }} open after this game"
+                                                    class="h-9 shrink-0 cursor-pointer rounded-full border-[1.5px] border-line2 px-3 text-xs font-bold text-ink transition hover:brightness-96 active:scale-97">Keep court</button>
+                                        @else
+                                            @php($can = $cd['canRemove']($c))
+                                            <button type="button" wire:click="askRemoveCourt({{ $c['n'] }})" @disabled(! $can) aria-label="Remove Court {{ $c['n'] }}" @if (! $can) aria-describedby="crt-last" @endif
+                                                    class="h-9 shrink-0 cursor-pointer rounded-full border-[1.5px] border-hot-line px-3 text-xs font-bold text-hot transition hover:brightness-96 active:scale-97 disabled:cursor-not-allowed disabled:opacity-40">Remove</button>
+                                        @endif
+                                    </li>
+                                @endforeach
+                            </ul>
+                            @if ($cd['lastOne'])
+                                <p id="crt-last" class="m-0 flex items-start gap-2 text-[13px] text-ink2"><x-icon name="alert" :size="15" class="mt-px shrink-0" /><span>At least one court has to stay. To stop for the night, end the session instead.</span></p>
+                            @endif
+                            <p class="m-0 text-[13px] leading-[1.45] text-ink3">Removing an open court is instant. If a game is on, you choose whether it finishes first. Players see the change on the live view.</p>
+                        </section>
+                    @else
+                        @php($four = $play->names([...$rc['a']['ids'], ...$rc['b']['ids']]))
+                        @php($locks = collect([$rc['a'], $rc['b']])->filter(fn ($t) => $t['locked'] && count($t['ids']) === 2))
+                        <div class="flex flex-col gap-2 rounded-[18px] border border-line bg-surface p-3.5">
+                            <span class="flex items-center gap-2 font-mono text-[11px] tracking-[.1em] text-ink3 uppercase"><span class="rounded-full bg-lime-soft px-2 py-0.5 font-sans text-[11px] font-bold tracking-normal text-lime-text normal-case">In play</span>Game on Court {{ $rc['n'] }} · <x-live-timer :start="now()->timestamp - $rc['started_at']" /></span>
+                            <span class="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[15px] font-bold"><span>{{ $play->names($rc['a']['ids']) }}</span><span class="font-mono text-[11px] text-ink3">VS</span><span>{{ $play->names($rc['b']['ids']) }}</span></span>
+                        </div>
+                        <section aria-labelledby="crt-how" class="flex flex-col gap-2.5">
+                            <h3 id="crt-how" class="m-0 text-[15px] font-extrabold">What happens to this game?</h3>
+                            <div role="radiogroup" aria-labelledby="crt-how" class="flex flex-col gap-2">
+                                @foreach ([
+                                    'finish' => ['Let this game finish', "Court {$rc['n']} closes when you enter the score. The result counts, and nobody new goes on it.", true],
+                                    'now' => ['Stop the game now', "The game doesn't count. {$four} go back to the front of the line".($locks->isNotEmpty() ? ', with '.$locks->map(fn ($t) => $play->names($t['ids']))->join(' and ').' still locked together' : '').'.', false],
+                                ] as $key => [$label, $desc, $rec])
+                                    @php($on = ($this->crt['how'] ?? 'finish') === $key)
+                                    <button type="button" role="radio" aria-checked="{{ $on ? 'true' : 'false' }}" wire:click="$set('crt.how', '{{ $key }}')"
+                                            @class(['flex cursor-pointer items-start gap-3 rounded-[14px] border-[1.5px] p-3.5 text-left transition hover:brightness-96 active:scale-99', 'border-ink bg-surface' => $on, 'border-line bg-transparent' => ! $on])>
+                                        <span aria-hidden="true" @class(['mt-0.5 flex size-4.5 shrink-0 items-center justify-center rounded-full border-2', 'border-ink' => $on, 'border-line2' => ! $on])><span @class(['size-2 rounded-full', 'bg-ink' => $on])></span></span>
+                                        <span class="flex min-w-0 flex-col gap-0.5">
+                                            <span class="flex flex-wrap items-center gap-2"><span class="text-sm font-bold">{{ $label }}</span>
+                                                @if ($rec)
+                                                    <span class="inline-flex h-5 items-center rounded-full bg-lime px-1.75 text-[10px] font-extrabold text-on-lime">Recommended</span>
+                                                @endif
+                                            </span>
+                                            <span class="text-xs leading-[1.4] text-ink2">{{ $desc }}</span>
+                                        </span>
+                                    </button>
+                                @endforeach
+                            </div>
+                        </section>
+                        <p class="m-0 flex items-start gap-2 text-[13px] text-ink3"><x-icon name="alert" :size="16" class="mt-px shrink-0" /><span>Players see Court {{ $rc['n'] }} leave the live view once it closes. You can add it back any time.</span></p>
+                    @endif
+                </div>
+
+                <div class="flex shrink-0 gap-2.5 border-t border-line bg-bg px-6 pt-3.5 pb-5.5">
+                    @if (! $rc)
+                        <button type="button" wire:click="$set('crt', null)" class="h-13 flex-1 cursor-pointer rounded-full bg-ink text-[15px] font-bold text-bg transition hover:brightness-96 active:scale-97">Done</button>
+                    @else
+                        @php($finish = ($this->crt['how'] ?? 'finish') !== 'now')
+                        <button type="button" wire:click="$set('crt.step', 'list')" class="h-13 cursor-pointer rounded-full border-[1.5px] border-line2 px-5 text-[15px] font-bold text-ink transition hover:brightness-96 active:scale-97">Back</button>
+                        <button type="button" wire:click="removeCourt"
+                                @class(['h-13 min-w-0 flex-1 cursor-pointer truncate rounded-full px-4 text-[15px] font-extrabold transition hover:brightness-96 active:scale-97', 'bg-ink text-bg' => $finish, 'bg-hot text-white' => ! $finish])>{{ $finish ? "Close Court {$rc['n']} after this game" : "Stop the game and remove Court {$rc['n']}" }}</button>
+                    @endif
+                </div>
+            </div>
+        </div>
+    @endif
+
     {{-- Sub on a live court: who comes off, who goes on, and what happens to them. The game keeps going. --}}
     @if ($play && $subDialog)
         @php($ct = $subDialog['court'])

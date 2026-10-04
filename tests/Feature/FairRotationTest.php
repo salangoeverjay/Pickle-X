@@ -133,6 +133,42 @@ class FairRotationTest extends TestCase
         $this->assertNotNull($play->participants()->find($out)->left_at);
     }
 
+    public function test_courts_can_be_added_and_removed_mid_session(): void
+    {
+        $play = $this->live(14, 2);
+        $c = Livewire::actingAs($this->org)->test(CourtBoard::class)
+            ->call('openCourts')->assertSee('Add or remove courts')->assertSet('crt.num', 3)
+            ->call('stepCourtNumber', 1)->assertSet('crt.num', 4)
+            ->call('addCourt')->assertDispatched('toast');
+        $play = $play->fresh();
+        $this->assertSame([1, 2, 4], array_column($play->boardCourts(), 'n'));
+        $this->assertSame(3, $play->courts);
+        $this->assertNotNull($play->boardCourts()[2]['a'], 'auto-fill puts the next group on');
+
+        // A court with a game on: let it finish, then it closes.
+        $c->call('askRemoveCourt', 1)->assertSee('Remove Court 1?')->assertSee('Recommended')
+            ->call('removeCourt')->assertDispatched('toast', message: 'Court 1 closes after this game · nobody new goes on it')
+            ->assertSee('Last game')->assertSee('Keep court');
+        $c->call('keepCourt', 1);
+        $this->assertArrayNotHasKey('closing', $play->fresh()->boardCourts()[0]);
+        $play->fresh()->removeCourt(1, 'finish');
+        $play->fresh()->recordScore(1, 11, 4);
+        $this->assertSame([2, 4], array_column($play->fresh()->boardCourts(), 'n'));
+
+        // Stop now: not counted, the four go to the front of the line.
+        $four = [...$play->fresh()->boardCourts()[0]['a']['ids'], ...$play->fresh()->boardCourts()[0]['b']['ids']];
+        $games = $play->games()->count();
+        $c->call('askRemoveCourt', 2)->set('crt.how', 'now')->call('removeCourt');
+        $play = $play->fresh();
+        $this->assertSame($games, $play->games()->count());
+        $this->assertEqualsCanonicalizing($four, array_merge(...array_column(array_slice($play->queue(), 0, 4), 'ids')));
+        $this->assertSame([4], array_column($play->boardCourts(), 'n'));
+
+        // The last court stays.
+        $c->call('askRemoveCourt', 4)->assertDispatched('toast', message: 'At least one court has to stay. To stop for the night, end the session instead.');
+        $this->assertCount(1, $play->fresh()->boardCourts());
+    }
+
     public function test_members_see_their_partners_tonight(): void
     {
         $play = $this->live(4);
