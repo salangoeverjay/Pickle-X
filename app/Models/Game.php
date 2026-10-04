@@ -8,11 +8,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Game extends Model
 {
-    protected $fillable = ['open_play_id', 'court', 'score_a', 'score_b', 'winner', 'started_at', 'played_at'];
+    protected $fillable = ['open_play_id', 'court', 'score_a', 'score_b', 'winner', 'subs', 'started_at', 'played_at'];
 
     protected function casts(): array
     {
-        return ['started_at' => 'datetime', 'played_at' => 'datetime'];
+        return ['started_at' => 'datetime', 'played_at' => 'datetime', 'subs' => 'array'];
     }
 
     public function openPlay(): BelongsTo

@@ -7,6 +7,7 @@ use App\Models\OpenPlay;
 use App\Support\Emails;
 use App\Support\MemberStats;
 use App\Support\Results;
+use App\Support\UpNext;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -42,8 +43,11 @@ class OpenPlays extends Component
     /** "I've sent the payment": noted for the organizer, who still confirms it. */
     public function claimPayment(int $id): void
     {
-        abort_unless($this->joinable($id)->hasPaymentQr(), 404);
-        DB::table('pay_claims')->insertOrIgnore(['open_play_id' => $id, 'user_id' => auth()->id(), 'created_at' => now(), 'updated_at' => now()]);
+        $play = $this->joinable($id);
+        abort_unless($play->hasPaymentQr(), 404);
+        if (DB::table('pay_claims')->insertOrIgnore(['open_play_id' => $id, 'user_id' => auth()->id(), 'created_at' => now(), 'updated_at' => now()])) {
+            Emails::notify([$play->organizer], 'payClaims', fn () => Emails::payClaimed($play, auth()->user()));
+        }
         $this->payFor = null;
         $this->dispatch('toast', message: 'Thanks. The organizer will mark you as paid once they see it.');
     }
@@ -89,6 +93,7 @@ class OpenPlays extends Component
         $play = OpenPlay::status('live')->findOrFail($id);
         $me = $play->participants()->where('user_id', auth()->id())->whereNull('left_at')->firstOrFail();
         $play->checkIn([$me->id]);
+        UpNext::notify($play);
 
         $this->dispatch('toast', message: 'Checked in at '.now()->format('g:i A').". You're in the rotation.");
     }
@@ -197,7 +202,11 @@ class OpenPlays extends Component
         foreach (OpenPlay::status('live')->whereIn('id', $joined)->get() as $play) {
             if ($status = $play->statusFor($user)) {
                 $index = $status['state'] === 'court' ? $status['index'] : $play->longestCourtIndex();
+                // Partners tonight: everyone rotates mixes partners, so this shows how many different ones so far.
+                $mates = $play->partnersTonight($play->participantMap()->first(fn ($p) => $p->user_id === $user->id && ! $p->left_at)->id);
                 $my = [
+                    'mates' => $mates,
+                    'others' => max(0, count($play->sessionPlayerIds()) - 1),
                     'play' => $play,
                     'status' => $status,
                     'court' => $index === null ? null : $play->boardCourts()[$index],

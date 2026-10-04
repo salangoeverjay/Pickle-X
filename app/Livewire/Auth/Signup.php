@@ -83,6 +83,7 @@ class Signup extends Component
         session()->regenerate();
 
         if ($organizer) {
+            Emails::notify(User::where('role', 'admin')->get(), 'requests', fn () => Emails::organizerRequest($user));
             // Shown after "Start playing" (a plain link: this guest-only page can't run actions once signed in).
             session()->flash('toast', "You're in as a player. Organizer tools unlock once you're approved.");
             $this->sent = true;

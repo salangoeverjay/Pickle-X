@@ -53,8 +53,9 @@
                     <div class="grid gap-3.5 lg:grid-cols-2">
                         <x-field label="Email" id="sf-email" type="email" autocomplete="email" wire:model="email" />
                         <div class="flex flex-col gap-2">
-                            <label for="sf-phone" class="text-[13px] font-bold text-ink2">Mobile number <span class="font-medium text-ink3">(for queue alerts)</span></label>
-                            <input id="sf-phone" type="tel" autocomplete="tel" placeholder="+63 9XX XXX XXXX" wire:model="phone" class="input">
+                            <label for="sf-phone" class="text-[13px] font-bold text-ink2">Mobile number <span class="font-medium text-ink3">(optional)</span></label>
+                            <input id="sf-phone" type="tel" autocomplete="tel" placeholder="+63 9XX XXX XXXX" wire:model="phone" aria-describedby="sf-phone-hint" class="input">
+                            <span id="sf-phone-hint" class="text-xs/[1.4] text-ink3">Only organizers of open plays you join can see it, in case they need to reach you. PickleX never sends texts.</span>
                         </div>
                         @if ($homeClubEditable)
                             <x-field label="Home club" id="sf-club" placeholder="The club you play with most" wire:model="club" />
@@ -165,7 +166,7 @@
 
                         <x-stepper label="Courts at your venue" model="courts" :value="$courts" :min="1" :max="12" class="max-w-55" />
                         <x-segmented label="Default race to" model="raceTo" :options="[11 => '11', 15 => '15', 21 => '21']" class="max-w-115" />
-                        <x-segmented label="Default rotation" model="rotation" :options="['rotate' => 'Everyone rotates', 'winners' => 'Winners stay (2 max)']" class="max-w-115" />
+                        <x-segmented label="Default rotation" model="rotation" :options="['rotate' => 'Everyone rotates', 'winners' => 'Winners stay (2 max)']" :hints="['rotate' => 'Fewest games tonight play first, and partners mix so everyone plays with someone new each game.', 'winners' => 'Winners stay on for up to 2 games in a row; challengers come from the front of the line.']" class="max-w-115" />
 
                         @if ($message = $firstError(['courts', 'raceTo', 'rotation']))
                             <x-alert>{{ $message }}</x-alert>
@@ -217,11 +218,15 @@
                 <section id="set-notify" aria-labelledby="set-notify-h" class="{{ $card }} border border-line">
                     <div class="mb-2.5">
                         <h2 id="set-notify-h" class="{{ $h2 }}">Notifications</h2>
-                        <p class="{{ $lede }}">Sent by push and SMS. Changes save right away.</p>
+                        <p class="{{ $lede }} leading-[1.45]">PickleX notifies you by email only, at {{ $user->email }}. No push notifications and no text messages. Changes save right away.</p>
                     </div>
                     @foreach ($notifications as $key => $row)
                         <x-settings.switch-row :key="$key" :row="$row" />
                     @endforeach
+                    <p class="flex items-start gap-2 border-t border-line pt-3 text-[13px]/[1.45] text-ink3">
+                        <x-icon name="mail" :size="14" :stroke="2" class="mt-0.5" />
+                        <span>Account and security emails are always sent: password resets, passkeys, role changes, suspensions and account deletion.</span>
+                    </p>
                 </section>
 
                 {{-- Appearance (client-side only, like every theme control) --}}

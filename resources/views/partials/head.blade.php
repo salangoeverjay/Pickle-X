@@ -1,7 +1,7 @@
 {{-- Shared <head> contents for app pages and error pages. --}}
 @php($description = 'PickleX runs pickleball open play: a fair rotating queue, partner locks, live court boards and stats from the games you play.')
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
 <meta name="csrf-token" content="{{ csrf_token() }}">
 
 <title>{{ $title ?? config('app.name') }}</title>

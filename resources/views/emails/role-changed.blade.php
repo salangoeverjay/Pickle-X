@@ -9,22 +9,16 @@
         'admin' => ['em-ink-bg', 'background: #12170F; color: #FFFFFF; border: 1.5px solid #12170F;'],
     ];
     $club = $user->club ?: 'your club';
-    [$body, $listTitle, $items, $cta, $href] = match ($role) {
-        'organizer' => ["You can now host open plays for {$club}, and you still play on the same account.", "What's new for you", [
-            "Create open plays for {$club}, with paid players and a payment QR.",
-            'Run the court board: check-ins, the queue, scores and the live view.',
-            'Switch to player mode any time. Your games, stats and rankings stay.',
-        ], 'Create your first open play', route('organizer.plays')],
-        'admin' => ['You can now review organizer requests and manage users, developers and sponsors.', "What's new for you", [
-            'Approve or decline organizer requests.',
-            'Manage accounts: roles, password resets, suspensions and deletions.',
-            'Manage developer accounts and sponsor looks.',
-        ], 'Open the admin dashboard', route('admin.requests')],
-        default => ["You play on PickleX as a member now, so the hosting tools are off for this account.", 'What stays', [
-            'Your games, stats and rankings.',
-            'Your spots in open plays you joined.',
-            'To host again, apply from Account settings › Apply to host open plays.',
-        ], 'Find an open play', route('member.plays')],
+    [$body, $h1, $cta, $href] = match ($role) {
+        'organizer' => ["You can host open plays for {$club} now, and you still play on the same account.", "You're now an Organizer", 'Create your first open play', route('organizer.plays')],
+        'admin' => ['You can manage the whole platform now, and you can still join open plays as a player.', "You're now a PickleX Admin", 'Open the admin pages', route('admin.requests')],
+        default => ["You can still join any open play, but you can't create or run them anymore.", 'Your role is now Member', 'Find an open play', route('member.plays')],
+    };
+    // Demoted organizers keep their upcoming open plays; nothing hands them over.
+    $kept = match ($hosting->count()) {
+        0 => null,
+        1 => "{$hosting[0]->title} on {$hosting[0]->starts_at->format('D, M j')} stays on, and players who joined keep their spots. Reply to this email if it needs a new host.",
+        default => "Your {$hosting->count()} upcoming open plays stay on, and players who joined keep their spots. Reply to this email if they need a new host.",
     };
     $piece = fn ($r, $cap) => '<span style="display: inline-block; vertical-align: middle;"><span class="em-ink3" style="display: block; margin: 0 0 6px; font-family: \'Barlow Condensed\', \'Arial Narrow\', sans-serif; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: #5B6257;">'.$cap.'</span><span class="'.$pill[$r][0].'" style="display: inline-block; padding: 7px 14px; border-radius: 999px; font-size: 15px; font-weight: 800; '.$pill[$r][1].'">'.$label[$r].'</span></span>';
 @endphp
@@ -34,21 +28,46 @@
 
 @section('content')
     <p style="margin: 0 0 22px;"><span style="display: inline-block; padding: 5px 12px 5px 10px; border-radius: 999px; background: #D3F347; color: #12170F; font-size: 13px; font-weight: 800;">&#8644;&nbsp;Role changed</span></p>
-    <x-mail.h1>You're now {{ $role === 'member' ? 'a' : 'an' }} {{ $label[$role] }}, {{ $user->firstName() }}</x-mail.h1>
-    <p class="em-ink2" style="margin: 10px 0 22px; font-size: 16px; color: #464D42;">A PickleX admin changed the role on <strong class="em-ink" style="color: #12170F;">{{ $user->email }}</strong>. {{ $body }}</p>
+    <x-mail.h1>{{ $h1 }}, {{ $user->firstName() }}</x-mail.h1>
+    <p class="em-ink2" style="margin: 10px 0 22px; font-size: 16px; color: #464D42;">{{ $role === 'admin' ? 'Another admin' : 'A PickleX admin' }} changed the role on <strong class="em-ink" style="color: #12170F;">{{ $user->email }}</strong>. {{ $body }}</p>
 
     <div role="img" aria-label="Role changed from {{ $label[$was] }} to {{ $label[$role] }}" class="em-soft" style="margin: 0 0 22px; padding: 18px; border-radius: 18px; background: #F6F5EE; border: 1px solid #DEDCD0;">
         {!! $piece($was, 'Was') !!}<span class="em-ink3" style="display: inline-block; vertical-align: bottom; padding: 0 12px 8px; font-size: 18px; color: #5B6257;">&rarr;</span>{!! $piece($role, 'Now') !!}
     </div>
 
-    @include('emails.partials.checklist', ['title' => $listTitle, 'items' => $items])
+    @if ($role === 'organizer')
+        @include('emails.partials.checklist', ['title' => 'Your hosting tools', 'items' => [
+            ['Create open plays', 'Pick the date, time, courts, player cap and fee, and add a GCash or bank QR so players can pay ahead.'],
+            ['Run the live court board', 'Check players in, fill courts from a fair queue, sub players in and out, and log scores.'],
+            ["See who's in and who paid", 'Every upcoming open play lists who joined. Mark them paid or not as payments arrive.'],
+            ['Switch to player mode', 'Join other open plays any time. Your games, stats and rankings stay.'],
+        ]])
+    @elseif ($role === 'admin')
+        @include('emails.partials.checklist', ['title' => 'Your admin pages', 'items' => [
+            ['Requests', 'Approve or decline people who ask to host open plays for their club.'],
+            ['Users', 'Change roles, send password resets, sign people out, suspend or restore accounts, and delete them.'],
+            ['Developers', 'Mark the people who build PickleX so they get the Developer look.'],
+            ['Sponsors', 'Give Gold, Silver and Bronze sponsor looks to the players who back the community.'],
+        ]])
+        @include('emails.partials.tip', ['title' => 'Keep your account locked down', 'text' => 'Admins can see every account. Add a passkey in Account settings › Passkeys, and never share your password.'])
+    @else
+        @include('emails.partials.checklist', ['title' => 'What stays', 'items' => [
+            'Your account, password and passkeys.',
+            'Your games, stats, rankings and looks.',
+            'Open plays you hosted stay in the history, with their results.',
+        ]])
+        @include('emails.partials.checklist', ['title' => 'What changes', 'tone' => 'muted', 'items' => array_filter([
+            $was === 'admin' ? 'No more admin pages.' : 'No more Create open play or court board.',
+            $kept,
+        ])])
+        @include('emails.partials.tip', ['title' => 'Want to host again?', 'text' => 'Apply any time from Account settings › Organize. An admin reviews it, usually within a few days.'])
+    @endif
 
-    <p class="em-ink2" style="margin: 0 0 10px; font-size: 13px; font-weight: 700; color: #464D42;">Details</p>
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 0 0 22px; font-size: 14px;">
-        <tr><td class="em-ink3" style="padding: 3px 16px 3px 0; color: #5B6257; width: 90px;">Changed by</td><td class="em-ink">A PickleX admin</td></tr>
-        <tr><td class="em-ink3" style="padding: 3px 16px 3px 0; color: #5B6257;">When</td><td class="em-ink">{{ now()->format('D, M j, Y · g:i A') }}</td></tr>
-        <tr><td class="em-ink3" style="padding: 3px 16px 3px 0; color: #5B6257;">Account</td><td class="em-ink">{{ $user->email }}</td></tr>
-    </table>
+    @include('emails.partials.facts', ['rows' => [
+        ['Changed by', $role === 'admin' && $by ? $by : 'A PickleX admin'],
+        ['When', now()->format('D, M j, Y · g:i A')],
+        ['Account', $user->email],
+    ]])
 
     <p style="margin: 0 0 22px;"><x-mail.button :href="$href">{{ $cta }}</x-mail.button></p>
     <p class="em-ink2" style="margin: 0; font-size: 14px; color: #464D42;">Didn't expect this? Reply to this email and the PickleX team will check it.</p>

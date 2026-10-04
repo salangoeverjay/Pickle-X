@@ -212,7 +212,74 @@ class OpenPlay extends Model
 
     public function nextUpTeams(): ?array
     {
-        return self::nextUp($this->queue(), $this->readyIds());
+        return self::nextUp($this->queue(), $this->readyIds(), $this->fairBook());
+    }
+
+    /**
+     * Everyone rotates needs tonight's history: games played per participant (finished games),
+     * and how often each pair partnered or faced each other (finished games plus the ones on court).
+     * Null for winners stay, which calls players in line order.
+     *
+     * @return array{sg: array<int, int>, pc: array<string, int>, oc: array<string, int>}|null
+     */
+    public function fairBook(?array $board = null): ?array
+    {
+        if ($this->rotation === 'winners') {
+            return null;
+        }
+        $games = GamePlayer::query()->whereIn('game_id', $this->games()->select('id'))->get(['game_id', 'team', 'participant_id'])
+            ->groupBy('game_id')->map(fn ($ps) => [$ps->where('team', 'a')->pluck('participant_id')->all(), $ps->where('team', 'b')->pluck('participant_id')->all()])
+            ->values()->all();
+        $sg = [];
+        foreach ($games as [$a, $b]) {
+            foreach ([...$a, ...$b] as $id) {
+                $sg[$id] = ($sg[$id] ?? 0) + 1;
+            }
+        }
+        foreach (($board ?? $this->board)['courts'] ?? [] as $c) {
+            if ($c['a']) {
+                $games[] = [$c['a']['ids'], $c['b']['ids']];
+            }
+        }
+        $pc = $oc = [];
+        foreach ($games as [$a, $b]) {
+            foreach ([$a, $b] as $team) {
+                if (count($team) === 2) {
+                    $k = self::pairKey(...$team);
+                    $pc[$k] = ($pc[$k] ?? 0) + 1;
+                }
+            }
+            foreach ($a as $x) {
+                foreach ($b as $y) {
+                    $k = self::pairKey($x, $y);
+                    $oc[$k] = ($oc[$k] ?? 0) + 1;
+                }
+            }
+        }
+
+        return ['sg' => $sg, 'pc' => $pc, 'oc' => $oc];
+    }
+
+    public static function pairKey(int $x, int $y): string
+    {
+        return min($x, $y).'|'.max($x, $y);
+    }
+
+    /** Partners each participant has had tonight, oldest first (finished games, then the one on court). */
+    public function partnersTonight(int $participantId): array
+    {
+        $mine = GamePlayer::query()->whereIn('game_id', $this->games()->select('id'))->where('participant_id', $participantId)->orderBy('game_id')->get(['game_id', 'team']);
+        $mates = GamePlayer::query()->whereIn('game_id', $mine->pluck('game_id'))->where('participant_id', '!=', $participantId)->get(['game_id', 'team', 'participant_id'])
+            ->filter(fn ($g) => $mine->firstWhere('game_id', $g->game_id)?->team === $g->team)->sortBy('game_id')->pluck('participant_id')->all();
+        foreach ($this->boardCourts() as $c) {
+            foreach ($c['a'] ? [$c['a']['ids'], $c['b']['ids']] : [] as $team) {
+                if (in_array($participantId, $team)) {
+                    array_push($mates, ...array_diff($team, [$participantId]));
+                }
+            }
+        }
+
+        return array_values($mates);
     }
 
     /**
@@ -225,7 +292,7 @@ class OpenPlay extends Model
     {
         $queue = $this->queue();
         $ready = $this->readyIds();
-        if ($full = self::nextUp($queue, $ready)) {
+        if ($full = self::nextUp($queue, $ready, $this->fairBook())) {
             return $full + ['full' => true, 'need' => 0];
         }
 
@@ -253,6 +320,18 @@ class OpenPlay extends Model
         $skipped = array_filter(array_slice($queue, 0, $last === false ? 0 : $last + 1), fn ($e) => ! self::isAvailable($e, $ready));
 
         return [collect($skipped)->map(fn ($e) => $this->names($e['ids']))->join(', '), collect($skipped)->contains(fn ($e) => $e['paused'] ?? false)];
+    }
+
+    /** Everyone rotates: ready entries ahead of the last one called next that wait a turn (more games tonight, or a repeat partner). */
+    public function passedForNext(array $group): array
+    {
+        $queue = $this->queue();
+        $last = array_search(end($group['used']), array_column($queue, 'id'));
+        $ready = $this->readyIds();
+
+        return collect(array_slice($queue, 0, $last === false ? 0 : $last))
+            ->filter(fn ($e) => self::isAvailable($e, $ready) && ! in_array($e['id'], $group['used']))
+            ->flatMap(fn ($e) => $e['ids'])->values()->all();
     }
 
     /** Checked-in participants still in the session (from the loaded map). */
@@ -457,13 +536,18 @@ class OpenPlay extends Model
     }
 
     /**
-     * The next two teams from the front of the queue, skipping entries that aren't available.
-     * Locked pairs are a team; single players pair up in queue order.
+     * The next two teams. With $book (everyone rotates, see fairBook) the fairest four play; otherwise
+     * the front of the queue, skipping entries that aren't available: locked pairs are a team, single
+     * players pair up in queue order.
      *
-     * @return array{a: array, b: array, used: int[]}|null each team also has 'eids' (its queue entry ids)
+     * @return array{a: array, b: array, used: int[], fair?: bool, rep?: int[]}|null each team also has 'eids' (its queue entry ids)
      */
-    public static function nextUp(array $queue, ?array $ready = null): ?array
+    public static function nextUp(array $queue, ?array $ready = null, ?array $book = null): ?array
     {
+        if ($book && ($fair = self::fairNext($queue, $ready, $book)) !== false) {
+            return $fair;
+        }
+
         $teams = [];
         $used = [];
         $single = null;
@@ -488,6 +572,108 @@ class OpenPlay extends Model
         }
 
         return count($teams) === 2 ? ['a' => $teams[0], 'b' => $teams[1], 'used' => $used] : null;
+    }
+
+    /**
+     * Everyone rotates, fairly:
+     *  1. Fewest games tonight play first: anyone with fewer games than the fourth player in that order is in.
+     *  2. Among players tied on games (the 8 who have waited longest), pick the group and split the teams so
+     *     partners repeat as little as possible, then by wait, then opponents. Over a night everyone partners
+     *     with as many different players as possible.
+     * Locked pairs always play together and count as one pick. Null when fewer than 4 are ready,
+     * false when no split works (line order takes over).
+     */
+    private static function fairNext(array $queue, ?array $ready, array $book): array|false|null
+    {
+        $units = [];
+        foreach ($queue as $i => $e) {
+            if (self::isAvailable($e, $ready)) {
+                $n = count($e['ids']);
+                $units[] = ['e' => $e, 'i' => $i, 'n' => $n, 'locked' => $e['locked'] && $n === 2, 'g' => max(array_map(fn ($id) => $book['sg'][$id] ?? 0, $e['ids']))];
+            }
+        }
+        if (array_sum(array_column($units, 'n')) < 4) {
+            return null;
+        }
+
+        usort($units, fn ($x, $y) => [$x['g'], $x['i']] <=> [$y['g'], $y['i']]);
+        foreach ($units as $r => &$u) {
+            $u['r'] = $r;
+        }
+        unset($u);
+        $n = 0;
+        foreach ($units as $cut) {
+            if (($n += $cut['n']) >= 4) {
+                break;
+            }
+        }
+        $must = array_values(array_filter($units, fn ($u) => $u['g'] < $cut['g']));
+        $tie = array_slice(array_values(array_filter($units, fn ($u) => $u['g'] === $cut['g'])), 0, 8);
+        $need = 4 - array_sum(array_column($must, 'n'));
+        $pc = fn ($t) => $book['pc'][self::pairKey($t[0], $t[1])] ?? 0;
+
+        $best = null;
+        $try = function (array $grp) use (&$best, $pc, $book) {
+            $lk = array_values(array_filter($grp, fn ($u) => $u['locked']));
+            $sn = array_merge(...array_map(fn ($u) => $u['e']['ids'], array_values(array_filter($grp, fn ($u) => ! $u['locked']))) ?: [[]]);
+            $splits = match (count($lk)) {
+                2 => [[$lk[0]['e']['ids'], $lk[1]['e']['ids'], true, true]],
+                1 => [[$lk[0]['e']['ids'], $sn, true, false]],
+                default => [[[$sn[0], $sn[1]], [$sn[2], $sn[3]], false, false], [[$sn[0], $sn[2]], [$sn[1], $sn[3]], false, false], [[$sn[0], $sn[3]], [$sn[1], $sn[2]], false, false]],
+            };
+            $wait = array_sum(array_column($grp, 'r'));
+            foreach ($splits as $sp) {
+                $ps = 0;
+                foreach ([0, 1] as $t) {
+                    if (! $sp[2 + $t]) {
+                        $c = $pc($sp[$t]);
+                        $ps += $c * ($c + 1);
+                    }
+                }
+                $os = 0;
+                foreach ($sp[0] as $x) {
+                    foreach ($sp[1] as $y) {
+                        $os += $book['oc'][self::pairKey($x, $y)] ?? 0;
+                    }
+                }
+                $score = $ps * 1000 + $wait * 10 + $os;
+                if (! $best || $score < $best['score']) {
+                    $best = ['score' => $score, 'sp' => $sp, 'grp' => $grp];
+                }
+            }
+        };
+        $pick = function (int $start, array $chosen, int $left) use (&$pick, $try, $tie, $must) {
+            if ($left === 0) {
+                $try([...$must, ...$chosen]);
+
+                return;
+            }
+            for ($j = $start; $j < count($tie); $j++) {
+                if ($tie[$j]['n'] <= $left) {
+                    $pick($j + 1, [...$chosen, $tie[$j]], $left - $tie[$j]['n']);
+                }
+            }
+        };
+        $pick(0, [], $need);
+        if (! $best) {
+            return false;
+        }
+
+        $team = function (array $ids, bool $locked) use ($best, $pc) {
+            $us = array_values(array_filter($best['grp'], fn ($u) => array_intersect($u['e']['ids'], $ids)));
+
+            return ['ids' => array_values($ids), 'locked' => $locked, 'eids' => array_map(fn ($u) => $u['e']['id'], $us),
+                'r' => min(array_column($us, 'r')), 'rep' => $locked ? -1 : $pc($ids)];
+        };
+        [$a, $b] = [$team($best['sp'][0], $best['sp'][2]), $team($best['sp'][1], $best['sp'][3])];
+        if ($b['r'] < $a['r']) {
+            [$a, $b] = [$b, $a];
+        }
+        $eids = array_map(fn ($u) => $u['e']['id'], $best['grp']);
+        $used = array_values(array_filter(array_column($queue, 'id'), fn ($id) => in_array($id, $eids)));
+        $strip = fn ($t) => ['ids' => $t['ids'], 'locked' => $t['locked'], 'eids' => $t['eids']];
+
+        return ['a' => $strip($a), 'b' => $strip($b), 'used' => $used, 'fair' => true, 'rep' => [$a['rep'], $b['rep']]];
     }
 
     /** The next single team (for winners-stay challengers). */
@@ -576,7 +762,7 @@ class OpenPlay extends Model
     /** Put the next two teams on court $n. Returns the teams, or null if fewer than 4 are waiting. */
     public function fillCourt(int $n): ?array
     {
-        return $this->mutate(fn (array &$board, self $play) => self::seatNextUp($board, $n, $play->checkedInIds()));
+        return $this->mutate(fn (array &$board, self $play) => self::seatNextUp($board, $n, $play->checkedInIds(), $play));
     }
 
     /** Log a result on court $n and send players back to the queue per the rotation rule. */
@@ -598,7 +784,7 @@ class OpenPlay extends Model
             $lose = $court[$side === 'a' ? 'b' : 'a'];
 
             $game = $play->games()->create([
-                'court' => $n, 'score_a' => $scoreA, 'score_b' => $scoreB, 'winner' => $side,
+                'court' => $n, 'score_a' => $scoreA, 'score_b' => $scoreB, 'winner' => $side, 'subs' => $court['subs'] ?? null,
                 'started_at' => $court['started_at'] ? now()->setTimestamp($court['started_at']) : now(), 'played_at' => now(),
             ]);
             $users = $play->participants()->pluck('user_id', 'id');
@@ -650,6 +836,62 @@ class OpenPlay extends Model
             $board['courts'][$i] = $court;
 
             return $game;
+        });
+    }
+
+    /** Switch the game mode mid-session. It applies from the next game; games on court finish as they are. */
+    public function setRotation(string $rotation): void
+    {
+        abort_unless(in_array($rotation, ['rotate', 'winners']), 422);
+        $this->mutate(function (array &$board, self $play) use ($rotation) {
+            $play->rotation = $rotation;
+            foreach ($board['courts'] as &$court) {
+                $court['wins'] = 0;
+            }
+        });
+    }
+
+    /**
+     * Sub on a live court: $outIds (one player, or both of a team) come off and the checked-in queue entries
+     * $inEntryIds take their places. The game keeps going and its result counts for whoever finishes it.
+     * $after for those coming off: 'out' (stepped out at the back of the line), 'back' (back of the line, ready)
+     * or 'leave' (done for the night). Subbing one partner of a locked pair unlocks them.
+     */
+    public function subOnCourt(int $n, array $outIds, array $inEntryIds, string $after): void
+    {
+        $this->mutate(function (array &$board, self $play) use ($n, $outIds, $inEntryIds, $after) {
+            $i = collect($board['courts'])->search(fn ($c) => $c['n'] === $n);
+            $court = $i === false ? null : $board['courts'][$i];
+            $outIds = array_values(array_unique(array_map('intval', $outIds)));
+            $inEntryIds = array_map('intval', $inEntryIds);
+            $side = $court && $court['a'] ? (in_array($outIds[0] ?? 0, $court['a']['ids']) ? 'a' : (in_array($outIds[0] ?? 0, $court['b']['ids']) ? 'b' : null)) : null;
+            $ins = collect($inEntryIds)->map(fn ($id) => collect($board['queue'])->firstWhere('id', $id))->filter()->values();
+            $inIds = $ins->flatMap(fn ($e) => $e['ids'])->all();
+            $ready = $play->checkedInIds();
+            $ok = $side && in_array($after, ['out', 'back', 'leave']) && count($outIds) <= 2 && ! array_diff($outIds, $court[$side]['ids'])
+                && $ins->count() === count($inEntryIds) && count($inIds) === count($outIds) && $ins->every(fn ($e) => self::isAvailable($e, $ready));
+            if (! $ok) {
+                throw new InvalidArgumentException('Pick who comes off and a checked-in player to go on.');
+            }
+
+            $swap = array_combine($outIds, $inIds);
+            $team = $court[$side];
+            $whole = count($outIds) === count($team['ids']);
+            $court[$side] = ['ids' => array_map(fn ($id) => $swap[$id] ?? $id, $team['ids']), 'locked' => $whole && $ins->count() === 1 && $ins[0]['locked']];
+            foreach ($outIds as $o) {
+                $court['subs'][] = ['out' => $o, 'in' => $swap[$o], 'at' => now()->timestamp];
+            }
+            $board['courts'][$i] = $court;
+
+            $board['queue'] = array_values(array_filter($board['queue'], fn ($e) => ! in_array($e['id'], $inEntryIds)));
+            if ($after === 'leave') {
+                $play->participants()->whereIn('id', $outIds)->update(['left_at' => now()]);
+            } else {
+                $entry = fn ($ids, $locked) => ['id' => ++$board['seq'], 'ids' => $ids, 'locked' => $locked] + ($after === 'out' ? ['paused' => true] : []);
+                foreach ($whole && $team['locked'] ? [$entry($outIds, true)] : array_map(fn ($o) => $entry([$o], false), $outIds) as $e) {
+                    $board['queue'][] = $e;
+                }
+            }
         });
     }
 
@@ -849,7 +1091,7 @@ class OpenPlay extends Model
             if ($play->status === 'live' && $play->auto_fill) {
                 $ready = $play->checkedInIds();
                 foreach ($board['courts'] as $court) {
-                    if (! $court['a'] && ! self::seatNextUp($board, $court['n'], $ready)) {
+                    if (! $court['a'] && ! self::seatNextUp($board, $court['n'], $ready, $play)) {
                         break;
                     }
                 }
@@ -883,9 +1125,9 @@ class OpenPlay extends Model
         return $code;
     }
 
-    private static function seatNextUp(array &$board, int $n, ?array $ready): ?array
+    private static function seatNextUp(array &$board, int $n, ?array $ready, self $play): ?array
     {
-        $next = self::nextUp($board['queue'], $ready);
+        $next = self::nextUp($board['queue'], $ready, $play->fairBook($board));
         if (! $next) {
             return null;
         }

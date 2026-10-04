@@ -84,6 +84,16 @@ document.addEventListener('alpine:init', () => {
             this.calM = this.date.slice(0, 7);
             this.typed = null;
             this.typedErr = '';
+            // On a phone the picker opens below the fold: scroll the form (only the form) so it shows, keeping the Date / Starts / Ends row in sight.
+            if (this.pick) {
+                this.$nextTick(() => {
+                    const el = document.getElementById(which === 'date' ? 'c-cal' : 'c-time');
+                    const box = el?.closest('.overflow-y-auto');
+                    if (box && el.getBoundingClientRect().bottom > box.getBoundingClientRect().bottom) {
+                        box.scrollBy({ top: el.getBoundingClientRect().top - box.getBoundingClientRect().top - 112, behavior: 'smooth' });
+                    }
+                });
+            }
         },
 
         // ------------------------------------------------------------ labels

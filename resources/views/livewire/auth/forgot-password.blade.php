@@ -45,7 +45,7 @@
                         <label for="rp-code" class="text-[13px] font-bold text-ink2">6-digit code</label>
                         <input id="rp-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••" wire:model="code"
                                x-on:input="$el.value = $el.value.replace(/\D/g, '').slice(0, 6)" @if ($error) aria-invalid="true" @endif
-                               class="h-16 w-full rounded-2xl border-[1.5px] border-line bg-surface px-4 text-center font-mono text-[28px] font-semibold tracking-[.5em] text-ink outline-none focus:border-ink">
+                               class="field-lg h-16 w-full rounded-2xl border-[1.5px] border-line bg-surface px-4 text-center font-mono text-[28px] font-semibold tracking-[.5em] text-ink outline-none focus:border-ink">
                     </div>
                     @if ($error)
                         <x-alert>{{ $error }}</x-alert>

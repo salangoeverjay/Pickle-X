@@ -269,6 +269,7 @@ class Settings extends Component
             'courts' => $user->courts ?: 2,
             'organizer_note' => 'Applied from an existing player account.',
         ]);
+        Emails::notify(User::where('role', 'admin')->get(), 'requests', fn () => Emails::organizerRequest($user));
         $this->club = $club;
         $this->reset('applyClub', 'applyCity', 'applyError');
 
@@ -311,7 +312,7 @@ class Settings extends Component
         return match ($user->mode()) {
             'organizer' => [
                 'notify.joins' => ['Someone joins my open play', 'Includes the updated player count'],
-                'notify.courtIdle' => ['A court is open with players waiting', 'A nudge to fill it from the queue'],
+                'notify.payClaims' => ['A player says they paid', 'Check it against your GCash or bank account'],
                 'notify.reminder' => ['Session reminder', 'One hour before each open play starts'],
                 'notify.clubRecap' => ['Weekly club summary', 'Sessions run, games logged and busiest nights'],
             ],
@@ -320,7 +321,7 @@ class Settings extends Component
                 'notify.adminRecap' => ['Weekly platform summary', 'New members, organizers and sessions'],
             ],
             default => [
-                'notify.upNext' => ["I'm up next", 'When you are in the next group to play'],
+                'notify.upNext' => ["I'm up next", "In case the app isn't open at the courts"],
                 'notify.liveStart' => ['An open play I joined goes live', 'So you know when to head to the courts'],
                 'notify.newPlays' => ['New open plays from my clubs', 'Get first pick of the spots'],
                 'notify.sessionRecap' => ['Recap after each open play', 'Your record, your games and the final standings'],

@@ -1,5 +1,5 @@
-{{-- Radio-style segmented control bound to a Livewire property. options: [value => label]. --}}
-@props(['label', 'model', 'options'])
+{{-- Radio-style segmented control bound to a Livewire property. options: [value => label]; hints: [value => line shown under it]. --}}
+@props(['label', 'model', 'options', 'hints' => null])
 
 <div class="flex flex-col gap-2">
     <span class="text-[13px] font-bold text-ink2">{{ $label }}</span>
@@ -10,4 +10,7 @@
             </label>
         @endforeach
     </div>
+    @if ($hints)
+        <span class="text-xs leading-[1.45] text-ink3" x-data x-text="@js($hints)[$wire.{{ $model }}] ?? ''">{{ $hints[array_key_first($hints)] }}</span>
+    @endif
 </div>

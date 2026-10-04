@@ -10,6 +10,7 @@ use App\Livewire\Organizer\OpenPlays as OrganizerPlays;
 use App\Mail\PickleXMail;
 use App\Models\OpenPlay;
 use App\Models\User;
+use App\Support\Emails;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
@@ -164,5 +165,49 @@ class EmailsTest extends TestCase
         $this->assertStringContainsString('₱150 collected', $html);
         $this->assertStringContainsString('3 to follow up:', $html);
         $this->assertStringContainsString('Download standings as CSV', $html);
+    }
+
+    public function test_role_suspension_and_restore_emails_follow_each_variant(): void
+    {
+        $this->actingAs(User::factory()->create(['name' => 'Lara Diaz', 'role' => 'admin']));
+        $see = function (PickleXMail $mail, array $lines) {
+            $html = html_entity_decode($mail->render(), ENT_QUOTES);
+            foreach ($lines as $line) {
+                $this->assertStringContainsString($line, $html, "{$mail->heading}: {$line}");
+            }
+        };
+        $kai = User::factory()->create(['name' => 'Kai Santos', 'email' => 'kai@example.com', 'club' => 'Dink Club', 'display_name' => 'Paddles4Sale', 'show_display_name' => true]);
+
+        $see(Emails::roleChanged($kai, 'member', 'organizer'), ["You're now an Organizer, Kai", 'Your hosting tools', 'Run the live court board', 'Create your first open play']);
+        $see(Emails::roleChanged($kai, 'member', 'admin'), ["You're now a PickleX Admin, Kai", 'Your admin pages', 'Keep your account locked down', 'Lara Diaz', 'Open the admin pages']);
+        $this->play();
+        $member = Emails::roleChanged($this->org, 'organizer', 'member');
+        $this->assertSame("You can still join open plays. Here's what stays and what changes.", $member->preheader);
+        $see($member, ['Your role is now Member, Ely', 'What stays', 'What changes', 'Friday Rally on '.now()->addDay()->format('D, M j').' stays on', 'Want to host again?', 'Find an open play']);
+
+        // Reason => [days, subject, lines]
+        foreach ([
+            'noshow' => [30, 'Your PickleX account is suspended until '.today()->addDays(30)->format('M j'), ["You don't need to do anything", 'Think this is a mistake?', 'like a schedule clash']],
+            'conduct' => [null, 'Your PickleX account is suspended', ['How to ask for another look', "alongside the organizer's report"]],
+            'unpaid' => [7, 'Your PickleX account is suspended until '.today()->addDays(7)->format('M j'), ['or sooner once you settle up', 'Get back on court sooner', 'Pay the organizer what you owe', "or as soon as it's lifted"]],
+            'fake' => [null, 'This PickleX account is suspended', ['This account is suspended', 'What to do', 'keep using your main one', 'Good to know']],
+            'spam' => [30, 'Your PickleX account is suspended until '.today()->addDays(30)->format('M j'), ['Your display name goes back to your full name.', 'not in display names', 'An admin reads every reply and takes another look.']],
+            'other' => [7, 'Your PickleX account is suspended until '.today()->addDays(7)->format('M j'), ["This one doesn't fit a usual reason", 'An admin reads every reply and takes another look.']],
+        ] as $reason => [$days, $subject, $lines]) {
+            $kai->suspend($reason, $days, 'See the note.', auth()->user());
+            $mail = Emails::accountSuspended($kai->fresh());
+            $this->assertSame($subject, $mail->heading);
+            $see($mail, $lines);
+        }
+        $this->assertFalse($kai->fresh()->show_display_name);
+
+        $kai->suspend('noshow', 30, null, auth()->user());
+        $see(Emails::accountRestored($kai, early: true), ['lifted your suspension early', 'It was set to end on', 'Spots you held before the suspension were freed']);
+        $this->travelTo($kai->suspended_until);
+        $auto = Emails::accountRestored($kai, early: false);
+        $this->assertSame('Your PickleX suspension ended', $auto->heading);
+        $see($auto, ['Your 30-day suspension ended this morning', 'Nothing to do on your end.', 'Repeated no-shows']);
+        $kai->suspend('conduct', null, null, auth()->user());
+        $see(Emails::accountRestored($kai, early: true), ['took another look and lifted the suspension', 'Lifted by', 'Lara Diaz · PickleX admin', 'Keep it friendly on court']);
     }
 }

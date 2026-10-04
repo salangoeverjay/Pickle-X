@@ -31,7 +31,7 @@
         @foreach ([
             ['1', 'Join an open play', "Find a session, tap Join, and pay with the organizer's QR if there's a fee."],
             ['2', 'Check in at the courts', "Tap Check in when you arrive. Players who haven't checked in are skipped for the next game."],
-            ['3', "Play when you're up", "We'll tell you your court. Every score counts toward your record and rankings."],
+            ['3', "Play when you're up", 'Your live card in the app shows your court. Every score counts toward your record and rankings.'],
         ] as [$n, $title, $text])
             <tr>
                 <td valign="top" style="padding: 0 14px 14px 0; width: 40px;">

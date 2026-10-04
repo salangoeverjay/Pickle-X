@@ -93,6 +93,9 @@
                                     @unless ($r['guest'])
                                         <span class="truncate font-mono text-[11px] text-ink2 lg:hidden">{{ $p->user->email }}</span>
                                     @endunless
+                                    @if ($p->user?->phone)
+                                        <a href="tel:{{ preg_replace('/[^\d+]/', '', $p->user->phone) }}" class="flex items-center gap-1.25 self-start font-mono text-[11px] text-ink2 underline-offset-2 hover:underline"><x-icon name="phone" :size="12" />{{ $p->user->phone }}</a>
+                                    @endif
                                 </div>
                                 <span class="hidden w-57.5 shrink-0 truncate font-mono text-xs text-ink2 lg:block">{{ $r['guest'] ? 'No account' : $p->user->email }}</span>
                                 @unless ($roster['free'])

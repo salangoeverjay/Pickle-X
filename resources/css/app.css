@@ -91,9 +91,29 @@
     --shadow-cta: 0 12px 32px -10px rgba(212, 245, 60, .45);
 }
 
+/* Phones: iOS zooms into any field under 16px when it gets focus, and stays zoomed. Big fields (.field-lg) keep their size. */
+@media (pointer: coarse) {
+    input:not([type='radio'], [type='checkbox'], [type='range'], [type='file'], .field-lg),
+    textarea,
+    select {
+        font-size: 16px;
+    }
+}
+
 @layer base {
     html {
         scroll-behavior: smooth;
+    }
+
+    /* No double-tap zoom when tapping a stepper or picker quickly. */
+    a,
+    button,
+    label,
+    input,
+    select,
+    textarea,
+    [role='button'] {
+        touch-action: manipulation;
     }
 
     body {

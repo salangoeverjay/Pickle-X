@@ -1,6 +1,7 @@
 <div wire:poll.15s x-data="{
     confirmEnd: false,
     share: false,
+    rotm: false,
     copyLink(url) {
         try { navigator.clipboard.writeText(url).catch(() => {}) } catch (e) { /* clipboard can be blocked */ }
         this.$dispatch('toast', { message: 'View link copied' })
@@ -121,10 +122,19 @@
                                             </div>
                                         @endforeach
                                     </div>
-                                    <button type="button" wire:click="openScore({{ $court['n'] }})"
-                                            class="inline-flex h-11.5 cursor-pointer items-center justify-center gap-2 rounded-[14px] bg-ink text-[15px] font-bold text-bg transition hover:brightness-96 active:scale-97">
-                                        <x-icon name="scoreboard" :size="17" :stroke="1.9" />Enter score
-                                    </button>
+                                    @if ($courtSubs[$court['n']])
+                                        <span class="flex items-center gap-1.5 px-1 text-xs font-semibold text-ink2"><x-icon name="swap" :size="14" :stroke="2" class="shrink-0" /><span class="min-w-0">{{ $courtSubs[$court['n']] }}</span></span>
+                                    @endif
+                                    <div class="flex gap-2">
+                                        <button type="button" wire:click="openScore({{ $court['n'] }})"
+                                                class="inline-flex h-11.5 flex-1 cursor-pointer items-center justify-center gap-2 rounded-[14px] bg-ink text-[15px] font-bold text-bg transition hover:brightness-96 active:scale-97">
+                                            <x-icon name="scoreboard" :size="17" :stroke="1.9" />Enter score
+                                        </button>
+                                        <button type="button" wire:click="openCourtSub({{ $court['n'] }})" aria-label="Sub a player in or out on Court {{ $court['n'] }}"
+                                                class="inline-flex h-11.5 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-[14px] border-[1.5px] border-line2 bg-surface px-4 text-[15px] font-bold text-ink transition hover:brightness-96 active:scale-97">
+                                            <x-icon name="swap" :size="16" :stroke="2" />Sub
+                                        </button>
+                                    </div>
                                 @else
                                     <div class="flex flex-col gap-2.5 px-1">
                                         <span class="min-h-11 text-sm text-ink2">
@@ -166,6 +176,9 @@
                                             @unless ($r['aWon'])<x-icon name="trophy" :size="14" :stroke="2.2" />@endunless
                                         </span>
                                     </div>
+                                    @if ($r['subs'])
+                                        <span class="flex items-center justify-center gap-1.5 text-xs text-ink3"><x-icon name="swap" :size="14" :stroke="2" />{{ $r['subs'] }}</span>
+                                    @endif
                                 </div>
                             @endforeach
                         </div>
@@ -183,7 +196,22 @@
                             <h2 class="m-0 font-display text-[22px] font-extrabold tracking-[-0.03em]">Queue</h2>
                             <span class="inline-flex h-6.5 items-center rounded-full border border-line bg-surface2 px-2.5 font-mono text-xs">{{ $inQueue }} players</span>
                         </div>
-                        <span class="inline-flex items-center gap-1.5 text-xs text-ink3"><x-icon name="rotate" :size="14" />{{ $play->rotationLabel() }}</span>
+                        <button type="button" id="rotm-btn" x-on:click="rotm = ! rotm" x-bind:aria-expanded="rotm" aria-controls="rotm" aria-label="Game mode: {{ $play->rotationLabel() }}. Change it"
+                                class="inline-flex h-8.5 cursor-pointer items-center gap-1.5 rounded-full border-[1.5px] border-line2 bg-surface px-3 text-xs font-bold whitespace-nowrap text-ink transition hover:brightness-96 active:scale-97">
+                            <x-icon name="rotate" :size="14" />{{ $play->rotationLabel() }}<x-icon name="chevron-down" :size="12" :stroke="2.4" class="transition-transform" x-bind:class="rotm && 'rotate-180'" />
+                        </button>
+                    </div>
+                    <div id="rotm" x-show="rotm" x-cloak x-on:click.outside="if (! $event.target.closest('#rotm-btn')) rotm = false" role="radiogroup" aria-label="Game mode" class="flex animate-fade flex-col gap-2 rounded-[18px] border border-line bg-surface2 p-3">
+                        <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">Game mode · changes from the next game</span>
+                        @foreach (['rotate' => ['Everyone rotates', 'Fewest games tonight play first, and partners mix so everyone plays with someone new each game.'], 'winners' => ['Winners stay (2 max)', 'Winners stay on for up to 2 games in a row; challengers come from the front of the line.']] as $key => [$label, $desc])
+                            @php($on = ($play->rotation === 'winners' ? 'winners' : 'rotate') === $key)
+                            <button type="button" role="radio" aria-checked="{{ $on ? 'true' : 'false' }}" wire:click="setRotation('{{ $key }}')" x-on:click="rotm = false"
+                                    @class(['flex cursor-pointer items-start gap-3 rounded-[14px] border-[1.5px] p-3 text-left transition hover:brightness-96 active:scale-99', 'border-ink bg-surface' => $on, 'border-line bg-transparent' => ! $on])>
+                                <span aria-hidden="true" @class(['mt-0.5 flex size-4.5 shrink-0 items-center justify-center rounded-full border-2', 'border-ink' => $on, 'border-line2' => ! $on])><span @class(['size-2 rounded-full', 'bg-ink' => $on])></span></span>
+                                <span class="flex min-w-0 flex-col gap-0.5"><span class="text-sm font-bold">{{ $label }}</span><span class="text-xs leading-[1.4] text-ink2">{{ $desc }}</span></span>
+                            </button>
+                        @endforeach
+                        <span class="text-xs text-ink3">Games on court finish as they are. Players see the change on the live view.</span>
                     </div>
 
                     @if ($group)
@@ -225,6 +253,12 @@
                                 <span class="flex items-center gap-2 text-[13px] font-bold text-ink"><x-icon name="clock" :size="15" />Needs {{ $group['need'] }} more checked-in {{ Str::plural('player', $group['need']) }} to start a game</span>
                             @elseif (! str_contains($where, 'is open'))
                                 <span class="text-xs text-ink2">They go on as soon as a court finishes.</span>
+                            @endif
+                            @if ($why)
+                                <span class="flex items-start gap-1.5 text-xs leading-[1.4] font-semibold text-ink2"><x-icon name="shuffle" :size="13" :stroke="2.2" class="mt-px shrink-0" /><span>{{ $why['mix'] }}</span></span>
+                                @if ($why['wait'])
+                                    <span class="text-xs leading-[1.4] text-ink3">{{ $why['wait'] }}</span>
+                                @endif
                             @endif
                             @if ($skipped[0])
                                 <span class="text-xs text-ink3">Skipping {{ $skipped[0] }} {{ $skipped[1] ? 'until they are back.' : 'until they check in.' }}</span>
@@ -291,7 +325,8 @@
                         <form wire:submit="addWalkin" class="flex flex-col gap-2">
                             <div class="flex gap-2">
                                 <label for="walkin" class="sr-only">Walk-in player name or email</label>
-                                <input id="walkin" type="text" wire:model.live.debounce.300ms="walkin" maxlength="60" autocomplete="off" placeholder="Add a walk-in by name or email" aria-describedby="walkin-hint"
+                                <input id="walkin" type="text" wire:model.live.debounce.300ms="walkin" maxlength="60" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="go"
+                                       x-on:focus="matchMedia('(pointer: coarse)').matches && setTimeout(() => scrollBy({ top: $el.getBoundingClientRect().top - 96, behavior: 'smooth' }), 300)" placeholder="Add a walk-in by name or email" aria-describedby="walkin-hint"
                                        class="h-11.5 min-w-0 flex-1 rounded-[14px] border-[1.5px] border-line bg-surface2 px-3.5 text-sm text-ink outline-none transition-colors placeholder:text-ink3 focus:border-ink">
                                 <button type="submit" class="inline-flex h-11.5 cursor-pointer items-center gap-1.5 rounded-[14px] bg-ink px-4 text-sm font-bold text-bg transition hover:brightness-96 active:scale-97">
                                     <x-icon name="user-plus" :size="16" :stroke="1.9" />Add
@@ -527,11 +562,11 @@
                     </button>
                 </div>
 
-                <div class="flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto px-6 py-5">
+                <div class="flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto px-4 py-5 lg:px-6">
                     <div class="grid grid-cols-1 gap-3 lg:grid-cols-2">
                         @foreach (['a', 'b'] as $side)
                             @php($K = strtoupper($side))
-                            <div class="flex flex-col items-center gap-3 rounded-[22px] border-2 px-3.5 py-4 transition-colors"
+                            <div class="flex flex-col items-center gap-2.5 rounded-[22px] border-2 px-3 py-3 transition-colors lg:gap-3 lg:px-3.5 lg:py-4"
                                  x-bind:class="win === '{{ $side }}' ? 'border-lime bg-lime-soft' : 'border-line bg-surface'">
                                 <div class="flex flex-col items-center gap-2 text-center">
                                     <span class="font-mono text-[10px] tracking-[.14em] text-ink3">TEAM {{ $K }}</span>
@@ -548,25 +583,27 @@
                                         @endif
                                     </div>
                                 </div>
-                                <div class="flex items-center gap-2.5">
+                                <div class="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-3 lg:flex-col">
+                                <div class="flex items-center gap-1.5 lg:gap-2.5">
                                     <button type="button" x-on:click="step('{{ $side }}', -1)" aria-label="Lower Team {{ $K }} score"
-                                            class="flex size-12 cursor-pointer items-center justify-center rounded-full border-[1.5px] border-line2 bg-surface text-ink transition hover:brightness-96 active:scale-97">
+                                            class="flex size-11 cursor-pointer items-center justify-center rounded-full border-[1.5px] border-line2 bg-surface text-ink lg:size-12 transition hover:brightness-96 active:scale-97">
                                         <x-icon name="minus" :size="18" :stroke="2.4" />
                                     </button>
-                                    <input type="number" min="0" max="{{ $to }}" inputmode="numeric" aria-label="Team {{ $K }} score"
-                                           x-bind:value="{{ $side }} ?? ''" x-on:input="type('{{ $side }}', $el)"
-                                           class="h-16 w-21 [appearance:textfield] rounded-2xl bg-transparent p-0 text-center font-display text-[52px] font-extrabold tracking-[-0.04em] text-ink tabular-nums outline-none lg:h-20 lg:w-24 lg:text-[64px] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none">
+                                    <input type="number" min="0" max="{{ $to }}" inputmode="numeric" enterkeyhint="done" aria-label="Team {{ $K }} score"
+                                           x-bind:value="{{ $side }} ?? ''" x-on:input="type('{{ $side }}', $el)" x-on:focus="$el.select()"
+                                           class="field-lg h-16 w-17 lg:w-21 [appearance:textfield] rounded-2xl bg-transparent p-0 text-center font-display text-[52px] font-extrabold tracking-[-0.04em] text-ink tabular-nums outline-none lg:h-20 lg:w-24 lg:text-[64px] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none">
                                     <button type="button" x-on:click="step('{{ $side }}', 1)" aria-label="Raise Team {{ $K }} score"
-                                            class="flex size-12 cursor-pointer items-center justify-center rounded-full border-[1.5px] border-line2 bg-surface text-ink transition hover:brightness-96 active:scale-97">
+                                            class="flex size-11 cursor-pointer items-center justify-center rounded-full border-[1.5px] border-line2 bg-surface text-ink lg:size-12 transition hover:brightness-96 active:scale-97">
                                         <x-icon name="plus" :size="18" :stroke="2.4" />
                                     </button>
                                 </div>
                                 <div class="flex min-h-10 items-center justify-center gap-2">
                                     <button type="button" x-show="win !== '{{ $side }}'" x-on:click="reach('{{ $side }}')"
-                                            class="h-10 cursor-pointer rounded-full border-[1.5px] border-line2 px-3.5 text-[13px] font-bold text-ink transition hover:brightness-96 active:scale-97">They reached {{ $to }}</button>
+                                            class="h-10 cursor-pointer rounded-full border-[1.5px] border-line2 px-3 text-[13px] lg:px-3.5 font-bold text-ink transition hover:brightness-96 active:scale-97">They reached {{ $to }}</button>
                                     <span x-show="win === '{{ $side }}'" x-cloak class="inline-flex h-8 animate-snap items-center gap-1.5 rounded-full bg-lime px-3 text-xs font-extrabold tracking-[.04em] text-on-lime">
                                         <x-icon name="trophy" :size="14" :stroke="2.2" />WINNER
                                     </span>
+                                </div>
                                 </div>
                             </div>
                         @endforeach
@@ -587,6 +624,124 @@
                             class="h-13 flex-1 cursor-pointer rounded-full border-2 border-cta-border bg-lime text-[15px] font-extrabold text-on-lime shadow-cta transition hover:brightness-96 active:scale-97 disabled:cursor-not-allowed disabled:opacity-50">Save score</button>
                 </div>
             </form>
+        </div>
+    @endif
+    {{-- Sub on a live court: who comes off, who goes on, and what happens to them. The game keeps going. --}}
+    @if ($play && $subDialog)
+        @php($ct = $subDialog['court'])
+        @php($outs = $this->csub['out'])
+        @php($opt = fn ($on) => $on ? 'border-ink bg-surface' : 'border-line bg-transparent')
+        @php($dot = fn ($on) => '<span aria-hidden="true" class="ml-auto flex size-4.5 shrink-0 items-center justify-center rounded-full border-2 '.($on ? 'border-ink' : 'border-line2').'"><span class="size-2 rounded-full '.($on ? 'bg-ink' : '').'"></span></span>')
+        <div wire:key="csub-{{ $ct['n'] }}" x-data x-on:keydown.escape.window="$wire.set('csub', null)" class="fixed inset-0 z-66 flex items-end justify-center lg:items-center lg:p-6">
+            <button type="button" wire:click="$set('csub', null)" aria-label="Close" class="absolute inset-0 animate-fade cursor-pointer bg-[rgba(18,23,15,.45)] dark:bg-black/62"></button>
+
+            <div role="dialog" aria-modal="true" aria-labelledby="cs-title" x-trap.noscroll="true"
+                 class="relative flex max-h-[92%] w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] lg:max-h-full lg:w-190 lg:rounded-[28px]">
+                <div class="flex shrink-0 items-center justify-between gap-3 border-b border-line pt-5 pr-5 pb-4 pl-6">
+                    <div class="flex min-w-0 flex-col gap-0.5">
+                        <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">Live court · substitution</span>
+                        <h2 id="cs-title" class="m-0 font-display text-[26px] font-extrabold tracking-[-0.03em]">Sub on Court {{ $ct['n'] }}</h2>
+                        <span class="truncate text-[13px] text-ink3">{{ $play->names($ct['a']['ids']) }} vs {{ $play->names($ct['b']['ids']) }} · <x-live-timer :start="now()->timestamp - $ct['started_at']" /> played</span>
+                    </div>
+                    <button type="button" wire:click="$set('csub', null)" aria-label="Close" class="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-line bg-surface text-ink transition hover:brightness-96 active:scale-97">
+                        <x-icon name="x" :size="18" />
+                    </button>
+                </div>
+
+                <div class="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 py-5">
+                    <section aria-labelledby="cs-off" class="flex flex-col gap-2.5">
+                        <h3 id="cs-off" class="m-0 text-[15px] font-extrabold">1 · Who's coming off?</h3>
+                        <div role="radiogroup" aria-labelledby="cs-off" class="grid grid-cols-1 gap-2.5 lg:grid-cols-2">
+                            @foreach (['a' => 'Team A', 'b' => 'Team B'] as $side => $label)
+                                @php($t = $ct[$side])
+                                <div class="flex flex-col gap-1.5 rounded-[18px] border border-line bg-surface2 p-2.5">
+                                    <span class="flex items-center gap-2 px-1 font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">{{ $label }}
+                                        @if ($t['locked'])
+                                            <span class="inline-flex h-5 items-center gap-1 rounded-full bg-lime-soft px-1.75 font-sans text-[10px] font-extrabold tracking-normal text-lime-text normal-case"><x-icon name="lock" :size="10" :stroke="2.6" />Locked pair</span>
+                                        @endif
+                                    </span>
+                                    @foreach ($t['ids'] as $id)
+                                        @php($p = $play->participant($id))
+                                        @php($on = count($outs) === 1 && $outs[0] === $id)
+                                        <button type="button" role="radio" aria-checked="{{ $on ? 'true' : 'false' }}" aria-label="{{ $p?->name }} comes off" wire:click="pickCourtSub('out', [{{ $id }}])"
+                                                class="flex h-12 cursor-pointer items-center gap-2.5 rounded-[14px] border-[1.5px] px-2 text-left transition hover:brightness-96 active:scale-99 {{ $opt($on) }}">
+                                            <x-avatar :src="$p?->avatarUrl()" :frame="$p?->frameClass()" :name="$p?->name ?? '?'" :color="$p?->color() ?? '#FFFFFF'" class="size-8 text-[11px]" />
+                                            <span class="min-w-0 truncate text-sm font-bold">{{ $p?->name }}</span>{!! $dot($on) !!}
+                                        </button>
+                                    @endforeach
+                                    @if (count($t['ids']) === 2)
+                                        @php($on = count($outs) === 2 && ! array_diff($t['ids'], $outs))
+                                        <button type="button" role="radio" aria-checked="{{ $on ? 'true' : 'false' }}" aria-label="{{ $play->names($t['ids']) }} both come off" wire:click="pickCourtSub('out', @js($t['ids']))"
+                                                class="flex h-11 cursor-pointer items-center gap-2.5 rounded-[14px] border-[1.5px] px-3 text-left transition hover:brightness-96 active:scale-99 {{ $opt($on) }}">
+                                            <span class="min-w-0 truncate text-[13px] font-bold">Both · {{ $play->names($t['ids']) }}</span>{!! $dot($on) !!}
+                                        </button>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+                        @if ($subDialog['lockNote'])
+                            <p class="m-0 flex items-start gap-2 text-[13px] text-ink2"><x-icon name="unlock" :size="15" class="mt-px shrink-0" /><span>{{ $subDialog['lockNote'] }}</span></p>
+                        @endif
+                    </section>
+
+                    <section aria-labelledby="cs-on" class="flex flex-col gap-2.5">
+                        <h3 id="cs-on" class="m-0 text-[15px] font-extrabold">2 · Who's going on?</h3>
+                        @if (! $outs)
+                            <p class="m-0 text-sm text-ink2">Pick who's coming off first. Checked-in players from the queue show up here, next in line first.</p>
+                        @elseif ($subDialog['cands']->isNotEmpty())
+                            <div role="radiogroup" aria-labelledby="cs-on" class="grid grid-cols-1 gap-2 lg:grid-cols-2">
+                                @foreach ($subDialog['cands'] as $cd)
+                                    @php($eids = collect($cd['es'])->pluck('id')->all())
+                                    @php($pids = collect($cd['es'])->flatMap(fn ($e) => $e['ids'])->all())
+                                    @php($on = $eids == $this->csub['in'])
+                                    <button type="button" role="radio" aria-checked="{{ $on ? 'true' : 'false' }}" aria-label="{{ $play->names($pids) }} {{ count($pids) > 1 ? 'go on' : 'goes on' }}" wire:click="pickCourtSub('in', @js($eids))"
+                                            wire:key="cs-in-{{ implode('-', $eids) }}" class="flex min-h-12 cursor-pointer items-center gap-2 rounded-[14px] border-[1.5px] px-2 py-1.5 text-left transition hover:brightness-96 active:scale-99 {{ $opt($on) }}">
+                                        <span class="flex shrink-0">
+                                            @foreach ($pids as $j => $id)
+                                                @php($cp = $play->participant($id))
+                                                <x-avatar :src="$cp?->avatarUrl()" :frame="$cp?->frameClass()" :name="$cp?->name ?? '?'" :color="$cp?->color() ?? '#FFFFFF'" @class(['size-8 border-2 border-bg text-[11px]', '-ml-2' => $j]) />
+                                            @endforeach
+                                        </span>
+                                        <span class="min-w-0 truncate text-sm font-bold">{{ $play->names($pids) }}</span>
+                                        <span class="shrink-0 font-mono text-[11px] text-ink3">{{ collect($cd['es'])->map(fn ($e) => '#'.$e['pos'])->join(' ') }}</span>
+                                        @if ($cd['tag'])
+                                            <span class="inline-flex h-5 shrink-0 items-center rounded-full bg-lime px-1.75 text-[10px] font-extrabold text-on-lime">{{ $cd['tag'] }}</span>
+                                        @endif
+                                        {!! $dot($on) !!}
+                                    </button>
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="m-0 text-sm font-semibold text-hot">{{ count($outs) === 2 ? 'No two checked-in players are free to go on right now.' : 'No checked-in players are free to go on right now.' }}</p>
+                        @endif
+                    </section>
+
+                    @if ($outs)
+                        <section aria-labelledby="cs-after" class="flex flex-col gap-2.5">
+                            <h3 id="cs-after" class="m-0 text-[15px] font-extrabold">3 · What about {{ $subDialog['off'] }}?</h3>
+                            <div role="radiogroup" aria-labelledby="cs-after" class="grid grid-cols-1 gap-2 lg:grid-cols-3">
+                                @foreach (['out' => ['Taking a break', "Stepped out at the back of the line. Tap I'm back when they're ready."], 'back' => ['Back in line now', 'Joins the back of the line, ready to play.'], 'leave' => ['Done for the night', "Leaves the queue. Tonight's games stay on the record."]] as $key => [$label, $desc])
+                                    @php($on = $this->csub['after'] === $key)
+                                    <button type="button" role="radio" aria-checked="{{ $on ? 'true' : 'false' }}" wire:click="pickCourtSub('after', '{{ $key }}')"
+                                            class="flex cursor-pointer items-start gap-2.5 rounded-[14px] border-[1.5px] p-3 text-left transition hover:brightness-96 active:scale-99 {{ $opt($on) }}">
+                                        <span class="flex min-w-0 flex-1 flex-col gap-0.5"><span class="text-sm font-bold">{{ $label }}</span><span class="text-xs leading-[1.4] text-ink2">{{ $desc }}</span></span>{!! $dot($on) !!}
+                                    </button>
+                                @endforeach
+                            </div>
+                        </section>
+                    @endif
+
+                    <p class="m-0 flex items-start gap-2 text-[13px] leading-[1.45] text-ink3"><x-icon name="clock" :size="16" class="mt-px shrink-0" /><span>The game keeps going and the timer doesn't reset. When you enter the score, the win or loss counts for the players who finish the game.</span></p>
+                </div>
+
+                <div class="flex shrink-0 gap-2.5 border-t border-line bg-bg px-6 pt-3.5 pb-5.5">
+                    <button type="button" wire:click="$set('csub', null)" class="h-13 cursor-pointer rounded-full border-[1.5px] border-line2 px-5 text-[15px] font-bold text-ink transition hover:brightness-96 active:scale-97">Cancel</button>
+                    <button type="button" wire:click="courtSub" @disabled(! $subDialog['go'])
+                            class="inline-flex h-13 min-w-0 flex-1 cursor-pointer items-center justify-center gap-2 rounded-full border-2 border-cta-border bg-lime px-4 text-[15px] font-extrabold text-on-lime shadow-cta transition hover:brightness-96 active:scale-97 disabled:cursor-not-allowed disabled:border-transparent disabled:bg-surface2 disabled:text-ink3 disabled:shadow-none">
+                        <x-icon name="swap" :size="16" :stroke="2" class="shrink-0" /><span class="truncate">{{ $subDialog['go'] ?? ($outs ? 'Pick who goes on' : 'Pick who comes off') }}</span>
+                    </button>
+                </div>
+            </div>
         </div>
     @endif
     @if ($play)

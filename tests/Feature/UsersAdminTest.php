@@ -79,10 +79,10 @@ class UsersAdminTest extends TestCase
             ->call('saveRole')->assertDispatched('toast', message: 'Kai Santos is now an Admin · we emailed Kai');
         $this->assertSame('admin', $kai->fresh()->accountRole());
         Mail::assertSent(PickleXMail::class, fn ($m) => $m->template === 'role-changed' && $m->hasTo($kai->email)
-            && $m->heading === 'Your PickleX role changed to Organizer' && str_contains($m->render(), "You're now an Organizer, Kai")
+            && $m->heading === 'Your PickleX role changed to Organizer' && str_contains($m->render(), 'You&#039;re now an Organizer, Kai')
             && str_contains($m->render(), 'host open plays for Panabo'));
         Mail::assertSent(PickleXMail::class, fn ($m) => $m->template === 'role-changed' && $m->data['was'] === 'organizer' && $m->data['role'] === 'admin'
-            && str_contains($m->render(), 'Open the admin dashboard'));
+            && str_contains($m->render(), 'Open the admin pages'));
 
         Livewire::actingAs($this->super)->test(Users::class)->call('open', $this->super->id)
             ->assertSee('This is your account. Another admin has to change your role.')
@@ -135,7 +135,7 @@ class UsersAdminTest extends TestCase
         $this->artisan('users:lift-suspensions')->expectsOutput('Lifted 1 suspension.');
         $this->assertNull($kai->fresh()->suspended_at);
         Mail::assertSent(PickleXMail::class, fn ($m) => $m->template === 'account-restored' && ! $m->data['early']
-            && str_contains($m->render(), 'Your suspension ended') && str_contains($m->render(), "Can't make it to an open play?"));
+            && str_contains($m->render(), 'Your suspension ended') && str_contains($m->render(), 'Can&#039;t make it to an open play?'));
         Livewire::test(Login::class)->set('email', 'kai@example.com')->set('password', 'password')->call('login')->assertHasNoErrors();
     }
 
@@ -157,7 +157,7 @@ class UsersAdminTest extends TestCase
         $this->assertFalse($kai->fresh()->isSuspended());
         $this->assertNull($kai->fresh()->suspension_reason);
         Mail::assertSent(PickleXMail::class, fn ($m) => $m->template === 'account-restored' && $m->data['early']
-            && str_contains($m->render(), 'lifted your suspension, so') && str_contains($m->render(), 'Unsportsmanlike conduct'));
+            && str_contains($m->render(), 'took another look and lifted the suspension') && str_contains($m->render(), 'Unsportsmanlike conduct'));
     }
 
     public function test_remember_me_sets_a_30_day_cookie(): void

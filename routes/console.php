@@ -5,6 +5,7 @@ use App\Models\User;
 use App\Support\Emails;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\Str;
 
@@ -33,3 +34,29 @@ Artisan::command('users:lift-suspensions', function () {
 })->purpose('Lift timed suspensions whose end date has passed');
 
 Schedule::command('users:lift-suspensions')->everyMinute();
+
+// One hour before an upcoming open play starts, its organizer gets a reminder. reminder_sent_at keeps it to one.
+Artisan::command('open-plays:remind', function () {
+    $due = OpenPlay::status('upcoming')->whereNull('reminder_sent_at')->whereBetween('starts_at', [now(), now()->addHour()])->with('organizer')->get();
+    $due->each(function (OpenPlay $play) {
+        $play->forceFill(['reminder_sent_at' => now()])->save();
+        Emails::notify([$play->organizer], 'reminder', fn () => Emails::sessionReminder($play));
+    });
+    $this->info("Reminded {$due->count()} open ".Str::plural('play', $due->count()).'.');
+})->purpose('Remind organizers an hour before each open play starts');
+
+Schedule::command('open-plays:remind')->everyMinute();
+
+// Mondays: last week's recap for members who played, summary for organizers whose sessions ran, platform summary for admins.
+Artisan::command('emails:weekly', function () {
+    [$from, $to] = Emails::lastWeek();
+    $players = User::whereIn('id', DB::table('game_players')->join('games', 'games.id', '=', 'game_players.game_id')
+        ->whereBetween('games.played_at', [$from, $to])->whereNotNull('game_players.user_id')->select('game_players.user_id'))->get();
+    Emails::notify($players, 'recap', fn (User $u) => Emails::weeklyRecap($u));
+    $hosts = User::whereIn('id', OpenPlay::status('done')->whereBetween('started_at', [$from, $to])->select('organizer_id'))->get();
+    Emails::notify($hosts, 'clubRecap', fn (User $u) => Emails::clubSummary($u));
+    Emails::notify(User::where('role', 'admin')->get(), 'adminRecap', fn (User $u) => Emails::platformSummary($u));
+    $this->info("Weekly emails for {$players->count()} ".Str::plural('player', $players->count())." and {$hosts->count()} ".Str::plural('organizer', $hosts->count()).'.');
+})->purpose('Send the Monday recap, club summary and platform summary emails');
+
+Schedule::command('emails:weekly')->weeklyOn(1, '8:00');

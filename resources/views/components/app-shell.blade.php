@@ -163,7 +163,9 @@
 
     {{-- Mobile bottom nav --}}
     @if (count($nav) > 1)
-        <nav aria-label="Main" class="fixed inset-x-0 bottom-0 z-20 flex h-19 border-t border-line bg-surface px-1.5 pt-1.5 pb-3.5 lg:hidden">
+        {{-- Steps aside while the keyboard is up, so it doesn't cover what you're typing into. --}}
+        <nav aria-label="Main" x-data="{ typing: false }" x-on:focusin.window="typing = $event.target.matches('input:not([type=radio], [type=checkbox], [type=file]), textarea, select')" x-on:focusout.window="typing = false"
+             x-show="! typing" class="fixed inset-x-0 bottom-0 z-20 flex h-19 border-t border-line bg-surface px-1.5 pt-1.5 pb-3.5 lg:hidden">
             @foreach ($nav as [$route, $label, $icon, $badge])
                 @php($on = $isPage($route))
                 <a href="{{ route($route) }}" wire:navigate @if ($on) aria-current="page" @endif @class(['flex min-w-0 flex-1 flex-col items-center justify-center gap-1 text-[11px] font-bold', 'text-ink' => $on, 'text-ink3' => ! $on])>

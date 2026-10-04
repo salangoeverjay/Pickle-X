@@ -23,6 +23,24 @@ class Emails
         \Illuminate\Support\defer(fn () => rescue(fn () => Mail::to($to)->send($mail)));
     }
 
+    /** A notification switch email: sent to each of $users who keeps notify.$pref on (skips suspended accounts). $build(User) may return null. */
+    public static function notify(iterable $users, string $pref, \Closure $build): void
+    {
+        foreach ($users as $user) {
+            if ($user && $user->pref("notify.{$pref}") && ! $user->isSuspended() && ($mail = $build($user))) {
+                self::send($user, $mail);
+            }
+        }
+    }
+
+    /** Last week, Monday to Sunday: [start, end]. The weekly emails go out the Monday after. */
+    public static function lastWeek(): array
+    {
+        $start = now()->startOfWeek(CarbonInterface::MONDAY)->subWeek();
+
+        return [$start, $start->copy()->endOfWeek(CarbonInterface::SUNDAY)];
+    }
+
     // ------------------------------------------------------------ account
 
     public static function reset(User $user, string $code, CarbonInterface $expires, string $device): PickleXMail
@@ -78,12 +96,14 @@ class Emails
     public static function roleChanged(User $user, string $was, string $role): PickleXMail
     {
         $label = ['member' => 'Member', 'organizer' => 'Organizer', 'admin' => 'Admin'][$role];
+        $hosting = $role === 'member' ? OpenPlay::where('organizer_id', $user->id)->status('upcoming')
+            ->where('starts_at', '>', now())->orderBy('starts_at')->get() : collect();
 
         return new PickleXMail('role-changed', "Your PickleX role changed to {$label}", match ($role) {
             'organizer' => 'A PickleX admin made you an Organizer for '.($user->club ?: 'your club').'. You can host open plays now.',
-            'admin' => 'A PickleX admin made you an Admin. You can review organizer requests and manage accounts now.',
-            default => 'A PickleX admin made you a Member. You still play on the same account.',
-        }, ['user' => $user, 'was' => $was, 'role' => $role]);
+            'admin' => 'You can manage organizer requests, users, developers and sponsors now.',
+            default => "You can still join open plays. Here's what stays and what changes.",
+        }, ['user' => $user, 'was' => $was, 'role' => $role, 'by' => auth()->user()?->name, 'hosting' => $hosting]);
     }
 
     /** Built after User::suspend(): the reason, how long and the admin's note. */
@@ -91,29 +111,39 @@ class Emails
     {
         $until = $user->suspended_until;
         $days = $until ? (int) round($user->suspended_at->copy()->startOfDay()->diffInDays($until)) : null;
-        $why = $user->suspensionReason()[2];
+        $key = isset(User::SUSPENSION_REASONS[$user->suspension_reason]) ? $user->suspension_reason : 'other';
+        $why = $key === 'spam' ? 'spam' : $user->suspensionReason()[2];
+        $for = $until ? "Suspended for {$days} days for {$why}." : "Suspended for {$why} until an admin restores it.";
 
-        return new PickleXMail('account-suspended', 'Your PickleX account is suspended'.($until ? ' until '.$until->format('M j') : ''),
-            $until ? "Suspended for {$days} days for {$why}. Here's what that means and how to ask for another look."
-                : 'Suspended for '.$why.' until an admin restores it. Reply to tell us your side.', [
-                    'user' => $user, 'at' => $user->suspended_at, 'until' => $until, 'days' => $days,
-                    'reason' => $user->suspensionReason(), 'note' => $user->suspension_note, 'by' => $user->suspender?->name,
-                ]);
+        return new PickleXMail('account-suspended', ($key === 'fake' ? 'This' : 'Your').' PickleX account is suspended'.($until ? ' until '.$until->format('M j') : ''), match ($key) {
+            'fake' => "It looks like a second account. Here's what to do if it isn't.",
+            'unpaid' => "{$for} Settle up and it can lift sooner.",
+            'spam' => "{$for} Your display name goes back to your full name.",
+            'other' => ($until ? "Suspended for {$days} days." : 'Suspended until an admin restores it.')." The admin's note explains what happened.",
+            default => $for.($until ? " Here's what that means and how to ask for another look." : ' Reply to tell us your side.'),
+        }, [
+            'user' => $user, 'at' => $user->suspended_at, 'until' => $until, 'days' => $days, 'key' => $key,
+            'reason' => $user->suspensionReason(), 'note' => $user->suspension_note, 'by' => $user->suspender?->name,
+        ]);
     }
 
-    /** Built before User::liftSuspension() clears the details. $early: an admin restored it (not the end date). */
+    /**
+     * Built before User::liftSuspension() clears the details. $early: an admin restored it (not the end date).
+     * Three versions: auto (ended on its own), early (lifted before its end date), open (lifted, no end date).
+     */
     public static function accountRestored(User $user, bool $early): PickleXMail
     {
         $back = now();
+        $kind = ! $early ? 'auto' : ($user->suspended_until ? 'early' : 'open');
 
-        return new PickleXMail('account-restored', 'Your PickleX account is active again', match (true) {
-            ! $early => 'Your suspension ended. Log in and join an open play anytime.',
-            (bool) $user->suspended_until => 'Your suspension was lifted early. Log in and join an open play anytime.',
-            default => 'Your suspension was lifted. Log in and join an open play anytime.',
+        return new PickleXMail('account-restored', $kind === 'auto' ? 'Your PickleX suspension ended' : 'Your PickleX account is active again', match ($kind) {
+            'auto' => "You're active again. Log in and join an open play anytime.",
+            'early' => 'Your suspension was lifted early. Log in and join an open play anytime.',
+            'open' => 'An admin took another look and lifted the suspension.',
         }, [
-            'user' => $user, 'early' => $early, 'at' => $user->suspended_at, 'until' => $user->suspended_until, 'back' => $back,
+            'user' => $user, 'early' => $early, 'kind' => $kind, 'at' => $user->suspended_at, 'until' => $user->suspended_until, 'back' => $back,
             'days' => max(1, (int) round($user->suspended_at->copy()->startOfDay()->diffInDays($back->copy()->startOfDay()))),
-            'reason' => $user->suspensionReason(), 'reasonKey' => $user->suspension_reason,
+            'reason' => $user->suspensionReason(), 'reasonKey' => $user->suspension_reason, 'by' => auth()->user()?->name,
         ]);
     }
 
@@ -264,6 +294,138 @@ class Emails
                 'players' => $play->activeParticipants()->count(),
                 'checkedIn' => $play->activeParticipants()->whereNotNull('checked_in_at')->count(),
                 'ran' => max(1, (int) round($play->started_at->diffInMinutes($play->ended_at) / 60)).'h',
+            ]);
+    }
+
+    // ------------------------------------------------------------ notification switches
+
+    /** To the organizer (notify.payClaims): a player tapped "I've sent the payment". */
+    public static function payClaimed(OpenPlay $play, User $player): PickleXMail
+    {
+        $claims = DB::table('pay_claims')->where('open_play_id', $play->id)->count();
+
+        return new PickleXMail('pay-claimed', "{$player->name} says they paid for {$play->title}",
+            "Check {$play->payApp()} for ".($play->fee ?: 'the payment')." from {$player->name}, then mark them as paid.", [
+                'play' => $play, 'player' => $player, 'claims' => $claims, 'at' => now(),
+                'paidCount' => $play->activeParticipants()->where('paid', true)->count(), 'count' => $play->playerCount(),
+            ]);
+    }
+
+    /** To the organizer (notify.reminder): one hour before the open play starts. */
+    public static function sessionReminder(OpenPlay $play): PickleXMail
+    {
+        $count = $play->playerCount();
+        $paid = $play->activeParticipants()->where('paid', true)->count();
+        $claims = DB::table('pay_claims')->where('open_play_id', $play->id)->count();
+
+        return new PickleXMail('session-reminder', "{$play->title} starts at {$play->starts_at->format('g:i A')}",
+            "{$count} of {$play->cap} players joined".($play->fee ? " · {$paid} paid" : '').($claims ? " · {$claims} to confirm" : '').'. Start the session when you get to the courts.',
+            ['play' => $play, 'count' => $count, 'paid' => $paid, 'claims' => $claims]);
+    }
+
+    /** To each player in it (notify.liveStart): the organizer started the session. */
+    public static function liveStarted(OpenPlay $play, User $user): PickleXMail
+    {
+        $owes = $play->fee && ! $play->activeParticipants()->where('user_id', $user->id)->value('paid');
+
+        return new PickleXMail('live-started', "{$play->title} is live",
+            "Head to {$play->venue} and check in when you get there so you're added to the rotation.",
+            ['play' => $play, 'user' => $user, 'owes' => $owes, 'count' => $play->playerCount()],
+            fromName: "{$play->club} via PickleX");
+    }
+
+    /** To a player who just moved into the next full group (notify.upNext). $group: OpenPlay::nextGroup(), $pid: their participant id. */
+    public static function upNext(OpenPlay $play, User $user, array $group, int $pid): PickleXMail
+    {
+        $mine = in_array($pid, $group['a']['ids']) ? $group['a'] : $group['b'];
+        $theirs = $mine === $group['a'] ? $group['b'] : $group['a'];
+        $partner = $play->names(array_values(array_diff($mine['ids'], [$pid])));
+        $opponents = $play->names($theirs['ids']);
+
+        return new PickleXMail('up-next', "You're up next at {$play->title}",
+            ($partner ? "With {$partner} vs " : 'Against ')."{$opponents}. You go on as soon as a court opens.",
+            ['play' => $play, 'user' => $user, 'partner' => $partner, 'opponents' => $opponents]);
+    }
+
+    /** To admins (notify.requests): someone applied to host open plays. */
+    public static function organizerRequest(User $applicant): PickleXMail
+    {
+        return new PickleXMail('organizer-request', "New organizer request: {$applicant->club}",
+            "{$applicant->name} wants to host open plays in {$applicant->city}. Review it in PickleX.",
+            ['applicant' => $applicant, 'stats' => new MemberStats($applicant)]);
+    }
+
+    /** Monday recap for a member who played last week (notify.recap). Null when they didn't play. */
+    public static function weeklyRecap(User $user): ?PickleXMail
+    {
+        [$from, $to] = self::lastWeek();
+        $games = DB::table('game_players')->join('games', 'games.id', '=', 'game_players.game_id')
+            ->where('game_players.user_id', $user->id)->whereBetween('games.played_at', [$from, $to])
+            ->get(['game_players.won', 'games.open_play_id']);
+        if ($games->isEmpty()) {
+            return null;
+        }
+
+        $wins = $games->where('won', true)->count();
+        $losses = $games->count() - $wins;
+        $rate = (int) round($wins * 100 / $games->count());
+        $club = MemberStats::homeTable($user);
+        $rank = MemberStats::rankOf($user, null, $club);
+        $was = MemberStats::ranking($user, null, $from->copy()->subSecond(), $club)->firstWhere('me', true)?->rank;
+        $move = match (true) {
+            ! $rank => null,
+            ! $was => "You're on the {$club} table at #{$rank}.",
+            $rank < $was => "You moved up to #{$rank} at {$club}, from #{$was}.",
+            $rank > $was => "You slipped to #{$rank} at {$club}, from #{$was}.",
+            default => "You held #{$rank} at {$club}.",
+        };
+
+        return new PickleXMail('weekly-recap', "Your week on PickleX: {$games->count()} ".Str::plural('game', $games->count()).", {$wins}-{$losses}",
+            "{$rate}% win rate across {$games->unique('open_play_id')->count()} open ".Str::plural('play', $games->unique('open_play_id')->count()).'.'.($move ? " {$move}" : ''), [
+                'user' => $user, 'from' => $from, 'to' => $to, 'games' => $games->count(), 'wins' => $wins, 'losses' => $losses, 'rate' => $rate,
+                'plays' => $games->unique('open_play_id')->count(), 'rank' => $rank, 'move' => $move,
+            ]);
+    }
+
+    /** Monday summary for an organizer whose sessions ran last week (notify.clubRecap). Null when none ran. */
+    public static function clubSummary(User $organizer): ?PickleXMail
+    {
+        [$from, $to] = self::lastWeek();
+        $plays = $organizer->openPlays()->status('done')->whereBetween('started_at', [$from, $to])->withCount('games')->orderBy('starts_at')->get();
+        if ($plays->isEmpty()) {
+            return null;
+        }
+
+        $players = DB::table('game_players')->whereIn('game_id', DB::table('games')->whereIn('open_play_id', $plays->pluck('id'))->select('id'))
+            ->get(['user_id', 'participant_id'])->map(fn ($r) => $r->user_id ? "u{$r->user_id}" : "p{$r->participant_id}")->unique()->count();
+        $counts = DB::table('game_players')->join('games', 'games.id', '=', 'game_players.game_id')->whereIn('games.open_play_id', $plays->pluck('id'))
+            ->selectRaw('games.open_play_id, count(distinct game_players.participant_id) as n')->groupBy('games.open_play_id')->pluck('n', 'open_play_id');
+        $busiest = $plays->sortByDesc(fn ($p) => [$counts[$p->id] ?? 0, $p->games_count])->take(3)->values();
+        $top = $busiest->first();
+        $games = $plays->sum('games_count');
+
+        return new PickleXMail('club-summary', "{$organizer->club} last week: {$plays->count()} ".Str::plural('session', $plays->count()).", {$games} ".Str::plural('game', $games),
+            "{$players} ".Str::plural('player', $players).' came out. Busiest night: '.$top->starts_at->format('D, M j').' with '.($counts[$top->id] ?? 0).' '.Str::plural('player', $counts[$top->id] ?? 0).'.', [
+                'organizer' => $organizer, 'from' => $from, 'to' => $to, 'plays' => $plays, 'games' => $games, 'players' => $players,
+                'busiest' => $busiest, 'counts' => $counts,
+            ]);
+    }
+
+    /** Monday summary for admins (notify.adminRecap): new members, organizers and sessions across PickleX. */
+    public static function platformSummary(User $admin): PickleXMail
+    {
+        [$from, $to] = self::lastWeek();
+        $members = User::where('role', 'member')->whereBetween('created_at', [$from, $to])->count();
+        $pending = User::where('organizer_status', 'pending')->count();
+        $sessions = OpenPlay::whereBetween('started_at', [$from, $to]);
+        $hosts = OpenPlay::whereNotNull('started_at')->groupBy('organizer_id')->havingRaw('min(started_at) between ? and ?', [$from, $to])->pluck('organizer_id')->count();
+        $games = DB::table('games')->whereBetween('played_at', [$from, $to])->count();
+        $count = (clone $sessions)->count();
+
+        return new PickleXMail('platform-summary', "PickleX last week: {$members} new ".Str::plural('member', $members).", {$count} ".Str::plural('session', $count),
+            "{$games} ".Str::plural('game', $games).' logged.'.($pending ? " {$pending} organizer ".Str::plural('request', $pending).' waiting for review.' : ''), [
+                'admin' => $admin, 'from' => $from, 'to' => $to, 'members' => $members, 'pending' => $pending, 'sessions' => $count,
+                'hosts' => $hosts, 'games' => $games, 'clubs' => (clone $sessions)->distinct()->count('club'),
             ]);
     }
 

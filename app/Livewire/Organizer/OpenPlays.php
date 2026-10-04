@@ -10,6 +10,7 @@ use App\Models\Participant;
 use App\Models\User;
 use App\Support\Emails;
 use App\Support\PaidList;
+use App\Support\UpNext;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -677,6 +678,8 @@ class OpenPlays extends Component
             return;
         }
 
+        Emails::notify($play->activeParticipants()->where('user_id', '!=', $play->organizer_id)->with('user')->get()->pluck('user'), 'liveStart', fn (User $u) => Emails::liveStarted($play, $u));
+        UpNext::notify($play);
         session()->flash('toast', "{$play->title} is live. Courts filled from the queue.");
 
         return $this->redirectRoute('organizer.board', navigate: true);

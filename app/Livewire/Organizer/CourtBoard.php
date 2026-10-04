@@ -7,9 +7,11 @@ use App\Models\OpenPlay;
 use App\Models\User;
 use App\Support\AccountMatch;
 use App\Support\Emails;
+use App\Support\UpNext;
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -42,6 +44,9 @@ class CourtBoard extends Component
     /** Up-next queue entry whose sub panel is open. */
     public ?int $subFor = null;
 
+    /** Sub on a live court: ['court' => n, 'out' => participant ids, 'in' => queue entry ids, 'after' => out|back|leave]. */
+    public ?array $csub = null;
+
     /** Big queues: find by name, filter (all|here|away|out), and how many spots show. */
     public string $qq = '';
 
@@ -66,11 +71,11 @@ class CourtBoard extends Component
         return $play;
     }
 
-    /** Run a board write; model rule violations come back as a toast. */
+    /** Run a board write; model rule violations come back as a toast. Then email whoever just became up next. */
     private function attempt(callable $fn): mixed
     {
         try {
-            return $fn();
+            return tap($fn(), fn () => UpNext::notify($this->play()));
         } catch (InvalidArgumentException $e) {
             $this->dispatch('toast', message: $e->getMessage());
 
@@ -193,6 +198,49 @@ class CourtBoard extends Component
             $outNames = $play->names($out['ids']);
             $keeps = $pair ? "{$outNames} keep their spot" : ($play->participant($out['ids'][0])?->firstName() ?? 'Guest').' keeps their spot';
             $this->dispatch('toast', message: $play->names($inPids).(count($inPids) > 1 ? ' sub in for ' : ' subs in for ')."{$outNames} · {$keeps}");
+        }
+    }
+
+    /** Everyone rotates or winners stay, switched mid-session from the Queue panel. */
+    public function setRotation(string $rotation): void
+    {
+        $play = $this->play();
+        if ($play->rotation === $rotation) {
+            return;
+        }
+        $play->setRotation($rotation);
+        $this->dispatch('toast', message: $play->rotationLabel().' from the next game · games on court finish as they are');
+    }
+
+    public function openCourtSub(int $n): void
+    {
+        $this->csub = ['court' => $n, 'out' => [], 'in' => [], 'after' => 'out'];
+    }
+
+    public function pickCourtSub(string $key, array|string $value): void
+    {
+        if ($this->csub && in_array($key, ['out', 'in', 'after'])) {
+            $this->csub = [$key => $value] + ($key === 'out' ? ['in' => []] : []) + $this->csub;
+        }
+    }
+
+    public function courtSub(): void
+    {
+        $play = $this->play();
+        $cs = $this->csub ?? abort(404);
+        $queue = collect($play->queue());
+        $inPids = collect($cs['in'])->flatMap(fn ($id) => $queue->firstWhere('id', $id)['ids'] ?? [])->all();
+
+        if ($this->attempt(fn () => $play->subOnCourt($cs['court'], $cs['out'], $cs['in'], $cs['after'])) !== false) {
+            $this->csub = null;
+            $on = $play->names($inPids);
+            $off = $play->names($cs['out']);
+            $many = count($cs['out']) > 1;
+            $this->dispatch('toast', message: $on.($many ? ' sub in for ' : ' subs in for ')."{$off} on Court {$cs['court']} · ".match ($cs['after']) {
+                'leave' => $off.($many ? ' are' : ' is').' done for the night',
+                'back' => $off.($many ? ' are' : ' is').' back in line',
+                default => "{$off} stepped out",
+            });
         }
     }
 
@@ -412,6 +460,7 @@ class CourtBoard extends Component
             'sa' => $g->score_a,
             'sb' => $g->score_b,
             'aWon' => $g->winner === 'a',
+            'subs' => $g->subs ? 'Sub: '.$this->subLine($play, $g->subs) : null,
         ]);
 
         $busy = $play->busyCourtCount();
@@ -439,6 +488,52 @@ class CourtBoard extends Component
                     ->concat($idle->filter($isPair)->take(3)->map(fn ($e) => ['es' => [$e], 'tag' => 'Locked pair']))
                 : $singles->take(6)->map(fn ($e, $k) => ['es' => [$e], 'tag' => $k ? '' : 'Next in line']);
             $subCands = $subCands->values();
+        }
+
+        // Everyone rotates: why these four (fewest games, new partners) and who waits a turn.
+        $why = null;
+        if ($next['fair'] ?? false) {
+            $sg = $play->fairBook()['sg'];
+            $gs = array_map(fn ($id) => $sg[$id] ?? 0, [...$next['a']['ids'], ...$next['b']['ids']]);
+            $games = min($gs) === max($gs) ? (min($gs) ? min($gs).' '.Str::plural('game', min($gs)).' each tonight' : 'first game tonight') : min($gs).' to '.max($gs).' games tonight';
+            $open = collect([[$next['a'], $next['rep'][0]], [$next['b'], $next['rep'][1]]])->reject(fn ($t) => $t[0]['locked']);
+            $reps = $open->filter(fn ($t) => $t[1] > 0);
+            $passed = $play->passedForNext($next);
+            $why = [
+                'mix' => 'Fewest games first · '.$games.match (true) {
+                    $open->isEmpty() => '',
+                    $reps->isEmpty() => ' · '.($open->count() === 2 ? 'both teams are new partners' : $play->names($open->first()[0]['ids']).' are new partners'),
+                    default => ' · '.$reps->map(fn ($t) => $play->names($t[0]['ids']).' partnered '.($t[1] === 1 ? 'once' : $t[1].' times'))->join(', ').', the fewest repeats possible',
+                },
+                'wait' => $passed ? $play->names($passed).(count($passed) > 1 ? ' wait' : ' waits').' a turn · they have played more games tonight or would repeat a partner' : null,
+            ];
+        }
+
+        // Sub on a live court: who comes off (one player or a whole team), who goes on (checked-in queue, next in line first), and what happens to them.
+        $csubCourt = $this->csub ? collect($courts)->first(fn ($c) => $c['n'] === $this->csub['court'] && $c['a']) : null;
+        $this->csub = $csubCourt ? $this->csub : null;
+        $csub = null;
+        if ($csubCourt) {
+            $outs = $this->csub['out'];
+            $both = count($outs) === 2;
+            $avail = collect($queue)->map(fn ($e, $i) => $e + ['pos' => $i + 1])->filter(fn ($e) => OpenPlay::isAvailable($e, $ready))->values();
+            $singles = $avail->reject($isPair)->values();
+            $cands = match (count($outs)) {
+                1 => $singles->take(6)->map(fn ($e, $k) => ['es' => [$e], 'tag' => $k === 0 ? 'Next in line' : (in_array($e['id'], $group['used'] ?? []) ? 'Up next' : '')]),
+                2 => $singles->chunk(2)->filter(fn ($d) => $d->count() === 2)->take(3)->values()->map(fn ($d, $k) => ['es' => $d->values()->all(), 'tag' => $k ? '' : 'Next two'])
+                    ->concat($avail->filter($isPair)->take(3)->map(fn ($e) => ['es' => [$e], 'tag' => 'Locked pair'])),
+                default => collect(),
+            };
+            $outTeam = $outs ? $csubCourt[in_array($outs[0], $csubCourt['a']['ids']) ? 'a' : 'b'] : null;
+            $chosen = $cands->first(fn ($c) => collect($c['es'])->pluck('id')->all() == $this->csub['in']);
+            $off = $both ? $play->names($outs) : ($outs ? $play->participant($outs[0])?->firstName() : null);
+            $csub = [
+                'court' => $csubCourt,
+                'cands' => $cands->values(),
+                'lockNote' => count($outs) === 1 && $outTeam['locked'] ? 'Subbing one partner unlocks '.$play->names($outTeam['ids']).' for the rest of the night.' : null,
+                'off' => $off,
+                'go' => $chosen ? $play->names(collect($chosen['es'])->flatMap(fn ($e) => $e['ids'])->all()).($both ? ' go on' : ' goes on').' for '.$off : null,
+            ];
         }
 
         // The queue list: filter and page it so big nights (100+) stay usable.
@@ -506,6 +601,9 @@ class CourtBoard extends Component
                 'rest' => max(0, $hits->count() - $qShow),
                 'shown' => min($qShow, $hits->count()),
             ],
+            'why' => $why,
+            'subDialog' => $csub,
+            'courtSubs' => collect($courts)->mapWithKeys(fn ($c) => [$c['n'] => ($c['subs'] ?? null) ? $this->subLine($play, $c['subs']).' · '.(($s = now()->timestamp - end($c['subs'])['at']) < 60 ? 'just now' : ago($s).' ago') : null]),
             'subOut' => $subOut,
             'subCands' => $subCands,
             'canAddMe' => $user->isMember() && ! $play->participantMap()->only($sessionIds)->contains('user_id', $user->id),
@@ -527,6 +625,14 @@ class CourtBoard extends Component
             'standingsPage' => $this->pageOf($standings, 10, 'standingsPage'),
             'podNew' => $this->podNew,
         ]);
+    }
+
+    /** "Ben in for Mika · Ana in for Rico". */
+    private function subLine(OpenPlay $play, array $subs): string
+    {
+        $first = fn ($id) => $play->participant($id)?->firstName() ?? 'Guest';
+
+        return collect($subs)->map(fn ($s) => $first($s['in']).' in for '.$first($s['out']))->join(' · ');
     }
 
     /** QR modules as '1'/'0' strings (no quiet zone) for the downloadable poster, drawn on a canvas in resources/js/share-poster.js. */

@@ -68,7 +68,7 @@ class User extends Authenticatable implements HasPasskeys
     public const DEFAULT_PREFERENCES = [
         'notify' => [
             'upNext' => true, 'liveStart' => true, 'newPlays' => true, 'sessionRecap' => true, 'recap' => false,
-            'joins' => true, 'courtIdle' => true, 'reminder' => true, 'clubRecap' => false,
+            'joins' => true, 'payClaims' => true, 'reminder' => true, 'clubRecap' => false,
             'requests' => true, 'adminRecap' => false,
         ],
         'privacy' => ['ranked' => true, 'statsPublic' => true],
@@ -128,15 +128,15 @@ class User extends Authenticatable implements HasPasskeys
         'noshow' => ['No-shows', "Joins open plays and doesn't turn up", 'repeated no-shows', 'e.g. You missed 3 of your last 4 open plays without leaving them first.',
             'Repeated no-shows at open plays you joined', 'Organizers hold a spot for every player who joins, so missing several in a row keeps others off the courts.'],
         'unpaid' => ['Unpaid fees', 'Owes organizers for open plays', 'unpaid open play fees', 'e.g. You still owe ₱360 for three Friday Socials. Settle it with the organizer.',
-            'Unpaid open play fees', 'Organizers pay for the courts up front, so open plays only work when every player settles their fee.'],
+            'Unpaid open play fees', 'Organizers pay for the courts up front, so fees for the open plays you join need to be settled.'],
         'conduct' => ['Unsportsmanlike conduct', 'Abuse, threats or harassment', 'unsportsmanlike conduct', "e.g. Two players reported you shouting at them during Sunday's open play.",
             'Unsportsmanlike conduct', "Abuse, threats or harassment of players or organizers aren't allowed at open plays on PickleX."],
         'fake' => ['Fake or duplicate account', 'Not a real person, or a second account', 'a fake or duplicate account', 'e.g. This is a second account. Please use the one you joined with first.',
-            'A fake or duplicate account', 'Every player gets one account, so the queue, stats and rankings stay fair for everyone.'],
+            'Fake or duplicate account', 'Each player gets one account in their own name, so queues, rankings and payments stay fair.'],
         'spam' => ['Spam or scams', 'Selling, scams or spam in open plays', 'spam or scams', 'e.g. You posted paddle sale links in three open plays.',
-            'Spam or scams', "Selling, scams and spam aren't allowed in open plays or anywhere else on PickleX."],
+            'Spam or scams', "Selling, scams and spam aren't allowed on PickleX: not in display names, open plays or anywhere else."],
         'other' => ['Something else', 'Explain it in the note', 'breaking the community guidelines', 'Say what happened and what they can do next.',
-            'Breaking the community guidelines', "The admin's note below explains what happened."],
+            'Breaking the community guidelines', "This one doesn't fit a usual reason, so the admin explains it below."],
     ];
 
     /** A timed suspension stops counting once its end date passes, even before users:lift-suspensions clears it. */
@@ -157,13 +157,16 @@ class User extends Authenticatable implements HasPasskeys
         return self::SUSPENSION_REASONS[$this->suspension_reason] ?? self::SUSPENSION_REASONS['other'];
     }
 
-    /** $days: 7 or 30, or null until an admin restores it. Lifts on its own at the start of the end day. */
+    /**
+     * $days: 7 or 30, or null until an admin restores it. Lifts on its own at the start of the end day.
+     * Spam often lives in the display name, so a spam suspension turns it off (others see the full name).
+     */
     public function suspend(string $reason, ?int $days, ?string $note, User $by): void
     {
         $this->forceFill([
             'suspended_at' => now(), 'suspension_reason' => $reason, 'suspension_note' => $note ?: null,
             'suspended_until' => $days ? today()->addDays($days) : null, 'suspended_by' => $by->id,
-        ])->save();
+        ] + ($reason === 'spam' ? ['show_display_name' => false] : []))->save();
         $this->signOutEverywhere();
         $this->releaseUpcomingSpots();
     }

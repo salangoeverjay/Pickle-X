@@ -304,7 +304,7 @@
                             <div class="flex items-center gap-1.5">
                                 <button type="button" x-on:click="nudge(-5)" aria-label="5 minutes earlier" class="flex h-13 w-11 shrink-0 cursor-pointer items-center justify-center rounded-[14px] border-[1.5px] border-line bg-surface2 text-ink transition hover:brightness-96 active:scale-97"><x-icon name="minus" :size="18" /></button>
                                 <input id="c-time-in" type="text" autocomplete="off" spellcheck="false" aria-describedby="c-time-hint" :value="typed ?? fmtTime(cur)" x-on:input="typed = $event.target.value; typedErr = ''" x-on:blur="commit()" x-on:keydown.enter.prevent="commit()"
-                                       x-bind:aria-invalid="!!typedErr" :class="typedErr ? 'border-hot' : 'border-ink'" class="h-13 min-w-0 flex-1 rounded-[14px] border-[1.5px] bg-bg px-2 text-center font-mono text-lg font-semibold text-ink outline-none">
+                                       x-bind:aria-invalid="!!typedErr" :class="typedErr ? 'border-hot' : 'border-ink'" class="field-lg h-13 min-w-0 flex-1 rounded-[14px] border-[1.5px] bg-bg px-2 text-center font-mono text-lg font-semibold text-ink outline-none">
                                 <button type="button" x-on:click="nudge(5)" aria-label="5 minutes later" class="flex h-13 w-11 shrink-0 cursor-pointer items-center justify-center rounded-[14px] border-[1.5px] border-line bg-surface2 text-ink transition hover:brightness-96 active:scale-97"><x-icon name="plus" :size="18" /></button>
                                 <div role="radiogroup" aria-label="AM or PM" class="flex shrink-0 gap-1 rounded-[14px] border-[1.5px] border-line bg-surface2 p-1">
                                     @foreach (['AM' => 'false', 'PM' => 'true'] as $label => $isPm)
@@ -363,7 +363,7 @@
                 </div>
 
                 <x-segmented label="Race to" model="raceTo" :options="[11 => '11', 15 => '15', 21 => '21']" />
-                <x-segmented label="Rotation" model="rotation" :options="['rotate' => 'Everyone rotates', 'winners' => 'Winners stay (2 max)']" />
+                <x-segmented label="Rotation" model="rotation" :options="['rotate' => 'Everyone rotates', 'winners' => 'Winners stay (2 max)']" :hints="['rotate' => 'Fewest games tonight play first, and partners mix so everyone plays with someone new each game. You can switch modes during the open play.', 'winners' => 'Winners stay on for up to 2 games in a row; challengers come from the front of the line.']" />
                 <x-segmented label="Who can join" model="visibility" :options="['public' => 'Any member', 'invite' => 'Invite only']" />
 
                 <div class="flex flex-col gap-2">

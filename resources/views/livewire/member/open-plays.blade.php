@@ -54,6 +54,22 @@
                         @endswitch
                     </p>
 
+                    @if ($mates = $my['mates'])
+                        @php($uniq = array_values(array_unique($mates)))
+                        <div class="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-2">
+                            <span class="font-mono text-[11px] tracking-widest text-ink3 uppercase">Partners tonight{{ $my['others'] ? ' · '.count($uniq).' of '.$my['others'].' players' : '' }}</span>
+                            <span class="flex">
+                                @foreach (array_slice($uniq, -8) as $id)
+                                    @php($mp = $play->participant($id))
+                                    <x-avatar :src="$mp?->avatarUrl()" :frame="$mp?->frameClass()" :name="$mp?->name ?? '?'" :color="$mp?->user ? $mp->color() : '#E6E3D6'" title="{{ $mp?->name }}" class="-mr-1.5 size-7.5 border-2 border-surface text-[10px]" />
+                                @endforeach
+                            </span>
+                            <span class="basis-full text-[13px] leading-[1.4] text-ink2">
+                                {{ count($uniq) }} different {{ Str::plural('partner', count($uniq)) }} in {{ count($mates) }} {{ Str::plural('game', count($mates)) }} · {{ count($uniq) === count($mates) ? 'everyone rotates, so you keep meeting new partners' : 'repeats only when the line is short' }}
+                            </span>
+                        </div>
+                    @endif
+
                     @if ($s['state'] === 'queued' && $s['checked_in_at'])
                         <div aria-hidden="true" class="mt-0.5 flex flex-wrap items-center gap-1.5">
                             @for ($i = 0; $i < min($s['ahead'], 16); $i++)
