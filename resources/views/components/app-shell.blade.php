@@ -80,6 +80,11 @@
 
         <div class="flex-1"></div>
 
+        <button type="button" x-on:click="$dispatch('open-coffee')" aria-haspopup="dialog"
+                class="flex h-12 cursor-pointer items-center gap-3 rounded-[14px] px-3 text-left text-sm font-semibold text-ink2 transition hover:bg-surface2 active:scale-97">
+            <x-icon name="coffee" :stroke="1.9" /><span class="flex-1">Buy me a coffee</span><span class="inline-flex h-5.5 items-center rounded-full border border-line bg-surface2 px-2 font-mono text-xs font-semibold tracking-[.04em] whitespace-nowrap text-ink2">QR Ph</span>
+        </button>
+
         <button type="button" onclick="setTheme()" x-data="{ dark: document.documentElement.dataset.theme === 'dark' }" x-on:click="dark = ! dark" role="switch" x-bind:aria-checked="dark" aria-label="Dark mode"
                 class="flex h-12 cursor-pointer items-center gap-3 rounded-[14px] px-3 text-left text-sm font-semibold text-ink2 transition hover:bg-surface2">
             <x-icon name="moon" class="dark:hidden" /><x-icon name="sun" class="hidden dark:block" />
@@ -150,6 +155,9 @@
             @endif
             <a href="{{ route('settings') }}" wire:navigate class="flex h-11 items-center gap-2.5 rounded-xl px-2.5 text-sm font-bold text-ink transition hover:bg-surface2"><x-icon name="settings" />Account settings</a>
             <a href="{{ route('about') }}" wire:navigate class="flex h-11 items-center gap-2.5 rounded-xl px-2.5 text-sm font-bold text-ink transition hover:bg-surface2"><x-icon name="love" />Meet the developer</a>
+            <button type="button" x-on:click="open = false; $dispatch('open-coffee')" aria-haspopup="dialog" class="flex h-11 cursor-pointer items-center gap-2.5 rounded-xl px-2.5 text-left text-sm font-bold text-ink transition hover:bg-surface2">
+                <x-icon name="coffee" :size="18" :stroke="1.8" /><span class="flex-1">Buy me a coffee</span><span class="inline-flex h-5.5 items-center rounded-full border border-line bg-surface2 px-2 font-mono text-xs font-semibold tracking-[.04em] whitespace-nowrap text-ink2">QR Ph</span>
+            </button>
             <form method="POST" action="{{ route('logout') }}" x-data x-on:submit="$dispatch('px-loading', { kind: 'logout', first: @js($user->firstName()) })">
                 @csrf
                 <button type="submit" class="flex h-11 w-full cursor-pointer items-center gap-2.5 rounded-xl bg-surface2 px-2.5 text-sm font-bold text-ink"><x-icon name="logout" />Log out</button>
@@ -181,5 +189,6 @@
         </nav>
     @endif
 
+    <x-coffee />
     <x-toast />
 </div>

@@ -21,4 +21,13 @@ class AboutTest extends TestCase
         $this->get(route('home'))->assertSee(route('about'))->assertSee('Made with');
         $this->actingAs(User::factory()->create())->get(route('member.dashboard'))->assertSee('Meet the developer');
     }
+
+    public function test_buy_me_a_coffee_shows_the_qr_ph_code(): void
+    {
+        $this->actingAs(User::factory()->create())->get(route('member.dashboard'))->assertOk()
+            ->assertSee('Buy me a coffee')->assertSee('QR Ph · InstaPay')->assertSee('/images/coffee-qr.svg')
+            ->assertSee('Tips go to the PickleX developer, not to a club or organizer.');
+        $this->assertFileExists(public_path('images/coffee-qr.svg'));
+        $this->assertFileExists(public_path('images/jayvee-salango-qr-ph.png'));
+    }
 }
