@@ -4,6 +4,8 @@
 @php($left = max(0, $play->cap - $c['all']))
 @php($peso = fn ($n) => '₱'.number_format(round($n)))
 @php($pad = 'px-3.5 lg:px-4.5')
+{{-- Co-hosts see the list; the host marks payments and edits. --}}
+@php($owner = $play->organizer_id === auth()->id())
 <div wire:key="roster-{{ $play->id }}" x-data x-on:keydown.escape.window="$wire.closeRoster()" class="fixed inset-0 z-66 flex items-end justify-center lg:items-center lg:p-6">
     <button type="button" wire:click="closeRoster" aria-label="Close player list" class="absolute inset-0 animate-fade cursor-pointer bg-[rgba(18,23,15,.45)] dark:bg-black/62"></button>
 
@@ -85,7 +87,7 @@
                                         @endif
                                     </span>
                                     <span class="text-xs leading-[1.35] text-ink3">
-                                        {{ $r['guest'] ? ($p->via_link ? 'Guest · joined through your share link'.($p->email ? ' · '.$p->email : '') : 'Guest · no PickleX account · from your paid list') : ($p->user->usesDisplayName() ? $p->user->name.' · ' : '').($p->from_list ? 'Added from your paid list · '.$p->created_at->format('M j') : 'Joined in the app · '.$p->created_at->format('M j, g:i A')) }}
+                                        {{ $r['guest'] ? ($p->via_link ? 'Guest · joined with your share link'.($p->email ? ' · '.$p->email : '') : 'Guest · no PickleX account · from your paid list') : ($p->user->usesDisplayName() ? $p->user->name.' · ' : '').($p->from_list ? 'Added from your paid list · '.$p->created_at->format('M j') : 'Joined in the app · '.$p->created_at->format('M j, g:i A')) }}
                                     </span>
                                     @if ($r['sent'])
                                         <span class="flex items-center gap-1.25 text-xs font-bold text-ink"><x-icon name="clock" :size="14" />Says they sent {{ $play->fee }} · check your {{ $roster['account'] }}</span>
@@ -98,7 +100,7 @@
                                     @endif
                                 </div>
                                 <span class="hidden w-57.5 shrink-0 truncate font-mono text-xs text-ink2 lg:block">{{ $r['guest'] ? 'No account' : $p->user->email }}</span>
-                                @unless ($roster['free'])
+                                @if (! $roster['free'] && $owner)
                                     <div class="ml-20 flex w-[calc(100%-80px)] shrink-0 items-center gap-1.5 lg:ml-0 lg:w-37.5 lg:justify-end">
                                         <div role="group" aria-label="Payment" class="inline-flex gap-0.5 rounded-full border border-line2 bg-bg p-0.75">
                                             <button type="button" wire:click="setPaid({{ $p->id }}, false)" aria-pressed="{{ $r['paid'] ? 'false' : 'true' }}" aria-label="Not paid: {{ $p->name }}"
@@ -112,7 +114,7 @@
                                             </button>
                                         </div>
                                     </div>
-                                @endunless
+                                @endif
                             </div>
                         @endforeach
                     </div>
@@ -128,9 +130,11 @@
         </div>
 
         <div class="flex shrink-0 gap-2.5 border-t border-line bg-bg px-6 pt-3.5 pb-4.5">
+            @if ($owner)
             <button type="button" wire:click="rosterEdit" class="inline-flex h-12.5 cursor-pointer items-center justify-center gap-2 rounded-full border-[1.5px] border-line2 bg-transparent px-5 text-[15px] font-bold text-ink transition hover:brightness-96 active:scale-97">
                 <x-icon name="edit" :size="17" />Edit open play
             </button>
+            @endif
             <button type="button" wire:click="closeRoster" class="h-12.5 flex-1 cursor-pointer rounded-full bg-ink text-[15px] font-bold text-bg transition hover:brightness-96 active:scale-97">Done</button>
         </div>
     </div>

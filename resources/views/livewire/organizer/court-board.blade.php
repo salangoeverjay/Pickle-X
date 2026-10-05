@@ -13,8 +13,8 @@
             <div class="flex flex-col items-start gap-3.5 rounded-[28px] border-[1.5px] border-dashed border-line2 bg-surface p-8">
                 <span class="flex size-14 items-center justify-center rounded-[18px] bg-surface2"><x-icon name="court" :size="26" :stroke="1.9" /></span>
                 <h1 class="m-0 font-display text-[32px] leading-none font-extrabold tracking-[-0.04em] lg:text-[44px]">No live session</h1>
-                <p class="m-0 text-ink2">{{ auth()->user()->openPlays()->exists() ? 'Start one from your open plays when players arrive, and the court board opens here.' : 'Your first live session opens here. Create an open play, then start it on the day when players arrive.' }}</p>
-                <a href="{{ route('organizer.plays') }}" wire:navigate class="inline-flex h-12 items-center rounded-full bg-ink px-5 font-bold text-bg transition hover:brightness-96 active:scale-97">Go to open plays</a>
+                <p class="m-0 text-ink2">{{ ! auth()->user()->isOrganizer() || session('mode') === 'member' ? 'The court board opens here when an open play you co-host is live.' : (auth()->user()->openPlays()->exists() ? 'Start one from your open plays when players arrive, and the court board opens here.' : 'Your first live session opens here. Create an open play, then start it on the day when players arrive.') }}</p>
+                <a href="{{ route(auth()->user()->mode() === 'organizer' ? 'organizer.plays' : 'member.plays') }}" wire:navigate class="inline-flex h-12 items-center rounded-full bg-ink px-5 font-bold text-bg transition hover:brightness-96 active:scale-97">Go to open plays</a>
             </div>
         @else
             {{-- Header --}}
@@ -319,13 +319,13 @@
                                         <span class="text-[13px] font-semibold text-hot">No checked-in players are free to sub in right now.</span>
                                     @endif
                                     @if ($outPair)
-                                        <div class="flex flex-wrap items-center gap-1.5 border-t border-line pt-2.5">
-                                            <span class="text-xs font-semibold text-ink2">Only one of them leaving?</span>
+                                        <div class="grid grid-cols-2 gap-1.5 border-t border-line pt-2.5">
+                                            <span class="col-span-2 text-xs font-semibold text-ink2">Only one of them leaving?</span>
                                             @foreach ($subOut['ids'] as $id)
                                                 @php($of = $play->participant($id)?->firstName() ?? 'Guest')
                                                 <button type="button" wire:click="subOne({{ $subOut['id'] }}, {{ $id }})" aria-label="Unlock the pair and sub out only {{ $of }}"
-                                                        class="inline-flex h-8.5 cursor-pointer items-center gap-1.25 rounded-full border-[1.5px] border-line2 px-2.75 text-xs font-bold text-ink transition hover:brightness-96 active:scale-97">
-                                                    <x-icon name="unlock" :size="13" :stroke="2.2" /><span>Only {{ $of }}</span>
+                                                        class="inline-flex h-8.5 min-w-0 cursor-pointer items-center justify-center gap-1.25 rounded-full border-[1.5px] border-line2 px-2.75 text-xs font-bold text-ink transition hover:brightness-96 active:scale-97">
+                                                    <x-icon name="unlock" :size="13" :stroke="2.2" class="shrink-0" /><span class="truncate">Only {{ $of }}</span>
                                                 </button>
                                             @endforeach
                                         </div>

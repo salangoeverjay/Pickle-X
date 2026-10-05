@@ -65,10 +65,17 @@ class CourtBoard extends Component
     /** Participant ids that just moved onto the podium (animated once). */
     protected array $podNew = [];
 
-    /** The organizer's live session. Querying through their own plays is the authorization. */
+    /** Organizers, and members who co-host an open play that hasn't ended (they run it from player mode). */
+    public function mount(): void
+    {
+        $user = auth()->user();
+        abort_unless($user->isOrganizer() || OpenPlay::where('status', '!=', 'done')->whereHas('cohosts', fn ($q) => $q->whereKey($user->id))->exists(), 403);
+    }
+
+    /** The live session this account hosts or co-hosts. Querying through the plays they run is the authorization. */
     private function play(): OpenPlay
     {
-        $play = auth()->user()->openPlays()->status('live')->first();
+        $play = OpenPlay::runBy(auth()->user())->status('live')->with('organizer', 'starter')->first();
         abort_unless($play, 403);
 
         return $play;
@@ -518,7 +525,7 @@ class CourtBoard extends Component
 
     public function render()
     {
-        $play = auth()->user()->openPlays()->status('live')->first();
+        $play = OpenPlay::runBy(auth()->user())->status('live')->with('organizer', 'starter')->first();
 
         // Still live 12 hours after its end time (no scheduler run yet): end it now, as the scheduler would.
         if ($play && now()->gte($play->autoEndAt())) {
@@ -679,7 +686,11 @@ class CourtBoard extends Component
             'here' => count(array_intersect($sessionIds, $ready)),
             'total' => count($sessionIds),
             'running' => $started,
-            'started' => $started === 'just now' ? 'Started just now' : "Started {$started} ago",
+            'started' => ($started === 'just now' ? 'Started just now' : "Started {$started} ago").match (true) {
+                $play->organizer_id !== $user->id => ' · co-hosting for '.$play->organizer->name,
+                $play->starter && ! $play->starter->is($user) => ' by '.$play->starter->name.' (co-host)',
+                default => '',
+            },
             'queueRows' => $hits->take($qShow),
             'qt' => [
                 'big' => count($queue) > 8,

@@ -41,7 +41,7 @@
             <div wire:key="live-{{ $play->id }}" class="relative grid animate-fade items-center gap-5.5 overflow-hidden rounded-[28px] bg-court p-5.5 text-white lg:grid-cols-2 lg:pt-7 lg:pr-7 lg:pb-7 lg:pl-8">
                 <div class="relative flex flex-col gap-3.5">
                     <span class="inline-flex h-7 items-center gap-2 self-start rounded-full bg-black/25 px-2.75 font-mono text-[11px] tracking-widest">
-                        <span class="size-1.75 animate-live rounded-full bg-lime"></span>LIVE NOW · {{ ago((int) $play->started_at?->diffInSeconds(now())) }}
+                        <span class="size-1.75 animate-live rounded-full bg-lime"></span>LIVE NOW · {{ ago((int) $play->started_at?->diffInSeconds(now())) }}{{ $play->starter && ! $play->starter->is(auth()->user()) ? ' · started by '.$play->starter->firstName() : '' }}
                     </span>
                     <h2 class="m-0 font-display text-[32px] leading-none font-extrabold tracking-[-0.04em] lg:text-[44px]">{{ $play->title }}</h2>
                     <span class="text-sm text-white/90">{{ $play->venue }} · {{ $play->timeRange() }}</span>
@@ -70,6 +70,7 @@
                 <h2 class="m-0 font-display text-[22px] font-bold tracking-[-0.02em]">Upcoming</h2>
                 @forelse ($upcoming as $play)
                     @php($today = $play->starts_at->isToday())
+                    @php($mine = $play->organizer_id === auth()->id())
                     <div wire:key="up-{{ $play->id }}" class="flex flex-col gap-4.5 rounded-3xl border border-line bg-surface p-4.5 transition duration-300 hover:-translate-y-1 hover:shadow-card lg:px-6 lg:py-5.5">
                         <div class="flex items-center gap-3.5 lg:gap-5">
                             <div class="flex h-16.5 w-14.5 shrink-0 flex-col items-center justify-center gap-0.75 rounded-[18px] border border-line bg-surface2 lg:h-20 lg:w-18">
@@ -88,8 +89,10 @@
                                         class="inline-flex h-11.5 cursor-pointer items-center gap-2 rounded-full border-[1.5px] border-line2 bg-transparent px-4.5 text-sm font-bold text-ink transition hover:brightness-96 active:scale-97">
                                     <x-icon name="link" :size="16" />Share link
                                 </button>
+                                @if ($mine)
                                 <button type="button" wire:click="edit({{ $play->id }})" aria-label="Edit {{ $play->title }}" class="inline-flex h-11.5 cursor-pointer items-center gap-2 rounded-full border-[1.5px] border-line2 bg-transparent px-4.5 text-sm font-bold text-ink transition hover:brightness-96 active:scale-97"><x-icon name="edit" :size="17" />Edit</button>
                                 <button type="button" wire:click="askDelete({{ $play->id }})" aria-label="Delete {{ $play->title }}" title="Delete" class="flex size-11.5 cursor-pointer items-center justify-center rounded-full border-[1.5px] border-hot-line bg-transparent text-hot transition hover:brightness-96 active:scale-97"><x-icon name="trash" :size="18" /></button>
+                                @endif
                                 <button type="button" wire:click="startSession({{ $play->id }})" class="inline-flex h-11.5 cursor-pointer items-center gap-2 rounded-full bg-ink px-5 text-sm font-bold text-bg transition hover:brightness-96 active:scale-97">
                                     <x-icon name="court" :size="16" />Start session
                                 </button>
@@ -102,8 +105,13 @@
                                 </div>
                                 <span class="shrink-0 font-mono text-xs text-ink3">{{ $play->playerCount() }}/{{ $play->cap }} joined</span>
                             </div>
-                            @if ($play->paid_count || $play->hasPaymentQr() || $play->visibility === 'invite')
+                            @if ($play->paid_count || $play->hasPaymentQr() || $play->visibility === 'invite' || ! $mine)
                                 <div class="flex flex-wrap gap-2">
+                                    @unless ($mine)
+                                        <span class="inline-flex h-6.5 items-center gap-1.5 rounded-full border border-line bg-surface2 pr-2.5 pl-0.75 text-xs font-bold text-ink2">
+                                            <x-avatar :src="$play->organizer?->avatarUrl()" :name="$play->organizer?->name ?? '?'" :color="$play->organizer?->color() ?? '#E6E3D6'" class="size-5 text-[9px]" />Co-hosting · hosted by {{ $play->organizer?->shownName() }}
+                                        </span>
+                                    @endunless
                                     @if ($play->visibility === 'invite')
                                         <span class="inline-flex h-6.5 items-center gap-1.5 rounded-full bg-ink px-2.5 text-xs font-bold text-bg"><x-icon name="lock" :size="13" :stroke="2.2" />Invite only · link</span>
                                     @endif
@@ -136,14 +144,33 @@
                                 <span class="ml-1.5 flex-1 text-left text-sm font-bold whitespace-nowrap">{{ $n ? "See who's in" : 'No one yet' }}</span>
                                 <x-icon name="chevron-right" :size="18" />
                             </button>
+                            @if ($mine)
+                                @php($cos = $play->cohosts)
+                                <button type="button" wire:click="openCohosts({{ $play->id }})" aria-haspopup="dialog" aria-label="Co-hosts for {{ $play->title }}: {{ $cos->isNotEmpty() ? $cos->pluck('name')->join(', ') : 'none yet' }}"
+                                        class="inline-flex min-h-11.5 cursor-pointer items-center gap-2.5 self-stretch rounded-full border-[1.5px] border-dashed border-line2 bg-transparent py-1.25 pr-4 pl-1.5 text-ink transition hover:brightness-96 active:scale-97 lg:self-start">
+                                    @if ($cos->isNotEmpty())
+                                        <span aria-hidden="true" class="flex pr-0.5">
+                                            @foreach ($cos as $co)
+                                                <x-avatar :src="$co->avatarUrl()" :frame="$co->frameClass()" :name="$co->name" :color="$co->color()" class="-mr-2.25 size-8.5 border-2 border-bg text-[11px]" />
+                                            @endforeach
+                                        </span>
+                                    @else
+                                        <span aria-hidden="true" class="flex size-8.5 items-center justify-center rounded-full bg-surface2"><x-icon name="plus" :size="15" :stroke="2.4" /></span>
+                                    @endif
+                                    <span class="ml-1.5 min-w-0 flex-1 truncate text-left text-sm font-bold">{{ $cos->isNotEmpty() ? Str::plural('Co-host', $cos->count()).' · '.$cos->pluck('name')->join(', ') : 'Add a co-host' }}</span>
+                                    <x-icon name="chevron-right" :size="16" :stroke="2.2" class="shrink-0" />
+                                </button>
+                            @endif
                         </div>
                         <div class="flex items-center gap-2 lg:hidden">
                             <button type="button" wire:click="startSession({{ $play->id }})" class="flex h-12 min-w-0 flex-1 cursor-pointer items-center justify-center gap-2 rounded-full bg-ink px-4 text-[15px] font-bold text-bg transition hover:brightness-96 active:scale-97">
                                 <x-icon name="court" :size="16" />Start session
                             </button>
                             <button type="button" wire:click="openShare({{ $play->id }})" aria-label="Share a link to {{ $play->title }}" aria-haspopup="dialog" title="Share link" class="flex size-12 shrink-0 cursor-pointer items-center justify-center rounded-full border-[1.5px] border-line2 bg-transparent text-ink transition hover:brightness-96 active:scale-97"><x-icon name="link" :size="17" /></button>
+                            @if ($mine)
                             <button type="button" wire:click="edit({{ $play->id }})" aria-label="Edit {{ $play->title }}" title="Edit" class="flex size-12 shrink-0 cursor-pointer items-center justify-center rounded-full border-[1.5px] border-line2 bg-transparent text-ink transition hover:brightness-96 active:scale-97"><x-icon name="edit" :size="17" /></button>
                             <button type="button" wire:click="askDelete({{ $play->id }})" aria-label="Delete {{ $play->title }}" title="Delete" class="flex size-12 shrink-0 cursor-pointer items-center justify-center rounded-full border-[1.5px] border-hot-line bg-transparent text-hot transition hover:brightness-96 active:scale-97"><x-icon name="trash" :size="18" /></button>
+                            @endif
                         </div>
                     </div>
                 @empty
@@ -540,7 +567,11 @@
     </div>
 
     @if ($sharePlay)
-        @include('livewire.partials.share-link', ['manage' => true])
+        @include('livewire.partials.share-link', ['manage' => $sharePlay->organizer_id === auth()->id()])
+    @endif
+
+    @if ($cohosts)
+        @include('livewire.organizer.partials.cohosts')
     @endif
 
     @if ($roster)

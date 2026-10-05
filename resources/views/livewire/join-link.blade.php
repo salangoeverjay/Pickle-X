@@ -37,7 +37,7 @@
                             @if ($invite)
                                 <x-icon name="lock" :size="13" :stroke="2.2" />
                             @endif
-                            {{ $state === 'mine' ? ($invite ? 'Invite only · link' : 'Open to everyone') : ($invite ? "Invite only · you're invited" : 'Open play · anyone can join') }}
+                            {{ $state === 'mine' && $play->organizer_id === $user?->id ? ($invite ? 'Invite only · link' : 'Open to everyone') : ($invite ? "Invite only · you're invited" : 'Open play · anyone can join') }}
                         </span>
                         <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">{{ $play->club }}</span>
                     </div>
@@ -178,12 +178,19 @@
                             @break
 
                         @case('mine')
+                            @php($own = $play->organizer_id === $user->id)
                             <span aria-hidden="true" class="flex size-13 items-center justify-center rounded-2xl bg-surface2"><x-icon name="link" :size="24" /></span>
                             <div class="flex flex-col gap-1.5">
-                                <h2 class="m-0 font-display text-[28px] leading-[1.05] font-extrabold tracking-[-0.03em]">This is your open play</h2>
-                                <p class="m-0 text-[15px] leading-normal text-ink2">People who open this link see these details. They can join as a guest{{ $play->link_guests ? '' : ' (off right now)' }}, create an account, or log in, and anyone already logged in is added straight away.</p>
+                                <h2 class="m-0 font-display text-[28px] leading-[1.05] font-extrabold tracking-[-0.03em]">{{ $own ? 'This is your open play' : "You're co-hosting this" }}</h2>
+                                <p class="m-0 text-[15px] leading-normal text-ink2">{{ $own ? '' : 'You can start it and run the court board with '.($host?->firstName() ?? 'the host').'. ' }}People who open this link see these details. They can join as a guest{{ $play->link_guests ? '' : ' (off right now)' }}, create an account, or log in, and anyone already logged in is added straight away.</p>
                             </div>
-                            <a href="{{ route('organizer.plays', ['share' => $play->id]) }}" wire:navigate class="inline-flex h-13 items-center justify-center gap-2 self-start rounded-full bg-ink px-5.5 text-[15px] font-extrabold text-bg transition hover:brightness-96 active:scale-97"><x-icon name="link" :size="17" />Back to open plays</a>
+                            <div class="flex flex-wrap gap-2.5">
+                                @if (! $own && $left)
+                                    <button type="button" wire:click="join" class="inline-flex h-13 cursor-pointer items-center justify-center rounded-full border-2 border-cta-border bg-lime px-5.5 text-[15px] font-extrabold text-on-lime shadow-cta transition hover:brightness-96 active:scale-97">Join as a player too</button>
+                                @endif
+                                <a href="{{ route($user->mode() === 'organizer' ? 'organizer.plays' : 'member.plays', ['share' => $play->id]) }}" wire:navigate class="inline-flex h-13 items-center justify-center gap-2 rounded-full bg-ink px-5.5 text-[15px] font-extrabold text-bg transition hover:brightness-96 active:scale-97"><x-icon name="link" :size="17" />Share link</a>
+                                <a href="{{ route($user->mode() === 'organizer' ? 'organizer.plays' : 'member.plays') }}" wire:navigate class="inline-flex h-13 items-center justify-center rounded-full border-[1.5px] border-line2 px-5 text-[15px] font-bold text-ink transition hover:brightness-96 active:scale-97">Back to open plays</a>
+                            </div>
                             @break
 
                         @default

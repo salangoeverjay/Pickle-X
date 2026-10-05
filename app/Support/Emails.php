@@ -217,6 +217,18 @@ class Emails
             fromName: "{$play->club} via PickleX");
     }
 
+    /** $user was added as (or removed from being) a co-host of $play. */
+    public static function cohost(OpenPlay $play, User $user, bool $added): PickleXMail
+    {
+        $host = $play->organizer;
+
+        return $added
+            ? new PickleXMail('cohost', "You're co-hosting {$play->title}", "{$host->name} added you. You can start it on {$play->starts_at->format('D, M j')} and run the court board.",
+                ['play' => $play, 'user' => $user, 'host' => $host, 'added' => true])
+            : new PickleXMail('cohost', "You're no longer co-hosting {$play->title}", "{$host->name} removed you as a co-host.",
+                ['play' => $play, 'user' => $user, 'host' => $host, 'added' => false, 'joined' => $play->activeParticipants()->where('user_id', $user->id)->exists()]);
+    }
+
     public static function playerJoined(OpenPlay $play, User $player): PickleXMail
     {
         $count = $play->playerCount();

@@ -3,6 +3,7 @@
 namespace App\Livewire\Organizer;
 
 use App\Livewire\Concerns\Pages;
+use App\Livewire\Concerns\StartsSessions;
 use App\Models\Game;
 use App\Models\GamePlayer;
 use App\Models\OpenPlay;
@@ -10,12 +11,10 @@ use App\Models\Participant;
 use App\Models\User;
 use App\Support\Emails;
 use App\Support\PaidList;
-use App\Support\UpNext;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use InvalidArgumentException;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
@@ -24,7 +23,7 @@ use Livewire\Component;
 #[Title('Your open plays · PickleX')]
 class OpenPlays extends Component
 {
-    use Pages;
+    use Pages, StartsSessions;
 
     // Create dialog; ?create=1 opens it (sidebar "Create open play" link).
     #[Url(except: false)]
@@ -573,7 +572,93 @@ class OpenPlays extends Component
 
     public function openShare(int $id): void
     {
-        $this->share = $this->editable($id)->id;
+        $this->share = $this->runnable($id)->id;
+    }
+
+    /** An upcoming open play you host or co-host: start it, share it, see who's in. */
+    private function runnable(int $id): OpenPlay
+    {
+        return OpenPlay::runBy(auth()->user())->status('upcoming')->findOrFail($id);
+    }
+
+    // ------------------------------------------------------------ co-hosts (the host only)
+
+    /** Upcoming open play whose Co-hosts dialog is showing, and its account search. */
+    public ?int $cohostFor = null;
+
+    public string $cohostQ = '';
+
+    public function openCohosts(int $id): void
+    {
+        $this->cohostFor = $this->editable($id)->id;
+        $this->cohostQ = '';
+    }
+
+    public function closeCohosts(): void
+    {
+        $this->cohostFor = null;
+    }
+
+    public function addCohost(int $userId): void
+    {
+        $play = $this->editable((int) $this->cohostFor);
+        $user = $this->cohostCandidates($play, '', all: true)->whereKey($userId)->firstOrFail();
+        if ($play->cohosts()->count() >= OpenPlay::MAX_COHOSTS) {
+            $this->dispatch('toast', message: 'Up to '.OpenPlay::MAX_COHOSTS.' co-hosts per open play');
+
+            return;
+        }
+        $play->cohosts()->attach($user);
+        $this->cohostQ = '';
+        Emails::send($user, Emails::cohost($play, $user, true));
+        $this->dispatch('toast', message: "{$user->name} can start and run {$play->title} · we emailed them");
+    }
+
+    public function removeCohost(int $userId): void
+    {
+        $play = $this->editable((int) $this->cohostFor);
+        $user = $play->cohosts()->whereKey($userId)->firstOrFail();
+        $play->cohosts()->detach($user);
+        Emails::send($user, Emails::cohost($play, $user, false));
+        $this->dispatch('toast', message: "{$user->name} is no longer a co-host · we emailed them");
+    }
+
+    /**
+     * Who can co-host: any active account except the host, admins and current co-hosts. With no search yet,
+     * players who joined this open play first, then organizers.
+     */
+    private function cohostCandidates(OpenPlay $play, string $q, bool $all = false)
+    {
+        $query = User::query()->whereKeyNot($play->organizer_id)->where('role', '!=', 'admin')->whereNull('suspended_at')
+            ->whereNotIn('id', $play->cohosts()->pluck('users.id'));
+        if ($all) {
+            return $query;
+        }
+        $term = mb_strtolower(trim($q));
+        if ($term !== '') {
+            return $query->where(fn ($w) => $w->whereRaw('lower(name) like ?', ["%{$term}%"])->orWhereRaw('lower(email) like ?', ["%{$term}%"])->orWhereRaw('lower(club) like ?', ["%{$term}%"]))
+                ->orderBy('name');
+        }
+        $joined = $play->activeParticipants()->whereNotNull('user_id')->orderBy('created_at')->pluck('user_id')->all();
+
+        return $query->where(fn ($w) => $w->whereIn('id', $joined ?: [0])->orWhere('organizer_status', 'approved'))
+            ->orderByRaw('case when id in ('.(implode(',', array_map('intval', $joined)) ?: '0').') then 0 else 1 end')->orderBy('name');
+    }
+
+    private function cohostsDialog(): ?array
+    {
+        if (! $this->cohostFor) {
+            return null;
+        }
+        $play = $this->editable($this->cohostFor);
+        $joined = $play->activeParticipants()->whereNotNull('user_id')->pluck('user_id')->all();
+
+        return [
+            'play' => $play,
+            'now' => $play->cohosts()->orderBy('open_play_cohosts.created_at')->get(),
+            'cands' => $this->cohostCandidates($play, $this->cohostQ)->limit(5)->get(),
+            'joined' => $joined,
+        ];
     }
 
     public function closeShare(): void
@@ -605,7 +690,7 @@ class OpenPlays extends Component
 
     public function openRoster(int $id): void
     {
-        $this->rosterId = $this->editable($id)->id;
+        $this->rosterId = $this->runnable($id)->id;
         $this->rosterQ = '';
         $this->rosterF = 'all';
         $this->resetPage('rosterPage');
@@ -653,7 +738,7 @@ class OpenPlays extends Component
         if (! $this->rosterId) {
             return null;
         }
-        $play = $this->editable($this->rosterId);
+        $play = $this->runnable($this->rosterId);
         $free = ! $play->fee;
         $claims = DB::table('pay_claims')->where('open_play_id', $play->id)->pluck('user_id')->all();
         $all = $play->activeParticipants()->with('user')->orderBy('created_at')->orderBy('id')->get()->values()
@@ -730,32 +815,6 @@ class OpenPlays extends Component
         return auth()->user()->openPlays()->whereNotNull('pay_qr_version')->latest('id')->first();
     }
 
-    public function startSession(int $id)
-    {
-        $play = OpenPlay::findOrFail($id);
-        abort_unless($play->organizer_id === auth()->id(), 403);
-
-        if (auth()->user()->openPlays()->status('live')->exists()) {
-            $this->dispatch('toast', message: 'End the current live session first');
-
-            return;
-        }
-
-        try {
-            $play->start();
-        } catch (InvalidArgumentException $e) {
-            $this->dispatch('toast', message: $e->getMessage());
-
-            return;
-        }
-
-        Emails::notify($play->activeParticipants()->where('user_id', '!=', $play->organizer_id)->with('user')->get()->pluck('user'), 'liveStart', fn (User $u) => Emails::liveStarted($play, $u));
-        UpNext::notify($play);
-        session()->flash('toast', "{$play->title} is live. Courts filled from the queue.");
-
-        return $this->redirectRoute('organizer.board', navigate: true);
-    }
-
     private function resetForm(): void
     {
         $user = auth()->user();
@@ -817,7 +876,8 @@ class OpenPlays extends Component
     public function render()
     {
         $query = fn () => auth()->user()->openPlays()->withCount(['activeParticipants', 'games']);
-        $plays = $query()->whereIn('status', ['live', 'upcoming'])->withCount([
+        // Open plays you co-host show here too, with what a co-host can do.
+        $plays = OpenPlay::runBy(auth()->user())->withCount(['activeParticipants', 'games'])->with(['organizer', 'cohosts', 'starter'])->whereIn('status', ['live', 'upcoming'])->withCount([
             'activeParticipants as paid_count' => fn ($q) => $q->where('paid', true),
             'activeParticipants as paid_linked_count' => fn ($q) => $q->where('paid', true)->whereNotNull('user_id'),
         ])->with(['activeParticipants' => fn ($q) => $q->with('user')->orderBy('created_at')->orderBy('id')])->orderBy('starts_at')->get();
@@ -825,7 +885,7 @@ class OpenPlays extends Component
         return view('livewire.organizer.open-plays', [
             'club' => auth()->user()->club ?? 'Your club',
             // A just-approved organizer with no open plays gets a welcome with first steps instead of empty lists.
-            'hasPlays' => auth()->user()->openPlays()->exists(),
+            'hasPlays' => OpenPlay::runBy(auth()->user())->exists(),
             'live' => $plays->where('status', 'live'),
             'upcoming' => $plays->where('status', 'upcoming'),
             'past' => $query()->status('done')->latest('starts_at')->paginate(5, pageName: 'pastPage'),
@@ -834,7 +894,8 @@ class OpenPlays extends Component
             'lastQrUrl' => $this->lastPayPlay()?->payQrUrl(),
             'deleting' => $this->deleteId ? $plays->firstWhere('id', $this->deleteId) : null,
             'roster' => $this->roster(),
-            'sharePlay' => $this->share ? auth()->user()->openPlays()->status('upcoming')->find($this->share) : null,
+            'sharePlay' => $this->share ? OpenPlay::runBy(auth()->user())->status('upcoming')->find($this->share) : null,
+            'cohosts' => $this->cohostsDialog(),
         ]);
     }
 }

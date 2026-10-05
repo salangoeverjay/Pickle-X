@@ -34,7 +34,8 @@ class JoinLink extends Component
     {
         $this->code = $code;
         $play = $this->play();
-        if ($play && auth()->check()) {
+        // Logged in: added straight away, unless you host or co-host it (a co-host can still join as a player).
+        if ($play && auth()->check() && ! $play->isRunBy(auth()->user())) {
             session()->forget('join');
             $this->joinAsUser($play);
         }
@@ -183,7 +184,7 @@ class JoinLink extends Component
         $full = ! $left && ! $joined && ! $guest;
         $state = match (true) {
             $play->status === 'done' => 'ended',
-            $user && $play->organizer_id === $user->id => 'mine',
+            $user && ($play->organizer_id === $user->id || ($play->isCohost($user) && ! $joined)) => 'mine',
             (bool) $user => $joined ? 'in' : ($full ? 'full' : 'out'),
             (bool) $guest => 'guestIn',
             $full => 'full',

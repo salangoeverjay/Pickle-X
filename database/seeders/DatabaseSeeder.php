@@ -36,7 +36,10 @@ class DatabaseSeeder extends Seeder
             ['Sam Flores', '#BCD9F7'], ['Ria Torres', '#CDEBB0'], ['Leo Soriano', '#E2D2FF'], ['Dana Chua', '#FFEFA3'],
         ])->map(fn ($m, $i) => User::factory()->create([
             'name' => $m[0],
-            'email' => $i === 0 ? 'kai@picklex.app' : strtolower(strtok($m[0], ' ')).'@picklex.test',
+            // Kai is the member demo account; Rico co-hosts Saturday Sunrise Rally.
+            'email' => match ($i) {
+                0 => 'kai@picklex.app', 1 => 'rico@picklex.app', default => strtolower(strtok($m[0], ' ')).'@picklex.test'
+            },
             'avatar_color' => $m[1],
             'club' => self::CLUB,
         ]));
@@ -141,6 +144,9 @@ class DatabaseSeeder extends Seeder
         }
         Carbon::setTestNow();
         DB::table('pay_claims')->insert(['open_play_id' => $sunrise->id, 'user_id' => $inApp[1]->id, 'created_at' => now(), 'updated_at' => now()]);
+        // Co-hosts: an organizer from another club and a regular (log in as gerald@davaopaddle.ph or rico@picklex.app).
+        $gerald = $this->organizer('Gerald Uy', 'gerald@davaopaddle.ph', 'Davao Paddle Club', 'Davao City', 2, 'approved', 'Helps run Davao and Panabo sessions.', '-20 days');
+        $sunrise->cohosts()->attach([$gerald->id, $members[1]->id]);
         $this->withJoins($this->play($davao, "Beginners' Open Court", $sat->copy()->addDay()->setTime(16, 0), 2, 12, 11, 'rotate', null, 3), $members->slice(4, 6));
         $this->withJoins($this->play($digos, 'Midweek Mixer', Carbon::today()->next(Carbon::WEDNESDAY)->setTime(19, 0), 3, 16, 15, 'rotate', '₱100', 3), $members->slice(8, 12));
     }

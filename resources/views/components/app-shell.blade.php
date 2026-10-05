@@ -15,7 +15,7 @@
     $nav = match ($mode) {
         'organizer' => [
             ['organizer.plays', 'Open plays', 'calendar', null],
-            ['organizer.board', 'Court board', 'court', $user->openPlays()->status('live')->exists() ? 'LIVE' : null],
+            ['organizer.board', 'Court board', 'court', \App\Models\OpenPlay::runBy($user)->status('live')->exists() ? 'LIVE' : null],
         ],
         'admin' => [
             ['admin.requests', 'Requests', 'shield', \App\Models\User::where('organizer_status', 'pending')->count() ?: null],
@@ -28,6 +28,8 @@
             ['member.plays', 'Open plays', 'calendar', null],
             ['member.played-with', 'Played with', 'users', null],
             ['member.rankings', 'Rankings', 'trophy', null],
+            // A member co-host runs the court board from player mode while their session is live.
+            ...(\App\Models\OpenPlay::status('live')->whereHas('cohosts', fn ($q) => $q->whereKey($user->id))->exists() ? [['organizer.board', 'Court board', 'court', 'LIVE']] : []),
         ],
     };
 @endphp

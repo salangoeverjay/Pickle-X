@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -67,6 +68,36 @@ class OpenPlay extends Model
         return $this->belongsTo(User::class, 'organizer_id');
     }
 
+    /** Up to 3 accounts who can start this open play and run its court board (OpenPlay::MAX_COHOSTS). */
+    public function cohosts(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'open_play_cohosts')->withTimestamps();
+    }
+
+    public const MAX_COHOSTS = 3;
+
+    public function starter(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'started_by');
+    }
+
+    /** The host or a co-host: they start it, run the court board and share the link. Only the host edits, deletes or changes co-hosts. */
+    public function isRunBy(?User $user): bool
+    {
+        return $user && ($this->organizer_id === $user->id || $this->isCohost($user));
+    }
+
+    public function isCohost(?User $user): bool
+    {
+        return $user && $this->cohosts()->whereKey($user->id)->exists();
+    }
+
+    /** Open plays $user runs: hosts or co-hosts. */
+    public function scopeRunBy(Builder $query, User $user): void
+    {
+        $query->where(fn ($q) => $q->where('organizer_id', $user->id)->orWhereHas('cohosts', fn ($c) => $c->whereKey($user->id)));
+    }
+
     public function participants(): HasMany
     {
         return $this->hasMany(Participant::class);
@@ -96,7 +127,8 @@ class OpenPlay extends Model
     public function scopeVisibleTo(Builder $query, User $user): void
     {
         $query->where(fn ($q) => $q->where('visibility', 'public')
-            ->orWhereHas('participants', fn ($p) => $p->where('user_id', $user->id)->whereNull('left_at')));
+            ->orWhereHas('participants', fn ($p) => $p->where('user_id', $user->id)->whereNull('left_at'))
+            ->orWhereHas('cohosts', fn ($c) => $c->whereKey($user->id)));
     }
 
     // ---------------------------------------------------------------- share link
@@ -785,13 +817,13 @@ class OpenPlay extends Model
     // ---------------------------------------------------------------- board writes
 
     /** Start the session: open the courts, queue everyone who joined, fill courts. */
-    public function start(): void
+    public function start(?User $by = null): void
     {
         if ($this->status !== 'upcoming') {
             throw new InvalidArgumentException('Only upcoming open plays can start.');
         }
 
-        $this->mutate(function (array &$board, self $play) {
+        $this->mutate(function (array &$board, self $play) use ($by) {
             $board = ['seq' => 0, 'queue' => [], 'courts' => []];
             foreach (range(1, max(1, $play->courts)) as $n) {
                 $board['courts'][] = ['n' => $n, 'a' => null, 'b' => null, 'started_at' => null, 'wins' => 0];
@@ -799,7 +831,7 @@ class OpenPlay extends Model
             foreach ($play->activeParticipants()->orderBy('id')->pluck('id') as $id) {
                 $board['queue'][] = ['id' => ++$board['seq'], 'ids' => [$id], 'locked' => false];
             }
-            $play->forceFill(['status' => 'live', 'started_at' => now(), 'auto_fill' => true, 'share_code' => $play->share_code ?? self::makeShareCode($play->club)]);
+            $play->forceFill(['status' => 'live', 'started_at' => now(), 'started_by' => $by?->id, 'auto_fill' => true, 'share_code' => $play->share_code ?? self::makeShareCode($play->club)]);
         });
     }
 

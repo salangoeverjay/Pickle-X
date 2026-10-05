@@ -3,6 +3,7 @@
 namespace App\Livewire\Member;
 
 use App\Livewire\Concerns\Pages;
+use App\Livewire\Concerns\StartsSessions;
 use App\Models\OpenPlay;
 use App\Support\Emails;
 use App\Support\MemberStats;
@@ -12,22 +13,24 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Livewire\Attributes\Title;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 
 #[Title('Open plays · PickleX')]
 class OpenPlays extends Component
 {
-    use Pages;
+    use Pages, StartsSessions;
 
     // Open play whose payment QR dialog is showing.
     public ?int $payFor = null;
 
-    // Upcoming open play whose Share link dialog is showing.
+    // Upcoming open play whose Share link dialog is showing (?share=id opens it, e.g. from the link page).
+    #[Url(except: null)]
     public ?int $share = null;
 
     public function openShare(int $id): void
     {
-        $this->share = OpenPlay::public()->status('upcoming')->findOrFail($id)->id;
+        $this->share = OpenPlay::visibleTo(auth()->user())->status('upcoming')->findOrFail($id)->id;
     }
 
     public function closeShare(): void
@@ -208,7 +211,7 @@ class OpenPlays extends Component
         $plays = OpenPlay::visibleTo($user)->whereIn('status', ['live', 'upcoming'])
             ->withCount('activeParticipants')->orderBy('starts_at')
             // "Hosted by": the organizer and how many open plays they've run.
-            ->with(['organizer' => fn ($q) => $q->withCount(['openPlays as hosted_count' => fn ($q) => $q->where('status', 'done')])])
+            ->with(['organizer' => fn ($q) => $q->withCount(['openPlays as hosted_count' => fn ($q) => $q->where('status', 'done')]), 'cohosts'])
             ->get();
 
         // "My status": the first live session (public or not) the member is standing in.

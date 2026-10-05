@@ -115,9 +115,11 @@ Route::middleware('auth')->group(function () {
         Route::livewire('/rankings', Member\Rankings::class)->name('member.rankings');
     });
 
+    // Hosts and co-hosts (members too, from player mode) run the court board; the component checks which live session is theirs.
+    Route::livewire('/organizer/board', Organizer\CourtBoard::class)->name('organizer.board');
+
     Route::middleware('role:organizer')->prefix('organizer')->name('organizer.')->group(function () {
         Route::livewire('/plays', Organizer\OpenPlays::class)->name('plays');
-        Route::livewire('/board', Organizer\CourtBoard::class)->name('board');
 
         // Final standings of a concluded open play (linked from the organizer recap email).
         Route::get('/plays/{play}/standings.csv', function (OpenPlay $play) {

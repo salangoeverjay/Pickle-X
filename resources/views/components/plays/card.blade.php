@@ -35,6 +35,19 @@
         </div>
     @endif
 
+    @php($cos = $play->cohosts)
+    @php($meCo = $cos->contains(auth()->user()))
+    @if ($cos->isNotEmpty() || $meCo)
+        <div class="flex flex-wrap items-center gap-2">
+            @if ($meCo)
+                <span class="inline-flex h-7 items-center gap-1.5 rounded-full bg-ink px-2.75 text-xs font-bold text-bg"><x-icon name="users" :size="14" />You're a co-host · hosted by {{ $host?->shownName() }}</span>
+            @endif
+            @if ($cos->isNotEmpty())
+                <span class="text-[13px] text-ink3">With {{ Str::plural('co-host', $cos->count()) }} {{ $cos->map(fn ($c) => $c->is(auth()->user()) ? 'you' : $c->shownName())->join(', ') }}</span>
+            @endif
+        </div>
+    @endif
+
     <div class="flex flex-col gap-2 text-sm text-ink2">
         <span class="flex items-center gap-2"><x-icon name="pin" :size="17" :stroke="1.9" />{{ $play->venue }}</span>
         <span class="flex items-center gap-2"><x-icon name="clock" :size="17" :stroke="1.9" />{{ $play->isLive() ? $play->whenLabel().' · ' : '' }}{{ $play->timeRange() }}</span>
@@ -70,6 +83,12 @@
     </button>
 
     <div class="flex flex-wrap gap-2">
+        {{-- A member co-host starts it, or opens the court board once it's live. --}}
+        @if ($meCo && $play->status === 'upcoming')
+            <button type="button" wire:click="startSession({{ $play->id }})" class="inline-flex h-12 basis-full cursor-pointer items-center justify-center gap-2 rounded-full bg-ink px-4.5 text-[15px] font-bold text-bg transition hover:brightness-96 active:scale-97"><x-icon name="court" :size="16" />Start session</button>
+        @elseif ($meCo && $play->isLive())
+            <a href="{{ route('organizer.board') }}" wire:navigate class="inline-flex h-12 basis-full items-center justify-center gap-2 rounded-full bg-ink px-4.5 text-[15px] font-bold text-bg transition hover:brightness-96 active:scale-97"><x-icon name="court" :size="16" />Open court board</a>
+        @endif
         @if ($joined)
             <button type="button" wire:click="leavePlay({{ $play->id }})" aria-pressed="true" class="h-12 min-w-40 flex-1 cursor-pointer rounded-full border-[1.5px] border-line2 bg-transparent text-[15px] font-bold text-ink transition hover:brightness-96 active:scale-97">You're in · Leave</button>
         @else
@@ -86,7 +105,7 @@
                 'border-ink bg-ink text-bg' => ! $claimed,
             ])><x-icon name="qr" :size="18" />{{ $claimed ? 'Payment sent · view QR' : 'Pay '.$play->feeLabel() }}</button>
         @endif
-        @if ($play->status === 'upcoming' && $play->visibility === 'public')
+        @if ($play->status === 'upcoming' && ($play->visibility === 'public' || $meCo))
             <button type="button" wire:click="openShare({{ $play->id }})" aria-label="Share a link to {{ $play->title }}" aria-haspopup="dialog" title="Share link"
                     class="flex size-12 shrink-0 cursor-pointer items-center justify-center rounded-full border-[1.5px] border-line2 bg-transparent text-ink transition hover:brightness-96 active:scale-97"><x-icon name="link" :size="17" /></button>
         @endif
