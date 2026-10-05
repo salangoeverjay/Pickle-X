@@ -52,6 +52,11 @@ class Looks
             'fl-blaze' => 'Blaze', 'fl-blue' => 'Blue flame', 'fl-inferno' => 'Inferno', 'fl-embers' => 'Ember storm', 'fl-fireball' => 'Fireball',
             'fl-crown' => 'Flame crown', 'fl-lava' => 'Molten lava', 'fl-violet' => 'Soul flame', 'fl-emerald' => 'Emerald flame', 'fl-streak' => 'Hot streak',
         ]],
+        // Original cursed-energy motifs inspired by sorcery anime (no characters or show symbols).
+        'so' => ['Sorcerer', 'Azure vortexes, crimson bursts, violet rifts, black lightning, binding seals, a night veil, a magic circle, a lurking curse, slash storms and a charged pickleball.', 'M11 12a1 1 0 0 1 2 0a2 2 0 0 1-4 0a3 3 0 0 1 6 0a4 4 0 0 1-8 0a5 5 0 0 1 10 0M19.5 4.5l-1.2 1.6M21 8.5l-1.9.4M16 3l-.3 1.9', '#7B2CFF', [
+            'so-azure' => 'Azure vortex', 'so-crimson' => 'Crimson burst', 'so-rift' => 'Violet rift', 'so-black' => 'Black lightning', 'so-seal' => 'Binding seal',
+            'so-veil' => 'Night veil', 'so-realm' => 'Inner realm', 'so-curse' => 'Lurking curse', 'so-slash' => 'Slash storm', 'so-rally' => 'Charged rally',
+        ]],
     ];
 
     /** Collection key a look belongs to, or null. */

@@ -205,6 +205,11 @@
         @include('livewire.partials.share-link', ['manage' => false])
     @endif
 
+    {{-- A member co-host sees the host's player list (view only). --}}
+    @if ($roster)
+        @include('livewire.organizer.partials.roster')
+    @endif
+
     {{-- Pay for an open play: bottom sheet on mobile, centered on desktop. --}}
     @if ($payPlay)
         @php($sent = in_array($payPlay->id, $claimedIds))

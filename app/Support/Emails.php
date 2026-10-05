@@ -225,8 +225,8 @@ class Emails
         return $added
             ? new PickleXMail('cohost', "You're co-hosting {$play->title}", "{$host->name} added you. You can start it on {$play->starts_at->format('D, M j')} and run the court board.",
                 ['play' => $play, 'user' => $user, 'host' => $host, 'added' => true])
-            : new PickleXMail('cohost', "You're no longer co-hosting {$play->title}", "{$host->name} removed you as a co-host.",
-                ['play' => $play, 'user' => $user, 'host' => $host, 'added' => false, 'joined' => $play->activeParticipants()->where('user_id', $user->id)->exists()]);
+            : new PickleXMail('cohost', "You're no longer co-hosting {$play->title}", "{$host->name} removed you as a co-host.".(($me = $play->activeParticipants()->where('user_id', $user->id)->first()) ? " You're still on the player list for {$play->starts_at->format('D, M j')}." : ''),
+                ['play' => $play, 'user' => $user, 'host' => $host, 'added' => false, 'joined' => (bool) $me, 'paid' => (bool) $me?->paid]);
     }
 
     public static function playerJoined(OpenPlay $play, User $player): PickleXMail

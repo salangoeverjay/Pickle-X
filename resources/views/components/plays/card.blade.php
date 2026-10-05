@@ -64,9 +64,10 @@
         </div>
     </div>
 
-    {{-- Who's in (upcoming) or here (live): the first five faces, then the dialog. --}}
-    <button type="button" wire:click="openWho({{ $play->id }})" @disabled(! $count)
-            aria-label="{{ $play->isLive() ? 'See who is here at' : 'See who joined' }} {{ $play->title }}"
+    {{-- Who's in (upcoming) or here (live): the first five faces, then the dialog. A member co-host gets the host's player list. --}}
+    @php($coList = $meCo && $play->status === 'upcoming')
+    <button type="button" wire:click="{{ $coList ? 'openRoster' : 'openWho' }}({{ $play->id }})" @disabled(! $count)
+            aria-label="{{ $coList ? 'See the player list for' : ($play->isLive() ? 'See who is here at' : 'See who joined') }} {{ $play->title }}"
             class="inline-flex min-h-11.5 cursor-pointer items-center gap-2.5 self-stretch rounded-full border-[1.5px] border-line2 bg-bg py-1.25 pr-4 pl-1.5 text-ink transition hover:brightness-96 active:scale-97 disabled:cursor-default disabled:hover:brightness-100 disabled:active:scale-100 lg:self-start">
         @if ($count)
             <span aria-hidden="true" class="flex pr-0.5">
@@ -78,7 +79,7 @@
                 @endif
             </span>
         @endif
-        <span class="ml-1.5 flex-1 text-left text-sm font-bold whitespace-nowrap">{{ ! $count ? 'No one yet' : ($play->isLive() ? "See who's here" : "See who's in") }}</span>
+        <span class="ml-1.5 flex-1 text-left text-sm font-bold whitespace-nowrap">{{ ! $count ? 'No one yet' : ($play->isLive() ? "See who's here" : ($coList ? 'See the player list' : "See who's in")) }}</span>
         <x-icon name="chevron-right" :size="16" :stroke="2.2" />
     </button>
 

@@ -60,8 +60,8 @@ class CohostTest extends TestCase
         $c->call('addCohost', User::factory()->create()->id)->assertDispatched('toast', message: 'Up to 3 co-hosts per open play');
         $this->assertSame(3, $play->cohosts()->count());
 
-        $c->call('removeCohost', $rico->id)->assertDispatched('toast', message: 'Rico Dizon is no longer a co-host · we emailed them');
-        Mail::assertSent(PickleXMail::class, fn ($m) => $m->template === 'cohost' && $m->hasTo($rico->email) && str_contains(html_entity_decode($m->render(), ENT_QUOTES), "You're still on the player list"));
+        $c->call('removeCohost', $rico->id)->assertDispatched('toast', message: 'Rico Dizon is no longer a co-host · we emailed them, and they stay on the player list');
+        Mail::assertSent(PickleXMail::class, fn ($m) => $m->template === 'cohost' && $m->hasTo($rico->email) && str_contains(html_entity_decode($m->render(), ENT_QUOTES), "You're still on the player list") && str_contains(html_entity_decode($m->render(), ENT_QUOTES), "You can't start the session or run the court board"));
     }
 
     public function test_an_organizer_co_host_starts_and_runs_it_but_cant_edit_it(): void
@@ -75,7 +75,7 @@ class CohostTest extends TestCase
             ->assertSee('Saturday Sunrise Rally')->assertSee('Co-hosting · hosted by Ely Ramos')->assertDontSee('Edit Saturday Sunrise Rally')
             ->call('edit', $play->id)->assertNotFound();
         Livewire::actingAs($gerald)->test(OrganizerPlays::class)->call('openCohosts', $play->id)->assertNotFound();
-        Livewire::actingAs($gerald)->test(OrganizerPlays::class)->call('openRoster', $play->id)->assertSee('Upcoming open play · players')->assertDontSee('Edit open play');
+        Livewire::actingAs($gerald)->test(OrganizerPlays::class)->call('openRoster', $play->id)->assertSee("Upcoming open play · you're co-hosting")->assertSee('You can see who joined.')->assertDontSee('Edit open play');
 
         Livewire::actingAs($gerald)->test(OrganizerPlays::class)->call('startSession', $play->id)->assertRedirect(route('organizer.board'));
         $play = $play->fresh();
@@ -96,7 +96,8 @@ class CohostTest extends TestCase
 
         // Invite only, but a co-host sees it, with the tag and Start session.
         Livewire::actingAs($rico)->test(MemberPlays::class)
-            ->assertSee("You're a co-host · hosted by Ely Ramos", false)->assertSee('With co-host you')->assertSee('Start session')
+            ->assertSee("You're a co-host · hosted by Ely Ramos", false)->assertSee('With co-host you')->assertSee('Start session')->assertSee('See the player list')
+            ->call('openRoster', $play->id)->assertSee("Upcoming open play · you're co-hosting")->assertDontSee('setPaid')->call('closeRoster')
             ->call('startSession', $play->id)->assertRedirect(route('organizer.board'));
 
         $this->actingAs($rico)->get(route('organizer.board'))->assertOk()->assertSee('Court board')->assertSee('co-hosting for Ely Ramos');

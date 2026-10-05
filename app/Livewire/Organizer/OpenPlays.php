@@ -3,6 +3,7 @@
 namespace App\Livewire\Organizer;
 
 use App\Livewire\Concerns\Pages;
+use App\Livewire\Concerns\ShowsRoster;
 use App\Livewire\Concerns\StartsSessions;
 use App\Models\Game;
 use App\Models\GamePlayer;
@@ -23,7 +24,7 @@ use Livewire\Component;
 #[Title('Your open plays · PickleX')]
 class OpenPlays extends Component
 {
-    use Pages, StartsSessions;
+    use Pages, ShowsRoster, StartsSessions;
 
     // Create dialog; ?create=1 opens it (sidebar "Create open play" link).
     #[Url(except: false)]
@@ -83,14 +84,6 @@ class OpenPlays extends Component
     // Upcoming open play waiting on the delete confirm.
     #[Locked]
     public ?int $deleteId = null;
-
-    // "See who's in" on an upcoming open play: the play, the search and the filter tab.
-    #[Locked]
-    public ?int $rosterId = null;
-
-    public string $rosterQ = '';
-
-    public string $rosterF = 'all';
 
     public function mount(): void
     {
@@ -620,7 +613,8 @@ class OpenPlays extends Component
         $user = $play->cohosts()->whereKey($userId)->firstOrFail();
         $play->cohosts()->detach($user);
         Emails::send($user, Emails::cohost($play, $user, false));
-        $this->dispatch('toast', message: "{$user->name} is no longer a co-host · we emailed them");
+        $still = $play->activeParticipants()->where('user_id', $user->id)->exists();
+        $this->dispatch('toast', message: "{$user->name} is no longer a co-host · we emailed them".($still ? ', and they stay on the player list' : ''));
     }
 
     /**
@@ -688,27 +682,6 @@ class OpenPlays extends Component
         $this->dispatch('toast', message: 'New link ready · the old link stops working');
     }
 
-    public function openRoster(int $id): void
-    {
-        $this->rosterId = $this->runnable($id)->id;
-        $this->rosterQ = '';
-        $this->rosterF = 'all';
-        $this->resetPage('rosterPage');
-    }
-
-    /** A new roster filter or search starts on page 1. */
-    public function updated(string $property): void
-    {
-        if (in_array($property, ['rosterQ', 'rosterF'])) {
-            $this->resetPage('rosterPage');
-        }
-    }
-
-    public function closeRoster(): void
-    {
-        $this->rosterId = null;
-    }
-
     public function rosterEdit(): void
     {
         $id = $this->rosterId;
@@ -727,45 +700,6 @@ class OpenPlays extends Component
             DB::table('pay_claims')->where(['open_play_id' => $play->id, 'user_id' => $p->user_id])->delete();
         }
         $this->dispatch('toast', message: $p->firstName().($paid ? ' marked as paid' : ' marked as not paid'));
-    }
-
-    /**
-     * Everyone in the roster's open play, in the order they joined, with their payment state.
-     * Filtered by $rosterF and $rosterQ in the view data; counts cover everyone.
-     */
-    private function roster(): ?array
-    {
-        if (! $this->rosterId) {
-            return null;
-        }
-        $play = $this->runnable($this->rosterId);
-        $free = ! $play->fee;
-        $claims = DB::table('pay_claims')->where('open_play_id', $play->id)->pluck('user_id')->all();
-        $all = $play->activeParticipants()->with('user')->orderBy('created_at')->orderBy('id')->get()->values()
-            ->map(function (Participant $p, int $i) use ($claims, $free) {
-                $sent = ! $free && ! $p->paid && $p->user_id && in_array($p->user_id, $claims);
-
-                return [
-                    'p' => $p, 'n' => $i + 1, 'guest' => ! $p->user_id,
-                    'paid' => ! $free && $p->paid, 'sent' => $sent, 'owes' => ! $free && ! $p->paid,
-                ];
-            });
-
-        $counts = ['all' => $all->count(), 'paid' => $all->where('paid', true)->count(), 'unpaid' => $all->where('owes', true)->count(), 'guests' => $all->where('guest', true)->count()];
-        $counts['app'] = $counts['all'] - $counts['guests'];
-        $tabs = $free ? ['all' => 'All', 'app' => 'PickleX accounts', 'guests' => 'Guests'] : ['all' => 'All', 'paid' => 'Paid', 'unpaid' => 'Unpaid', 'guests' => 'Guests'];
-        $f = isset($tabs[$this->rosterF]) ? $this->rosterF : 'all';
-        $q = mb_strtolower(trim($this->rosterQ));
-        $rows = $all->filter(fn ($r) => match ($f) {
-            'paid' => $r['paid'], 'unpaid' => $r['owes'], 'guests' => $r['guest'], 'app' => ! $r['guest'], default => true,
-        } && ($q === '' || str_contains(mb_strtolower($r['p']->name.' '.$r['p']->fullName()), $q) || str_contains(mb_strtolower((string) $r['p']->user?->email), $q)))->values();
-
-        return [
-            'play' => $play, 'free' => $free, 'rows' => $rows, 'page' => $this->pageOf($rows, 10, 'rosterPage'), 'counts' => $counts, 'tabs' => $tabs, 'f' => $f, 'q' => trim($this->rosterQ),
-            'fee' => (float) preg_replace('/[^\d.]/', '', (string) $play->fee),
-            'sent' => $all->where('sent', true)->count(),
-            'account' => $play->hasPaymentQr() ? $play->payMethodLabel() : 'account',
-        ];
     }
 
     /** Delete an upcoming open play; everyone who joined gets a cancellation email. */

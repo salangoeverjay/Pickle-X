@@ -32,7 +32,9 @@ trait StartsSessions
 
         Emails::notify($play->activeParticipants()->where('user_id', '!=', $play->organizer_id)->with('user')->get()->pluck('user'), 'liveStart', fn (User $u) => Emails::liveStarted($play, $u));
         UpNext::notify($play);
-        session()->flash('toast', "{$play->title} is live. Courts filled from the queue.");
+        // A co-host started it: the host sees "started by" on the live card and the court board.
+        $host = $play->organizer_id !== auth()->id() ? $play->organizer?->firstName() : null;
+        session()->flash('toast', "{$play->title} is live. Courts filled from the queue.".($host ? " · {$host} sees that you started it" : ''));
 
         return $this->redirectRoute('organizer.board', navigate: true);
     }

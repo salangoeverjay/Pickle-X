@@ -6,6 +6,8 @@
 @php($pad = 'px-3.5 lg:px-4.5')
 {{-- Co-hosts see the list; the host marks payments and edits. --}}
 @php($owner = $play->organizer_id === auth()->id())
+@php($hostFirst = $play->organizer?->firstName() ?? 'The host')
+@php($yr = $owner ? 'your' : $hostFirst."'s")
 <div wire:key="roster-{{ $play->id }}" x-data x-on:keydown.escape.window="$wire.closeRoster()" class="fixed inset-0 z-66 flex items-end justify-center lg:items-center lg:p-6">
     <button type="button" wire:click="closeRoster" aria-label="Close player list" class="absolute inset-0 animate-fade cursor-pointer bg-[rgba(18,23,15,.45)] dark:bg-black/62"></button>
 
@@ -13,7 +15,7 @@
          class="relative flex max-h-[92%] w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] lg:max-h-full lg:w-215 lg:rounded-[28px]">
         <div class="flex shrink-0 items-center justify-between gap-3 border-b border-line pt-5 pr-5 pb-4 pl-6">
             <div class="flex min-w-0 flex-1 flex-col gap-0.5">
-                <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">Upcoming open play · players</span>
+                <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">{{ $owner ? 'Upcoming open play · players' : "Upcoming open play · you're co-hosting" }}</span>
                 <h2 id="roster-title" class="m-0 font-display text-[26px] leading-[1.1] font-extrabold tracking-[-0.03em]">{{ $play->title }}</h2>
                 <span class="truncate text-[13px] text-ink3">{{ $play->whenLabel() }} · {{ $play->timeRange() }} · {{ $play->venue }}</span>
             </div>
@@ -23,6 +25,11 @@
         </div>
 
         <div class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 pt-5 pb-6 [&>*]:shrink-0">
+            @unless ($owner)
+                <p class="m-0 flex items-start gap-2.5 rounded-[16px] border border-line bg-surface px-3.5 py-3 text-sm leading-[1.45] text-ink2"><x-icon name="users" :size="18" class="mt-px shrink-0" />
+                    <span>{{ $roster['free'] ? "You can see who joined. {$hostFirst} handles any changes to the list." : "You can see who joined and who has paid. Only {$hostFirst} marks payments, since players pay {$hostFirst}'s ".($play->hasPaymentQr() ? $play->payMethodLabel().' QR' : 'account').'.' }}</span>
+                </p>
+            @endunless
             <div class="grid grid-cols-3 gap-2.5">
                 @php($tiles = [['Joined', $c['all'].'/'.$play->cap, $left ? $left.'<span class="lg:hidden"> left</span><span class="hidden lg:inline"> '.Str::plural('spot', $left).' left</span>' : 'Full']])
                 @if ($roster['free'])
@@ -30,7 +37,7 @@
                     @php($tiles[] = ['Fee', 'Free', 'nothing to collect'])
                 @else
                     @php($tiles[] = ['Collected', $peso($c['paid'] * $roster['fee']), 'of '.$peso($c['all'] * $roster['fee']).'<span class="hidden lg:inline"> · '.e($play->fee).' each</span>'])
-                    @php($tiles[] = ['<span class="lg:hidden">Unpaid</span><span class="hidden lg:inline">To collect</span>', $c['unpaid'], $roster['sent'] ? $roster['sent'].' sent<span class="hidden lg:inline"> · check your '.e($roster['account']).'</span>' : ($c['unpaid'] ? 'not paid yet' : 'all paid')])
+                    @php($tiles[] = ['<span class="lg:hidden">Unpaid</span><span class="hidden lg:inline">To collect</span>', $c['unpaid'], $roster['sent'] ? $roster['sent'].' sent<span class="hidden lg:inline"> · '.($owner ? 'check your '.e($roster['account']) : e($hostFirst).' checks them').'</span>' : ($c['unpaid'] ? 'not paid yet' : 'all paid')])
                 @endif
                 @foreach ($tiles as [$label, $value, $sub])
                     <div class="flex min-w-0 flex-col gap-1 rounded-[18px] border border-line bg-surface px-4 py-3.5">
@@ -87,10 +94,10 @@
                                         @endif
                                     </span>
                                     <span class="text-xs leading-[1.35] text-ink3">
-                                        {{ $r['guest'] ? ($p->via_link ? 'Guest · joined with your share link'.($p->email ? ' · '.$p->email : '') : 'Guest · no PickleX account · from your paid list') : ($p->user->usesDisplayName() ? $p->user->name.' · ' : '').($p->from_list ? 'Added from your paid list · '.$p->created_at->format('M j') : 'Joined in the app · '.$p->created_at->format('M j, g:i A')) }}
+                                        {{ $r['guest'] ? ($p->via_link ? "Guest · joined with {$yr} share link".($p->email ? ' · '.$p->email : '') : "Guest · no PickleX account · from {$yr} paid list") : ($p->user->usesDisplayName() ? $p->user->name.' · ' : '').($p->from_list ? "Added from {$yr} paid list · ".$p->created_at->format('M j') : ($p->via_link ? "Joined with {$yr} share link · " : 'Joined in the app · ').$p->created_at->format('M j, g:i A')) }}
                                     </span>
                                     @if ($r['sent'])
-                                        <span class="flex items-center gap-1.25 text-xs font-bold text-ink"><x-icon name="clock" :size="14" />Says they sent {{ $play->fee }} · check your {{ $roster['account'] }}</span>
+                                        <span class="flex items-center gap-1.25 text-xs font-bold text-ink"><x-icon name="clock" :size="14" />Says they sent {{ $play->fee }} · {{ $owner ? 'check your '.$roster['account'] : $hostFirst.' checks it' }}</span>
                                     @endif
                                     @unless ($r['guest'])
                                         <span class="truncate font-mono text-[11px] text-ink2 lg:hidden">{{ $p->user->email }}</span>
@@ -113,6 +120,17 @@
                                                 <span>Paid</span>
                                             </button>
                                         </div>
+                                    </div>
+                                @elseif (! $roster['free'])
+                                    {{-- Co-hosts see who has paid; only the host changes it. --}}
+                                    <div class="ml-20 flex w-[calc(100%-80px)] shrink-0 items-center lg:ml-0 lg:w-37.5 lg:justify-end">
+                                        <span role="status" aria-label="{{ $p->name }}: {{ $r['paid'] ? 'paid' : ($r['sent'] ? 'says they sent it, not checked yet' : 'not paid') }}"
+                                              @class(['inline-flex h-8 items-center gap-1 rounded-full px-3 text-xs font-bold whitespace-nowrap', 'bg-lime-soft text-lime-text' => $r['paid'], 'bg-surface2 text-ink' => ! $r['paid'] && $r['sent'], 'bg-surface2 text-ink2' => ! $r['paid'] && ! $r['sent']])>
+                                            @if ($r['paid'])
+                                                <x-icon name="check" :size="12" :stroke="3" />
+                                            @endif
+                                            {{ $r['paid'] ? 'Paid' : ($r['sent'] ? 'Sent, not checked' : 'Not paid') }}
+                                        </span>
                                     </div>
                                 @endif
                             </div>

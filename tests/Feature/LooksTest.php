@@ -32,7 +32,7 @@ class LooksTest extends TestCase
     {
         $css = file_get_contents(resource_path('css/looks.css'));
         $ids = collect(Looks::COLLECTIONS)->flatMap(fn ($c) => array_keys($c[4]));
-        $this->assertCount(54, $ids);
+        $this->assertCount(64, $ids);
         foreach ($ids as $id) {
             $this->assertStringContainsString(".px-fr-{$id}{", $css, "border {$id}");
             $this->assertStringContainsString(".px-qb-{$id}{", $css, "queue {$id}");
@@ -40,13 +40,15 @@ class LooksTest extends TestCase
 
         $kai = User::factory()->create();
         Livewire::actingAs($kai)->test(Settings::class)
-            ->assertSee('Collections')->assertSee('54 animated looks')->assertSee('Shinobi flame')
+            ->assertSee('Collections')->assertSee('64 animated looks')->assertSee('Shinobi flame')
             ->set('lookCol', 'pr')->assertSee('Pirate · Jolly Rogers')->assertSee('Kraken')
             ->call('setLook', 'frame', 'pr-kraken')->assertDispatched('toast', message: 'Avatar border: Kraken')
             ->set('lookCol', '')->assertSee('Pirate collection, has your pick')->assertSee('Kraken · Pirate')
+            ->set('lookCol', 'so')->assertSee('Sorcerer · Azure vortexes')->call('setLook', 'frame', 'so-azure')->assertDispatched('toast', message: 'Avatar border: Azure vortex')
+            ->set('lookCol', '')
             ->set('lookTab', 'queue')->call('setLook', 'queue', 'sb-dragon')->assertDispatched('toast', message: 'Queue background: Jade dragon');
 
-        $this->assertSame(['px-fr px-fr-pr-kraken', 'px-qb px-qb-sb-dragon'], [$kai->fresh()->frameClass(), $kai->fresh()->queueBgClass()]);
+        $this->assertSame(['px-fr px-fr-so-azure', 'px-qb px-qb-sb-dragon'], [$kai->fresh()->frameClass(), $kai->fresh()->queueBgClass()]);
     }
 
     public function test_every_animated_svg_look_has_a_still_version(): void

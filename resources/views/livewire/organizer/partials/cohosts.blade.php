@@ -65,8 +65,8 @@
 
             <div class="grid grid-cols-1 gap-3 lg:grid-cols-2">
                 @foreach ([
-                    ['Co-hosts can', 'check', 'text-lime-text', ['Start the session on the day', 'Check players in, add walk-ins and sub players', 'Run courts, the queue and the game mode', 'Enter scores and end the session', 'Share the link, and play too if they joined']],
-                    ['Only you', 'minus', 'text-ink3', ['Edit or delete the open play', 'Change who co-hosts', 'Get paid: players still pay your '.($play->hasPaymentQr() ? $play->payMethodLabel().' QR' : 'payment details')]],
+                    ['Co-hosts can', 'check', 'text-lime-text', ['Start the session on the day', 'Check players in, add walk-ins and sub players', 'Run courts, the queue and the game mode', 'Enter scores and end the session', 'See the player list and who has paid', 'Share the link, and play too if they joined']],
+                    ['Only you', 'minus', 'text-ink3', ['Edit or delete the open play', 'Change who co-hosts', 'Mark who has paid: they can see it, but players still pay your '.($play->hasPaymentQr() ? $play->payMethodLabel().' QR' : 'payment details')]],
                 ] as [$label, $icon, $tone, $items])
                     <div class="flex flex-col gap-2 rounded-[18px] border border-line bg-surface p-4">
                         <span class="font-mono text-[11px] tracking-widest text-ink3 uppercase">{{ $label }}</span>
