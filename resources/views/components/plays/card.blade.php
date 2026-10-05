@@ -86,6 +86,10 @@
                 'border-ink bg-ink text-bg' => ! $claimed,
             ])><x-icon name="qr" :size="18" />{{ $claimed ? 'Payment sent · view QR' : 'Pay '.$play->feeLabel() }}</button>
         @endif
+        @if ($play->status === 'upcoming' && $play->visibility === 'public')
+            <button type="button" wire:click="openShare({{ $play->id }})" aria-label="Share a link to {{ $play->title }}" aria-haspopup="dialog" title="Share link"
+                    class="flex size-12 shrink-0 cursor-pointer items-center justify-center rounded-full border-[1.5px] border-line2 bg-transparent text-ink transition hover:brightness-96 active:scale-97"><x-icon name="link" :size="17" /></button>
+        @endif
         @if ($play->isLive() && $play->share_code)
             <a href="{{ route('live', $play->share_code) }}" wire:navigate class="inline-flex h-12 items-center justify-center gap-2 rounded-full border-[1.5px] border-line2 px-4.5 text-sm font-bold text-ink transition hover:brightness-96 active:scale-97">
                 <x-icon name="eye" :size="18" />Watch live

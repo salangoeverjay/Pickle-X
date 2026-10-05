@@ -22,6 +22,19 @@ class OpenPlays extends Component
     // Open play whose payment QR dialog is showing.
     public ?int $payFor = null;
 
+    // Upcoming open play whose Share link dialog is showing.
+    public ?int $share = null;
+
+    public function openShare(int $id): void
+    {
+        $this->share = OpenPlay::public()->status('upcoming')->findOrFail($id)->id;
+    }
+
+    public function closeShare(): void
+    {
+        $this->share = null;
+    }
+
     // "See who's in" (upcoming) or "See who's here" (live): the open play, the search and the filter tab.
     public ?int $whoFor = null;
 
@@ -136,7 +149,7 @@ class OpenPlays extends Component
      */
     private function who(): ?array
     {
-        $play = $this->whoFor ? OpenPlay::public()->whereIn('status', ['live', 'upcoming'])->find($this->whoFor) : null;
+        $play = $this->whoFor ? OpenPlay::visibleTo(auth()->user())->whereIn('status', ['live', 'upcoming'])->find($this->whoFor) : null;
         if (! $play) {
             return null;
         }
@@ -153,7 +166,7 @@ class OpenPlays extends Component
             [$pa, $op] = [$uid === $me ? 0 : (int) $partner->get($uid), $uid === $me ? 0 : (int) $opponent->get($uid)];
             $with = $pa && $op ? "Partner {$pa}× · opponent {$op}×" : ($pa ? 'Your partner '.$pa.' '.Str::plural('time', $pa) : ($op ? 'Played against you '.$op.' '.Str::plural('time', $op) : ''));
             $rec = $record->get($p->id);
-            $sub = ! $uid ? ($live ? 'Walk-in guest' : 'Guest · added by the organizer')
+            $sub = ! $uid ? ($p->via_link ? 'Guest · joined through the link' : ($live ? 'Walk-in guest' : 'Guest · added by the organizer'))
                 : collect([$rec ? "{$rec['w']}-{$rec['l']} tonight" : $p->user?->club, $with])->filter()->join(' · ');
 
             return $r + ['guest' => ! $uid, 'me' => $uid && $uid === $me, 'host' => $uid && $uid === $play->organizer_id, 'played' => (bool) ($pa || $op), 'sub' => $sub];
@@ -183,7 +196,7 @@ class OpenPlays extends Component
     /** Members only act on public sessions that haven't ended. */
     private function joinable(int $id): OpenPlay
     {
-        return OpenPlay::public()->whereIn('status', ['live', 'upcoming'])->findOrFail($id);
+        return OpenPlay::visibleTo(auth()->user())->whereIn('status', ['live', 'upcoming'])->findOrFail($id);
     }
 
     public function render()
@@ -191,7 +204,8 @@ class OpenPlays extends Component
         $user = auth()->user();
         $joined = $user->participations()->whereNull('left_at')->pluck('open_play_id')->all();
 
-        $plays = OpenPlay::public()->whereIn('status', ['live', 'upcoming'])
+        // Invite-only open plays show once you've joined through their link.
+        $plays = OpenPlay::visibleTo($user)->whereIn('status', ['live', 'upcoming'])
             ->withCount('activeParticipants')->orderBy('starts_at')
             // "Hosted by": the organizer and how many open plays they've run.
             ->with(['organizer' => fn ($q) => $q->withCount(['openPlays as hosted_count' => fn ($q) => $q->where('status', 'done')])])
@@ -226,6 +240,7 @@ class OpenPlays extends Component
             'paidIds' => $user->participations()->whereNull('left_at')->where('paid', true)->pluck('open_play_id')->all(),
             'claimedIds' => DB::table('pay_claims')->where('user_id', $user->id)->pluck('open_play_id')->all(),
             'who' => $this->who(),
+            'sharePlay' => $this->share ? $plays->firstWhere('id', $this->share) : null,
             'payPlay' => $this->payFor ? $plays->firstWhere('id', $this->payFor) : null,
             'history' => $history = Results::memberHistory($user),
             'historyPage' => $this->pageOf($history['rows'], 5, 'pastPage'),

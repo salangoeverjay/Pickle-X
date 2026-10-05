@@ -9,11 +9,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /** A player in one open play: a joined member, or a walk-in with just a name. */
 class Participant extends Model
 {
-    protected $fillable = ['open_play_id', 'user_id', 'name', 'left_at', 'checked_in_at', 'paid', 'from_list'];
+    protected $fillable = ['open_play_id', 'user_id', 'name', 'email', 'left_at', 'checked_in_at', 'paid', 'from_list', 'via_link'];
 
     protected function casts(): array
     {
-        return ['left_at' => 'datetime', 'checked_in_at' => 'datetime', 'paid' => 'boolean', 'from_list' => 'boolean'];
+        return ['left_at' => 'datetime', 'checked_in_at' => 'datetime', 'paid' => 'boolean', 'from_list' => 'boolean', 'via_link' => 'boolean'];
     }
 
     public function openPlay(): BelongsTo

@@ -8,6 +8,7 @@
     <div class="flex flex-1 items-center justify-center px-4 pt-5 pb-8 lg:px-12 lg:pt-6 lg:pb-14">
         <div class="flex w-full max-w-105 flex-col gap-4.5">
             <form wire:submit="login" novalidate class="flex flex-col gap-4.5">
+                @include('livewire.partials.join-banner', ['kicker' => 'Log in to join'])
                 <div class="flex flex-col gap-2">
                     <h1 class="m-0 font-display text-4xl leading-none font-extrabold tracking-[-0.04em] lg:text-[46px]">Welcome back</h1>
                     <p class="m-0 text-[15px] text-ink2">Log in to join the queue, check your stats, or run your courts.</p>

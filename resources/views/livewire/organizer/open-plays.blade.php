@@ -84,6 +84,10 @@
                                 <span class="text-sm leading-[1.45] text-ink2">{{ $play->timeRange() }} · {{ $play->venue }} · {{ $play->courts }} {{ Str::plural('court', $play->courts) }}</span>
                             </div>
                             <div class="hidden shrink-0 items-center gap-2 lg:flex">
+                                <button type="button" wire:click="openShare({{ $play->id }})" aria-label="Share a link to {{ $play->title }}" aria-haspopup="dialog"
+                                        class="inline-flex h-11.5 cursor-pointer items-center gap-2 rounded-full border-[1.5px] border-line2 bg-transparent px-4.5 text-sm font-bold text-ink transition hover:brightness-96 active:scale-97">
+                                    <x-icon name="link" :size="16" />Share link
+                                </button>
                                 <button type="button" wire:click="edit({{ $play->id }})" aria-label="Edit {{ $play->title }}" class="inline-flex h-11.5 cursor-pointer items-center gap-2 rounded-full border-[1.5px] border-line2 bg-transparent px-4.5 text-sm font-bold text-ink transition hover:brightness-96 active:scale-97"><x-icon name="edit" :size="17" />Edit</button>
                                 <button type="button" wire:click="askDelete({{ $play->id }})" aria-label="Delete {{ $play->title }}" title="Delete" class="flex size-11.5 cursor-pointer items-center justify-center rounded-full border-[1.5px] border-hot-line bg-transparent text-hot transition hover:brightness-96 active:scale-97"><x-icon name="trash" :size="18" /></button>
                                 <button type="button" wire:click="startSession({{ $play->id }})" class="inline-flex h-11.5 cursor-pointer items-center gap-2 rounded-full bg-ink px-5 text-sm font-bold text-bg transition hover:brightness-96 active:scale-97">
@@ -98,8 +102,11 @@
                                 </div>
                                 <span class="shrink-0 font-mono text-xs text-ink3">{{ $play->playerCount() }}/{{ $play->cap }} joined</span>
                             </div>
-                            @if ($play->paid_count || $play->hasPaymentQr())
+                            @if ($play->paid_count || $play->hasPaymentQr() || $play->visibility === 'invite')
                                 <div class="flex flex-wrap gap-2">
+                                    @if ($play->visibility === 'invite')
+                                        <span class="inline-flex h-6.5 items-center gap-1.5 rounded-full bg-ink px-2.5 text-xs font-bold text-bg"><x-icon name="lock" :size="13" :stroke="2.2" />Invite only · link</span>
+                                    @endif
                                     @if ($play->paid_count)
                                         @php($guests = $play->paid_count - $play->paid_linked_count)
                                         <span class="inline-flex h-6.5 items-center gap-1.5 rounded-full bg-lime-soft px-2.5 text-xs font-bold text-lime-text">
@@ -134,6 +141,7 @@
                             <button type="button" wire:click="startSession({{ $play->id }})" class="flex h-12 min-w-0 flex-1 cursor-pointer items-center justify-center gap-2 rounded-full bg-ink px-4 text-[15px] font-bold text-bg transition hover:brightness-96 active:scale-97">
                                 <x-icon name="court" :size="16" />Start session
                             </button>
+                            <button type="button" wire:click="openShare({{ $play->id }})" aria-label="Share a link to {{ $play->title }}" aria-haspopup="dialog" title="Share link" class="flex size-12 shrink-0 cursor-pointer items-center justify-center rounded-full border-[1.5px] border-line2 bg-transparent text-ink transition hover:brightness-96 active:scale-97"><x-icon name="link" :size="17" /></button>
                             <button type="button" wire:click="edit({{ $play->id }})" aria-label="Edit {{ $play->title }}" title="Edit" class="flex size-12 shrink-0 cursor-pointer items-center justify-center rounded-full border-[1.5px] border-line2 bg-transparent text-ink transition hover:brightness-96 active:scale-97"><x-icon name="edit" :size="17" /></button>
                             <button type="button" wire:click="askDelete({{ $play->id }})" aria-label="Delete {{ $play->title }}" title="Delete" class="flex size-12 shrink-0 cursor-pointer items-center justify-center rounded-full border-[1.5px] border-hot-line bg-transparent text-hot transition hover:brightness-96 active:scale-97"><x-icon name="trash" :size="18" /></button>
                         </div>
@@ -530,6 +538,10 @@
             </div>
         </form>
     </div>
+
+    @if ($sharePlay)
+        @include('livewire.partials.share-link', ['manage' => true])
+    @endif
 
     @if ($roster)
         @include('livewire.organizer.partials.roster')

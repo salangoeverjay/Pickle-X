@@ -30,6 +30,10 @@ class OpenPlays extends Component
     #[Url(except: false)]
     public bool $create = false;
 
+    /** Open play whose Share link dialog is showing (?share=id opens it, e.g. from the link page). */
+    #[Url(except: null)]
+    public ?int $share = null;
+
     public string $title = '';
 
     public string $venue = '';
@@ -567,6 +571,38 @@ class OpenPlays extends Component
         $this->deleteId = null;
     }
 
+    public function openShare(int $id): void
+    {
+        $this->share = $this->editable($id)->id;
+    }
+
+    public function closeShare(): void
+    {
+        $this->share = null;
+    }
+
+    public function setShareVisibility(string $visibility): void
+    {
+        $play = $this->editable((int) $this->share);
+        if (! in_array($visibility, ['public', 'invite']) || $play->visibility === $visibility) {
+            return;
+        }
+        $play->update(['visibility' => $visibility]);
+        $this->dispatch('toast', message: $visibility === 'invite' ? "{$play->title} is invite only · only people with the link can find it" : "{$play->title} shows in Open plays for everyone");
+    }
+
+    public function toggleLinkGuests(): void
+    {
+        $play = $this->editable((int) $this->share);
+        $play->update(['link_guests' => ! $play->link_guests]);
+    }
+
+    public function resetShareLink(): void
+    {
+        $this->editable((int) $this->share)->resetLink();
+        $this->dispatch('toast', message: 'New link ready · the old link stops working');
+    }
+
     public function openRoster(int $id): void
     {
         $this->rosterId = $this->editable($id)->id;
@@ -798,6 +834,7 @@ class OpenPlays extends Component
             'lastQrUrl' => $this->lastPayPlay()?->payQrUrl(),
             'deleting' => $this->deleteId ? $plays->firstWhere('id', $this->deleteId) : null,
             'roster' => $this->roster(),
+            'sharePlay' => $this->share ? auth()->user()->openPlays()->status('upcoming')->find($this->share) : null,
         ]);
     }
 }

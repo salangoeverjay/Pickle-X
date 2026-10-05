@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Auth;
 
+use App\Models\OpenPlay;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\RateLimiter;
@@ -81,8 +82,21 @@ class Login extends Component
         return $this->redirectIntended(route($user->homeRoute()), navigate: true);
     }
 
+    /** Came here from a share link: the open play to join once you're in. */
+    private function joining(): ?OpenPlay
+    {
+        $code = session('join.code');
+
+        return $code ? OpenPlay::where('link_code', $code)->where('status', '!=', 'done')->first() : null;
+    }
+
+    public function cancelJoin(): void
+    {
+        session()->forget(['join', 'url.intended']);
+    }
+
     public function render()
     {
-        return view('livewire.auth.login');
+        return view('livewire.auth.login', ['joining' => $this->joining()]);
     }
 }

@@ -33,7 +33,7 @@ class OpenPlay extends Model
     protected $fillable = [
         'organizer_id', 'title', 'club', 'venue', 'starts_at', 'ends_at', 'courts', 'cap',
         'race_to', 'rotation', 'visibility', 'fee', 'status', 'auto_fill', 'board', 'started_at', 'ended_at', 'share_code',
-        'pay_method', 'pay_name', 'pay_number', 'pay_qr_version',
+        'pay_method', 'pay_name', 'pay_number', 'pay_qr_version', 'link_code', 'link_guests',
     ];
 
     protected function casts(): array
@@ -45,6 +45,7 @@ class OpenPlay extends Model
             'ended_at' => 'datetime',
             'auto_ended' => 'boolean',
             'auto_fill' => 'boolean',
+            'link_guests' => 'boolean',
             'board' => 'array',
         ];
     }
@@ -89,6 +90,73 @@ class OpenPlay extends Model
     public function scopePublic(Builder $query): void
     {
         $query->where('visibility', 'public');
+    }
+
+    /** What a member sees: public open plays, plus invite-only ones they joined through the link. */
+    public function scopeVisibleTo(Builder $query, User $user): void
+    {
+        $query->where(fn ($q) => $q->where('visibility', 'public')
+            ->orWhereHas('participants', fn ($p) => $p->where('user_id', $user->id)->whereNull('left_at')));
+    }
+
+    // ---------------------------------------------------------------- share link
+
+    /** The open play's share link code (/j/{code}), made the first time it's asked for. */
+    public function linkCode(): string
+    {
+        if (! $this->link_code) {
+            $this->forceFill(['link_code' => self::newLinkCode()])->save();
+        }
+
+        return $this->link_code;
+    }
+
+    public function linkUrl(): string
+    {
+        return route('join', $this->linkCode());
+    }
+
+    /** A new link: the old one stops working. Everyone who already joined stays in. */
+    public function resetLink(): void
+    {
+        $this->forceFill(['link_code' => self::newLinkCode()])->save();
+    }
+
+    /** The message organizers and players paste into Messenger, Viber or a group chat. */
+    public function shareMessage(): string
+    {
+        return "Join me at {$this->title}, {$this->whenLabel()} · {$this->timeRange()} at {$this->venue}. "
+            .($this->fee ? "{$this->feeLabel()} per player" : 'Free').'. Join here: '.preg_replace('#^https?://#', '', $this->linkUrl());
+    }
+
+    private static function newLinkCode(): string
+    {
+        do {
+            $code = collect(range(1, 6))->map(fn () => 'abcdefghjkmnpqrstuvwxyz23456789'[random_int(0, 30)])->join('');
+        } while (self::where('link_code', $code)->exists());
+
+        return $code;
+    }
+
+    /** Someone without an account joins through the share link: a named guest on the player list (not while live). */
+    public function addLinkGuest(string $name, ?string $email): Participant
+    {
+        return $this->mutate(function (array &$board, self $play) use ($name, $email) {
+            if (! $play->link_guests) {
+                throw new InvalidArgumentException('The organizer asks everyone to join with a PickleX account.');
+            }
+            if ($play->status !== 'upcoming') {
+                throw new InvalidArgumentException("It's on now. Without an account, tell the organizer at the courts and they'll add you as a walk-in.");
+            }
+            if ($play->activeParticipants()->whereNull('user_id')->whereRaw('lower(name) = ?', [mb_strtolower($name)])->exists()) {
+                throw new InvalidArgumentException("Someone named {$name} already joined as a guest. Add your last name or an initial.");
+            }
+            if ($play->activeParticipants()->count() >= $play->cap) {
+                throw new InvalidArgumentException('Sorry, the last spot was just taken.');
+            }
+
+            return $play->participants()->create(['name' => $name, 'email' => $email ?: null, 'via_link' => true]);
+        });
     }
 
     // ---------------------------------------------------------------- display

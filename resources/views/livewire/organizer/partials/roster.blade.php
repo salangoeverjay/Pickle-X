@@ -85,7 +85,7 @@
                                         @endif
                                     </span>
                                     <span class="text-xs leading-[1.35] text-ink3">
-                                        {{ $r['guest'] ? 'Guest · no PickleX account · from your paid list' : ($p->user->usesDisplayName() ? $p->user->name.' · ' : '').($p->from_list ? 'Added from your paid list · '.$p->created_at->format('M j') : 'Joined in the app · '.$p->created_at->format('M j, g:i A')) }}
+                                        {{ $r['guest'] ? ($p->via_link ? 'Guest · joined through your share link'.($p->email ? ' · '.$p->email : '') : 'Guest · no PickleX account · from your paid list') : ($p->user->usesDisplayName() ? $p->user->name.' · ' : '').($p->from_list ? 'Added from your paid list · '.$p->created_at->format('M j') : 'Joined in the app · '.$p->created_at->format('M j, g:i A')) }}
                                     </span>
                                     @if ($r['sent'])
                                         <span class="flex items-center gap-1.25 text-xs font-bold text-ink"><x-icon name="clock" :size="14" />Says they sent {{ $play->fee }} · check your {{ $roster['account'] }}</span>

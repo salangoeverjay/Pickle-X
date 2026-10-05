@@ -201,6 +201,10 @@
         @include('livewire.member.partials.who')
     @endif
 
+    @if ($sharePlay)
+        @include('livewire.partials.share-link', ['manage' => false])
+    @endif
+
     {{-- Pay for an open play: bottom sheet on mobile, centered on desktop. --}}
     @if ($payPlay)
         @php($sent = in_array($payPlay->id, $claimedIds))

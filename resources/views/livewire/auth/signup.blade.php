@@ -30,6 +30,7 @@
     <div class="flex flex-1 justify-center px-4 pt-1 pb-8 lg:px-12 lg:pt-2 lg:pb-12">
         @if (! $sent)
             <form wire:submit="signup" novalidate class="flex w-full max-w-115 flex-col gap-4.5">
+                @include('livewire.partials.join-banner', ['kicker' => 'Create your account to join'])
                 <div class="flex flex-col gap-2">
                     <h1 class="m-0 font-display text-4xl leading-none font-extrabold tracking-[-0.04em] lg:text-[46px]">Create your account</h1>
                     <p class="m-0 text-[15px] text-ink2">Members can play right away. Organizer accounts are approved by a PickleX admin.</p>

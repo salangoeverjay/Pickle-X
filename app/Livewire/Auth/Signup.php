@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Auth;
 
+use App\Models\OpenPlay;
 use App\Models\User;
 use App\Support\Emails;
 use Illuminate\Support\Facades\Auth;
@@ -37,6 +38,12 @@ class Signup extends Component
     {
         if (! in_array($this->role, ['member', 'organizer'])) {
             $this->role = 'member';
+        }
+        // From a share link: a guest's name and email carry over.
+        if (session('join.code')) {
+            $this->role = 'member';
+            $this->name = (string) session('join.name', '');
+            $this->email = (string) session('join.email', '');
         }
     }
 
@@ -94,11 +101,25 @@ class Signup extends Component
 
         session()->flash('loader', ['kind' => 'signup', 'first' => $user->firstName()]);
 
-        return $this->redirect(route('member.dashboard'), navigate: true);
+        // From a share link: back to it, where the new account joins (and takes over any guest spot).
+        return $this->redirect(session('join.code') ? route('join', session('join.code')) : route('member.dashboard'), navigate: true);
+    }
+
+    /** Came here from a share link: the open play to join once you're in. */
+    private function joining(): ?OpenPlay
+    {
+        $code = session('join.code');
+
+        return $code ? OpenPlay::where('link_code', $code)->where('status', '!=', 'done')->first() : null;
+    }
+
+    public function cancelJoin(): void
+    {
+        session()->forget(['join', 'url.intended']);
     }
 
     public function render()
     {
-        return view('livewire.auth.signup');
+        return view('livewire.auth.signup', ['joining' => $this->joining()]);
     }
 }

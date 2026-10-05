@@ -6,6 +6,7 @@ use App\Livewire\Auth\ForgotPassword;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Signup;
 use App\Livewire\Home;
+use App\Livewire\JoinLink;
 use App\Livewire\LiveView;
 use App\Livewire\Member;
 use App\Livewire\Organizer;
@@ -47,7 +48,7 @@ Route::middleware('guest')->group(function () {
         $request->session()->flash('loader', ['kind' => 'login']);
         $request->session()->flash('toast', 'Logged in with your passkey');
 
-        return response()->json(['redirect' => route($user->homeRoute())]);
+        return response()->json(['redirect' => $request->session()->pull('url.intended', route($user->homeRoute()))]);
     })->middleware('throttle:10,1')->name('passkeys.login');
 });
 
@@ -84,25 +85,28 @@ Route::get('/avatars/{user}/{version}.jpg', function (int $user, string $version
     ]);
 })->where('version', '[a-f0-9]{12}')->name('avatar.photo');
 
+// An open play's payment QR (players pay the fee with it, guests from a share link too). Versioned and unguessable, so it caches forever.
+Route::get('/plays/{play}/pay-qr/{version}.png', function (Request $request, OpenPlay $play, string $version) {
+    abort_unless($play->pay_qr_version === $version, 404);
+    $data = DB::table('payment_qrs')->where('open_play_id', $play->id)->value('data');
+    abort_unless($data, 404);
+
+    return response(base64_decode($data), 200, array_filter([
+        'Content-Type' => 'image/png',
+        'Cache-Control' => 'public, max-age=31536000, immutable',
+        'X-Content-Type-Options' => 'nosniff',
+        'Content-Disposition' => $request->boolean('download') ? 'attachment; filename="picklex-'.Str::slug($play->title).'-qr.png"' : null,
+    ]));
+})->where('version', '[a-f0-9]{12}')->name('play.pay-qr');
+
+// A share link (/j/{code}): see the open play and join as a guest, with an account, or straight away when logged in.
+Route::livewire('/j/{code}', JoinLink::class)->where('code', '[a-z0-9]{4,12}')->name('join');
+
 // Public, read-only live view (QR target). No login needed.
 Route::livewire('/live/{play:share_code}', LiveView::class)->name('live');
 
 Route::middleware('auth')->group(function () {
     Route::livewire('/settings', Settings::class)->name('settings');
-
-    // An open play's payment QR (members pay the fee with it). Versioned, so it caches forever.
-    Route::get('/plays/{play}/pay-qr/{version}.png', function (Request $request, OpenPlay $play, string $version) {
-        abort_unless($play->pay_qr_version === $version, 404);
-        $data = DB::table('payment_qrs')->where('open_play_id', $play->id)->value('data');
-        abort_unless($data, 404);
-
-        return response(base64_decode($data), 200, array_filter([
-            'Content-Type' => 'image/png',
-            'Cache-Control' => 'private, max-age=31536000, immutable',
-            'X-Content-Type-Options' => 'nosniff',
-            'Content-Disposition' => $request->boolean('download') ? 'attachment; filename="picklex-'.Str::slug($play->title).'-qr.png"' : null,
-        ]));
-    })->where('version', '[a-f0-9]{12}')->name('play.pay-qr');
 
     Route::middleware('role:member')->group(function () {
         Route::livewire('/dashboard', Member\Dashboard::class)->name('member.dashboard');
