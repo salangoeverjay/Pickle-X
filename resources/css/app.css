@@ -105,6 +105,28 @@
         scroll-behavior: smooth;
     }
 
+    /* Scrollbars as in the design (.px-scroll): thin, a line2 thumb on a clear track, in light and dark.
+       Safari ignores scrollbar-color, so it gets the same look through ::-webkit-scrollbar. */
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: var(--color-line2) transparent;
+    }
+
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        border: 2px solid transparent;
+        border-radius: 999px;
+        background: var(--color-line2) padding-box;
+    }
+
     /* No double-tap zoom when tapping a stepper or picker quickly. */
     a,
     button,
