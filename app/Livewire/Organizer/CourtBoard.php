@@ -531,6 +531,7 @@ class CourtBoard extends Component
         if (! $play) {
             return view('livewire.organizer.court-board', ['play' => null]);
         }
+        $play->repairQueueIds();
 
         $courts = $play->boardCourts();
         $queue = $play->queue();

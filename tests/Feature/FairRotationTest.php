@@ -169,6 +169,31 @@ class FairRotationTest extends TestCase
         $this->assertCount(1, $play->fresh()->boardCourts());
     }
 
+    public function test_players_subbed_off_court_and_players_added_after_get_their_own_queue_entries(): void
+    {
+        $play = $this->live(6);
+        [$off] = $play->boardCourts()[0]['a']['ids'];
+        $play->subOnCourt(1, [$off], [$play->queue()[0]['id']], 'back');
+        $late = $play->fresh()->addWalkin('Late Larry');
+
+        $queue = $play->fresh()->queue();
+        $ids = array_column($queue, 'id');
+        $this->assertSame(count($ids), count(array_unique($ids)), 'every queue entry has its own id');
+
+        // Stepping out the subbed-off player doesn't take the next one with them.
+        $offEntry = collect($queue)->first(fn ($e) => $e['ids'] === [$off]);
+        $play->fresh()->setPaused($offEntry['id'], true);
+        $this->assertEmpty(collect($play->fresh()->queue())->first(fn ($e) => $e['ids'] === [$late->id])['paused'] ?? false);
+
+        // A board that already has a repeated id gets it renumbered when the court board loads.
+        $board = $play->fresh()->board;
+        $board['queue'][1]['id'] = $board['queue'][0]['id'];
+        $play->forceFill(['board' => $board])->save();
+        Livewire::actingAs($this->org)->test(CourtBoard::class);
+        $ids = array_column($play->fresh()->queue(), 'id');
+        $this->assertSame(count($ids), count(array_unique($ids)));
+    }
+
     public function test_members_see_their_partners_tonight(): void
     {
         $play = $this->live(4);

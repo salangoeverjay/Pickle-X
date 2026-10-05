@@ -983,6 +983,15 @@ class OpenPlay extends Model
         });
     }
 
+    /** True when two queue entries share an id (boards hit by the old court-sub bug). Saving the board renumbers them. */
+    public function repairQueueIds(): void
+    {
+        $ids = array_column($this->queue(), 'id');
+        if (count($ids) !== count(array_unique($ids))) {
+            $this->mutate(fn () => null);
+        }
+    }
+
     /** Switch the game mode mid-session. It applies from the next game; games on court finish as they are. */
     public function setRotation(string $rotation): void
     {
@@ -1031,9 +1040,9 @@ class OpenPlay extends Model
             if ($after === 'leave') {
                 $play->participants()->whereIn('id', $outIds)->update(['left_at' => now()]);
             } else {
-                $entry = fn ($ids, $locked) => ['id' => ++$board['seq'], 'ids' => $ids, 'locked' => $locked] + ($after === 'out' ? ['paused' => true] : []);
-                foreach ($whole && $team['locked'] ? [$entry($outIds, true)] : array_map(fn ($o) => $entry([$o], false), $outIds) as $e) {
-                    $board['queue'][] = $e;
+                // A loop, not an arrow fn: ++$board['seq'] has to move the real counter, or the next entry reuses this id.
+                foreach ($whole && $team['locked'] ? [$outIds] : array_map(fn ($o) => [$o], $outIds) as $ids) {
+                    $board['queue'][] = ['id' => ++$board['seq'], 'ids' => $ids, 'locked' => count($ids) === 2] + ($after === 'out' ? ['paused' => true] : []);
                 }
             }
         });
@@ -1240,6 +1249,19 @@ class OpenPlay extends Model
             $board = $play->board ?? ['seq' => 0, 'queue' => [], 'courts' => []];
 
             $result = $fn($board, $play);
+
+            // Every queue entry needs its own id (select, step out and sub all find entries by it). Boards that
+            // got a repeated id from the old court-sub bug get the later one renumbered on their next change.
+            $seen = [];
+            $board['queue'] ??= [];
+            $board['seq'] = max([$board['seq'] ?? 0, ...array_column($board['queue'], 'id')]);
+            foreach ($board['queue'] as &$e) {
+                if (isset($seen[$e['id']])) {
+                    $e['id'] = ++$board['seq'];
+                }
+                $seen[$e['id']] = true;
+            }
+            unset($e);
 
             if ($play->status === 'live' && $play->auto_fill) {
                 $ready = $play->checkedInIds();
