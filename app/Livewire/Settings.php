@@ -66,6 +66,9 @@ class Settings extends Component
     // Collection tab showing in Your look (empty = the one with your current pick, or Shinobi).
     public string $lookCol = '';
 
+    // Kind of look showing per tab, ['border' => anim|col|still|ex]; unset = the kind you're wearing.
+    public array $lookCat = [];
+
     // "Remember me is on" until this date on this device; null once forgotten.
     public ?string $rememberedUntil = null;
 

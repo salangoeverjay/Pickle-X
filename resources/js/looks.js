@@ -2,7 +2,7 @@
 // only once a page shows a look. Each distinct animated SVG look costs main-thread time every frame
 // (copies of the same look are nearly free), so .px-still (the static version) goes on every look off
 // screen, and on SVG looks beyond the first CAP distinct ones in view.
-// Inside [data-looks-all] (the look picker) every look in view animates.
+// Looks inside [data-still] never move (the look picker's tiles, or its preview while paused).
 const LOOK = '.px-fr, .px-qb';
 const SVG_LOOK = /\bpx-(?:fr|qb)-(?:dev\b|[a-z]{2}-[a-z]+)/;
 // ponytail: fixed cap in DOM order; make it device-aware (e.g. navigator.hardwareConcurrency) if phones still lag.
@@ -19,13 +19,15 @@ const apply = () => {
         .sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1))
         .forEach((el) => {
             const look = el.className.match(SVG_LOOK)?.[0];
-            const on = ! look || el.closest('[data-looks-all]') || allowed.has(look) || (allowed.size < CAP && allowed.add(look));
+            const on = ! el.closest('[data-still]') && (! look || allowed.has(look) || (allowed.size < CAP && allowed.add(look)));
             on ? moving.add(el) : moving.delete(el);
             el.classList.toggle('px-still', ! on);
         });
 };
 
 const schedule = () => queued || (queued = true, requestAnimationFrame(apply));
+// The look picker's Pause button calls this after it toggles [data-still].
+window.pxLooks = schedule;
 
 const io = new IntersectionObserver((entries) => {
     for (const { target, isIntersecting } of entries) {

@@ -30,7 +30,7 @@
 
                     <x-settings.avatar-picker :user="$user" :picker="$picker" />
 
-                    <x-settings.look-picker :user="$user" :tab="$lookTab" :col="$lookCol" :saved="$lookSaved" />
+                    <x-settings.look-picker :user="$user" :tab="$lookTab" :col="$lookCol" :cats="$lookCat" :saved="$lookSaved" />
 
                     <div class="grid gap-3.5 lg:grid-cols-2">
                         <x-field label="Full name" id="sf-name" autocomplete="name" wire:model="name" />

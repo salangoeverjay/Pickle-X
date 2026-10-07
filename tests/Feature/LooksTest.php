@@ -40,12 +40,13 @@ class LooksTest extends TestCase
 
         $kai = User::factory()->create();
         Livewire::actingAs($kai)->test(Settings::class)
-            ->assertSee('Collections')->assertSee('64 animated looks')->assertSee('Shinobi flame')
+            ->assertDontSee('Shown still here')->assertDontSee('Shinobi flame')
+            ->set('lookCat.border', 'col')->assertSee('Shinobi flame')->assertSee('Shown still here so the page stays smooth.')
             ->set('lookCol', 'pr')->assertSee('Pirate · Jolly Rogers')->assertSee('Kraken')
             ->call('setLook', 'frame', 'pr-kraken')->assertDispatched('toast', message: 'Avatar border: Kraken')
             ->set('lookCol', '')->assertSee('Pirate collection, has your pick')->assertSee('Kraken · Pirate')
             ->set('lookCol', 'so')->assertSee('Sorcerer · Azure vortexes')->call('setLook', 'frame', 'so-azure')->assertDispatched('toast', message: 'Avatar border: Azure vortex')
-            ->set('lookCol', '')
+            ->set('lookCol', '')->set('lookCat', [])->assertSee('Collections, you are wearing one of these')->assertSee('Azure vortex')
             ->set('lookTab', 'queue')->call('setLook', 'queue', 'sb-dragon')->assertDispatched('toast', message: 'Queue background: Jade dragon');
 
         $this->assertSame(['px-fr px-fr-so-azure', 'px-qb px-qb-sb-dragon'], [$kai->fresh()->frameClass(), $kai->fresh()->queueBgClass()]);
@@ -69,9 +70,10 @@ class LooksTest extends TestCase
         $kai = User::factory()->create(['name' => 'Kai Santos']);
 
         Livewire::actingAs($kai)->test(Settings::class)
-            ->assertSee('Your look')->assertSee('Changes save right away')->assertSee('Rainbow spin')->assertSee('Paddle wood')
+            ->assertSee('Your look')->assertSee('Changes save right away')->assertSee('Paddle wood')->assertDontSee('Rainbow spin')
+            ->set('lookCat.border', 'anim')->assertSee('Rainbow spin')
             ->call('setLook', 'frame', 'spin')->assertDispatched('toast', message: 'Avatar border: Rainbow spin')->assertSee('Saved')
-            ->set('lookTab', 'queue')->assertSee('Bouncing ball')
+            ->set('lookTab', 'queue')->set('lookCat.queue', 'anim')->assertSee('Bouncing ball')
             ->call('setLook', 'queue', 'confetti')->assertDispatched('toast', message: 'Queue background: Confetti')
             ->call('setLook', 'queue', 'nope');
 
@@ -88,7 +90,7 @@ class LooksTest extends TestCase
         $kai = User::factory()->create(['name' => 'Kai Santos']);
         $admin = User::factory()->create(['role' => 'admin']);
 
-        Livewire::actingAs($kai)->test(Settings::class)
+        Livewire::actingAs($kai)->test(Settings::class)->set('lookCat.border', 'ex')
             ->assertSee('For developers and sponsors who help cover PickleX’s costs. An admin unlocks them.')
             ->call('setLook', 'frame', 'dev')->assertDispatched('toast', message: 'Developer accounts only · an admin unlocks this');
         $this->assertNull($kai->fresh()->frame);
@@ -100,7 +102,7 @@ class LooksTest extends TestCase
             ->call('makeDeveloper', $kai->id)->assertDispatched('toast', message: 'Kai Santos is a developer · Developer look unlocked')
             ->assertSee('Unlocked · not worn yet');
 
-        Livewire::actingAs($kai->fresh())->test(Settings::class)
+        Livewire::actingAs($kai->fresh())->test(Settings::class)->set('lookCat.border', 'ex')
             ->assertSee('An admin marked your account as a developer')
             ->call('setLook', 'frame', 'dev')->call('setLook', 'queue', 'dev');
         $this->assertSame('px-fr px-fr-dev', $kai->fresh()->frameClass());
@@ -125,8 +127,8 @@ class LooksTest extends TestCase
             ->set('tier', 'silver')->set('q', 'kai')->assertSee('Add as Silver')
             ->call('addSponsor', $kai->id)->assertDispatched('toast', message: 'Kai Santos is a Silver sponsor · Silver look unlocked');
 
-        Livewire::actingAs($kai->fresh())->test(Settings::class)
-            ->assertSee('Thanks for sponsoring PickleX. Your Silver sponsor look is unlocked.')->assertSee('1 of 4 unlocked')
+        Livewire::actingAs($kai->fresh())->test(Settings::class)->assertSee('1/4')->set('lookCat.border', 'ex')
+            ->assertSee('Thanks for sponsoring PickleX. Your Silver sponsor look is unlocked.')
             ->call('setLook', 'frame', 'sp-silver')->call('setLook', 'queue', 'sp-silver')
             ->call('setLook', 'frame', 'dev')->assertDispatched('toast', message: 'Developer accounts only · an admin unlocks this');
         $this->assertSame('px-fr px-fr-sp-silver', $kai->fresh()->frameClass());
