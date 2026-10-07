@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Livewire\Admin\OpenPlays;
 use App\Mail\PickleXMail;
 use App\Models\OpenPlay;
 use App\Models\User;
@@ -227,6 +228,17 @@ class Emails
                 ['play' => $play, 'user' => $user, 'host' => $host, 'added' => true])
             : new PickleXMail('cohost', "You're no longer co-hosting {$play->title}", "{$host->name} removed you as a co-host.".(($me = $play->activeParticipants()->where('user_id', $user->id)->first()) ? " You're still on the player list for {$play->starts_at->format('D, M j')}." : ''),
                 ['play' => $play, 'user' => $user, 'host' => $host, 'added' => false, 'joined' => (bool) $me, 'paid' => (bool) $me?->paid]);
+    }
+
+    /** To the host: an admin deleted their concluded open play. Built before the delete. $why: test | dup | other. */
+    public static function playDeleted(OpenPlay $play, string $why, int $games, int $players): PickleXMail
+    {
+        $because = OpenPlays::REASONS[$why][2] ?? null;
+        $count = $games.' '.Str::plural('game', $games);
+
+        return new PickleXMail('play-deleted', "Your open play “{$play->title}” was deleted",
+            ($because ? 'It was '.$because.", so its {$count}" : "Its {$count}")." no longer count toward anyone's stats.",
+            ['play' => $play, 'user' => $play->organizer, 'why' => $why, 'because' => $because, 'games' => $games, 'players' => $players]);
     }
 
     public static function playerJoined(OpenPlay $play, User $player): PickleXMail

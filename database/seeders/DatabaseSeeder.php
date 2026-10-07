@@ -147,6 +147,9 @@ class DatabaseSeeder extends Seeder
         // Co-hosts: an organizer from another club and a regular (log in as gerald@davaopaddle.ph or rico@picklex.app).
         $gerald = $this->organizer('Gerald Uy', 'gerald@davaopaddle.ph', 'Davao Paddle Club', 'Davao City', 2, 'approved', 'Helps run Davao and Panabo sessions.', '-20 days');
         $sunrise->cohosts()->attach([$gerald->id, $members[1]->id]);
+        // Gerald tried the court board last Sunday with real members (Kai included) and ended it: an admin can delete it
+        // under Admin › Open plays, and its games come off their stats.
+        $this->playSession($gerald, 'TEST - please ignore', Carbon::today()->previous(Carbon::SUNDAY)->setTime(19, 0), $members->take(7)->push($gerald), 6, 2, 1, null);
         $this->withJoins($this->play($davao, "Beginners' Open Court", $sat->copy()->addDay()->setTime(16, 0), 2, 12, 11, 'rotate', null, 3), $members->slice(4, 6));
         $this->withJoins($this->play($digos, 'Midweek Mixer', Carbon::today()->next(Carbon::WEDNESDAY)->setTime(19, 0), 3, 16, 15, 'rotate', '₱100', 3), $members->slice(8, 12));
     }
@@ -185,10 +188,10 @@ class DatabaseSeeder extends Seeder
         }
     }
 
-    private function playSession(User $org, string $title, Carbon $at, $players, int $games): void
+    private function playSession(User $org, string $title, Carbon $at, $players, int $games, int $courts = 4, int $hours = 4, ?string $fee = '₱150'): void
     {
         Carbon::setTestNow($at);
-        $play = $this->play($org, $title, $at->copy(), 4, 24, 11, 'rotate', '₱150');
+        $play = $this->play($org, $title, $at->copy(), $courts, 24, 11, 'rotate', $fee, $hours);
         $this->withJoins($play, $players);
         $play->participants()->update(['checked_in_at' => now()]);
         $play->start();

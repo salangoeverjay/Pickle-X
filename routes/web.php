@@ -139,6 +139,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
         Route::livewire('/requests', Admin\Requests::class)->name('requests');
         Route::livewire('/users', Admin\Users::class)->name('users');
+        Route::livewire('/open-plays', Admin\OpenPlays::class)->name('plays');
         Route::livewire('/developers', Admin\Developers::class)->name('developers');
         Route::livewire('/sponsors', Admin\Sponsors::class)->name('sponsors');
     });
