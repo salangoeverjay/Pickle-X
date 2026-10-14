@@ -142,7 +142,7 @@
                     <template x-teleport="body">
                         <div x-show="step === 'wait'" x-cloak class="fixed inset-0 z-66 flex items-end justify-center md:items-center md:p-6">
                             <div class="absolute inset-0 animate-fade bg-[rgba(18,23,15,.45)] dark:bg-black/62"></div>
-                            <div role="dialog" aria-modal="true" aria-labelledby="pka-title" aria-describedby="pka-desc" class="relative flex w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:w-115 md:max-w-full md:rounded-[28px]">
+                            <div role="dialog" aria-modal="true" aria-labelledby="pka-title" aria-describedby="pka-desc" class="relative flex w-full animate-rise flex-col overflow-clip rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:w-115 md:max-w-full md:rounded-[28px]">
                                 <div class="flex flex-col items-center gap-4.5 px-6 pt-7 pb-5 text-center">
                                     <span aria-hidden="true" class="px-pk-wait flex size-18 items-center justify-center rounded-full bg-lime-soft text-lime-text"><x-icon name="passkey" :size="34" :stroke="1.8" /></span>
                                     <div class="flex flex-col gap-1.5">
@@ -313,7 +313,7 @@
     @if ($naming)
         <div class="fixed inset-0 z-66 flex items-end justify-center md:items-center md:p-6">
             <div class="absolute inset-0 animate-fade bg-[rgba(18,23,15,.45)] dark:bg-black/62"></div>
-            <form wire:submit="namePasskey" role="dialog" aria-modal="true" aria-labelledby="pkn-title" aria-describedby="pkn-desc" x-trap.noscroll="true" class="relative flex w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:w-115 md:max-w-full md:rounded-[28px]">
+            <form wire:submit="namePasskey" role="dialog" aria-modal="true" aria-labelledby="pkn-title" aria-describedby="pkn-desc" x-trap.noscroll="true" class="relative flex w-full animate-rise flex-col overflow-clip rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:w-115 md:max-w-full md:rounded-[28px]">
                 <div class="flex flex-col gap-4.5 px-6 pt-7 pb-5">
                     <span aria-hidden="true" class="flex size-14 items-center justify-center rounded-full bg-lime text-on-lime"><x-icon name="check" :size="26" :stroke="2.6" /></span>
                     <div class="flex flex-col gap-1.5">
@@ -330,7 +330,7 @@
     @if ($removing && ($pkGone = $passkeys->firstWhere('id', $removing)))
         <div x-data x-on:keydown.escape.window="$wire.set('removing', null)" class="fixed inset-0 z-66 flex items-end justify-center md:items-center md:p-6">
             <button type="button" wire:click="$set('removing', null)" aria-label="Keep passkey" class="absolute inset-0 animate-fade cursor-pointer bg-[rgba(18,23,15,.45)] dark:bg-black/62"></button>
-            <div role="alertdialog" aria-modal="true" aria-labelledby="pkd-title" aria-describedby="pkd-desc" x-trap.noscroll="true" class="relative flex w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:w-115 md:max-w-full md:rounded-[28px]">
+            <div role="alertdialog" aria-modal="true" aria-labelledby="pkd-title" aria-describedby="pkd-desc" x-trap.noscroll="true" class="relative flex w-full animate-rise flex-col overflow-clip rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:w-115 md:max-w-full md:rounded-[28px]">
                 <div class="flex flex-col gap-4 px-6 pt-7 pb-5">
                     <span aria-hidden="true" class="flex size-14 items-center justify-center rounded-full bg-hot-soft text-hot"><x-icon name="passkey" :size="26" :stroke="1.9" /></span>
                     <div class="flex flex-col gap-1.5">

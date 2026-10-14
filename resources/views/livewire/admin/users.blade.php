@@ -94,7 +94,7 @@
         @php($self = $managed->id === auth()->id())
         <div wire:key="um-{{ $managed->id }}" x-data x-on:keydown.escape.window="$wire.close()" class="fixed inset-0 z-66 flex items-end justify-center md:items-center md:p-6">
             <button type="button" wire:click="close" aria-label="Close" class="absolute inset-0 animate-fade cursor-pointer bg-[rgba(18,23,15,.45)] dark:bg-black/62"></button>
-            <div role="dialog" aria-modal="true" aria-labelledby="um-title" x-trap.noscroll="true" class="relative flex max-h-full w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:w-170 md:max-w-full md:rounded-[28px]">
+            <div role="dialog" aria-modal="true" aria-labelledby="um-title" x-trap.noscroll="true" class="relative flex max-h-full w-full animate-rise flex-col overflow-clip rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:w-170 md:max-w-full md:rounded-[28px]">
                 <div class="flex flex-col gap-5 overflow-y-auto px-6 pt-6 pb-6.5">
                     <div class="flex items-start gap-3.5">
                         <x-avatar :src="$managed->avatarUrl()" :frame="$managed->frameClass()" :name="$managed->name" :color="$managed->color()" class="size-14 text-lg" />

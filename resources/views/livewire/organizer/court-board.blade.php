@@ -620,7 +620,7 @@
             <button type="button" wire:click="closeScore" aria-label="Close score entry" class="absolute inset-0 animate-fade cursor-pointer bg-[rgba(18,23,15,.45)] dark:bg-black/62"></button>
 
             <form wire:submit="saveScore" role="dialog" aria-modal="true" aria-labelledby="score-title"
-                  class="relative flex max-h-full w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:w-160 md:max-w-full md:rounded-[28px]">
+                  class="relative flex max-h-full w-full animate-rise flex-col overflow-clip rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:w-160 md:max-w-full md:rounded-[28px]">
                 <div class="flex shrink-0 items-center justify-between gap-3 border-b border-line pt-5 pr-5 pb-4 pl-6">
                     <div class="flex flex-col gap-0.5">
                         <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">Court {{ $scoring['n'] }} · Race to {{ $to }} · <x-live-timer :start="now()->timestamp - $scoring['started_at']" /></span>
@@ -703,7 +703,7 @@
             <button type="button" wire:click="$set('crt', null)" aria-label="Close" class="absolute inset-0 animate-fade cursor-pointer bg-[rgba(18,23,15,.45)] dark:bg-black/62"></button>
 
             <div role="dialog" aria-modal="true" aria-labelledby="crt-title" x-trap.noscroll="true"
-                 class="relative flex max-h-[92%] w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:max-h-full md:w-170 md:max-w-full md:rounded-[28px]">
+                 class="relative flex max-h-[92%] w-full animate-rise flex-col overflow-clip rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:max-h-full md:w-170 md:max-w-full md:rounded-[28px]">
                 <div class="flex shrink-0 items-center justify-between gap-3 border-b border-line pt-5 pr-5 pb-4 pl-6">
                     <div class="flex min-w-0 flex-col gap-0.5">
                         <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">{{ $rc ? 'Live session · remove a court' : 'Live session · courts' }}</span>
@@ -842,7 +842,7 @@
             <button type="button" wire:click="$set('csub', null)" aria-label="Close" class="absolute inset-0 animate-fade cursor-pointer bg-[rgba(18,23,15,.45)] dark:bg-black/62"></button>
 
             <div role="dialog" aria-modal="true" aria-labelledby="cs-title" x-trap.noscroll="true"
-                 class="relative flex max-h-[92%] w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:max-h-full md:w-190 md:max-w-full md:rounded-[28px]">
+                 class="relative flex max-h-[92%] w-full animate-rise flex-col overflow-clip rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:max-h-full md:w-190 md:max-w-full md:rounded-[28px]">
                 <div class="flex shrink-0 items-center justify-between gap-3 border-b border-line pt-5 pr-5 pb-4 pl-6">
                     <div class="flex min-w-0 flex-col gap-0.5">
                         <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">Live court · substitution</span>
@@ -957,7 +957,7 @@
                 <button type="button" x-on:click="share = false" aria-label="Close share" class="absolute inset-0 animate-fade cursor-pointer bg-[rgba(18,23,15,.45)] dark:bg-black/62"></button>
 
                 <div role="dialog" aria-modal="true" aria-labelledby="share-title" x-trap.noscroll="share"
-                     class="relative flex max-h-full w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:w-180 md:max-w-full md:rounded-[28px]">
+                     class="relative flex max-h-full w-full animate-rise flex-col overflow-clip rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:w-180 md:max-w-full md:rounded-[28px]">
                     <div class="flex shrink-0 items-center justify-between gap-3 border-b border-line pt-5 pr-5 pb-4 pl-6">
                         <div class="flex min-w-0 flex-1 flex-col gap-0.5">
                             <span class="truncate font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">{{ $play->title }}</span>
@@ -1014,7 +1014,7 @@
             <button type="button" x-on:click="confirmEnd = false" aria-label="Keep playing" class="absolute inset-0 animate-fade cursor-pointer bg-[rgba(18,23,15,.45)] dark:bg-black/62"></button>
 
             <div role="alertdialog" aria-modal="true" aria-labelledby="end-title" aria-describedby="end-desc" x-trap.noscroll="confirmEnd"
-                 class="relative flex max-h-full w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:w-130 md:max-w-full md:rounded-[28px]">
+                 class="relative flex max-h-full w-full animate-rise flex-col overflow-clip rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:w-130 md:max-w-full md:rounded-[28px]">
                 <div class="flex min-h-0 flex-col gap-4 overflow-y-auto px-6 pt-6.5 pb-4.5">
                     <span class="flex size-13 items-center justify-center rounded-2xl border border-hot-line bg-hot-soft text-hot"><x-icon name="stop" :size="22" :stroke="2.2" /></span>
                     <div class="flex flex-col gap-1.5">

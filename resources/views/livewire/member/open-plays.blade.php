@@ -215,7 +215,7 @@
         @php($sent = in_array($payPlay->id, $claimedIds))
         <div wire:key="pay-{{ $payPlay->id }}" x-data x-on:keydown.escape.window="$wire.closePay()" class="fixed inset-0 z-66 flex items-end justify-center md:items-center md:p-6">
             <button type="button" wire:click="closePay" aria-label="Close payment" class="absolute inset-0 animate-fade cursor-pointer bg-[rgba(18,23,15,.45)] dark:bg-black/62"></button>
-            <div role="dialog" aria-modal="true" aria-labelledby="pay-title" x-trap.noscroll="true" class="relative flex max-h-full w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:w-170 md:max-w-full md:rounded-[28px]">
+            <div role="dialog" aria-modal="true" aria-labelledby="pay-title" x-trap.noscroll="true" class="relative flex max-h-full w-full animate-rise flex-col overflow-clip rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:w-170 md:max-w-full md:rounded-[28px]">
                 <div class="flex shrink-0 items-center justify-between gap-3 border-b border-line pt-5 pr-5 pb-4 pl-6">
                     <div class="flex min-w-0 flex-col gap-0.5">
                         <span class="truncate font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">{{ $payPlay->title }}</span>

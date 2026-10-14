@@ -89,7 +89,7 @@
     @if ($editing !== null)
         <div wire:key="an-edit" x-data x-on:keydown.escape.window="$wire.closeEditor()" class="fixed inset-0 z-67 flex items-end justify-center md:items-center md:p-6">
             <button type="button" wire:click="closeEditor" aria-label="Close" class="absolute inset-0 animate-fade cursor-pointer bg-[rgba(18,23,15,.45)] dark:bg-black/62"></button>
-            <div role="dialog" aria-modal="true" aria-labelledby="an-title" x-trap.noscroll="true" class="relative flex max-h-full w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:w-135 md:max-w-full md:rounded-[28px]">
+            <div role="dialog" aria-modal="true" aria-labelledby="an-title" x-trap.noscroll="true" class="relative flex max-h-full w-full animate-rise flex-col overflow-clip rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:w-135 md:max-w-full md:rounded-[28px]">
                 <div class="flex shrink-0 items-start justify-between gap-3 border-b border-line pt-5 pr-5 pb-4 pl-6">
                     <div class="flex min-w-0 flex-col gap-1">
                         <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">{{ ! $editing ? "Admin · What's new" : ($editingLive ? 'Edit a published update' : 'Edit a draft') }}</span>
@@ -154,7 +154,7 @@
         @php($unread = $toDelete->isLive() ? $sizes[$toDelete->audience] - $read($toDelete) : 0)
         <div wire:key="an-del-{{ $toDelete->id }}" x-data x-on:keydown.escape.window="$wire.set('deleting', null)" class="fixed inset-0 z-68 flex items-end justify-center md:items-center md:p-6">
             <button type="button" wire:click="$set('deleting', null)" aria-label="Close" class="absolute inset-0 animate-fade cursor-pointer bg-[rgba(18,23,15,.45)] dark:bg-black/62"></button>
-            <div role="alertdialog" aria-modal="true" aria-labelledby="and-title" x-trap.noscroll="true" class="relative flex max-h-full w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:w-120 md:max-w-full md:rounded-[28px]">
+            <div role="alertdialog" aria-modal="true" aria-labelledby="and-title" x-trap.noscroll="true" class="relative flex max-h-full w-full animate-rise flex-col overflow-clip rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:w-120 md:max-w-full md:rounded-[28px]">
                 <div class="flex flex-col gap-3.5 px-6 pt-6.5 pb-4.5">
                     <span class="flex size-13 items-center justify-center rounded-2xl border border-hot-line bg-hot-soft text-hot"><x-icon name="trash" :size="22" /></span>
                     <h2 id="and-title" class="m-0 font-display text-[26px] leading-[1.1] font-extrabold tracking-[-0.03em]">Delete "{{ $toDelete->title }}"?</h2>

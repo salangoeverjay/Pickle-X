@@ -248,7 +248,7 @@
               x-transition:enter="transition-transform duration-[420ms] ease-[cubic-bezier(.2,.8,.2,1)]"
               x-transition:enter-start="translate-y-full md:translate-x-full md:translate-y-0"
               x-transition:enter-end="translate-x-0 translate-y-0"
-              class="relative flex h-[92%] w-full flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_-10px_60px_rgba(0,0,0,.3)] md:h-full md:w-140 md:rounded-l-[28px] md:rounded-tr-none lg:w-130">
+              class="relative flex h-[92%] w-full flex-col overflow-clip rounded-t-[28px] bg-bg shadow-[0_-10px_60px_rgba(0,0,0,.3)] md:h-full md:w-140 md:rounded-l-[28px] md:rounded-tr-none lg:w-130">
             <div class="flex shrink-0 items-center justify-between gap-3 border-b border-line pt-5 pr-5 pb-4 pl-6">
                 <div class="flex flex-col gap-0.5">
                     <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">{{ $club }}</span>
@@ -490,7 +490,7 @@
                     </div>
                     <div role="radiogroup" aria-label="Payment method" class="flex flex-wrap gap-1 rounded-2xl border-[1.5px] border-line bg-surface2 p-1">
                         @foreach (\App\Models\OpenPlay::PAY_METHODS as $key => [$label])
-                            <label class="flex min-h-9.5 flex-auto cursor-pointer items-center justify-center rounded-xl px-3 text-[13px] font-bold whitespace-nowrap text-ink2 transition-colors has-checked:bg-ink has-checked:text-bg has-focus-visible:outline-2 has-focus-visible:outline-focus">
+                            <label class="relative flex min-h-9.5 flex-auto cursor-pointer items-center justify-center rounded-xl px-3 text-[13px] font-bold whitespace-nowrap text-ink2 transition-colors has-checked:bg-ink has-checked:text-bg has-focus-visible:outline-2 has-focus-visible:outline-focus">
                                 <input type="radio" value="{{ $key }}" wire:model="payMethod" class="sr-only">{{ $label }}
                             </label>
                         @endforeach

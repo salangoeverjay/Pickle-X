@@ -50,7 +50,7 @@
                     <template x-if="open">
                         <div class="fixed inset-0 z-66 flex items-end justify-center md:items-center md:p-6">
                             <button type="button" x-on:click="open = false" aria-label="Close" class="absolute inset-0 animate-fade cursor-pointer bg-[rgba(18,23,15,.45)] dark:bg-black/62"></button>
-                            <div role="dialog" aria-modal="true" aria-labelledby="pk-title" aria-describedby="pk-desc" class="relative flex w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:w-115 md:max-w-full md:rounded-[28px]">
+                            <div role="dialog" aria-modal="true" aria-labelledby="pk-title" aria-describedby="pk-desc" class="relative flex w-full animate-rise flex-col overflow-clip rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:w-115 md:max-w-full md:rounded-[28px]">
                                 <div class="flex flex-col items-center gap-4.5 px-6 pt-7 pb-5 text-center">
                                     <span x-bind:class="error || 'px-pk-wait'" aria-hidden="true" class="flex size-18 items-center justify-center rounded-full bg-lime-soft text-lime-text"><x-icon name="passkey" :size="34" :stroke="1.8" /></span>
                                     <div class="flex flex-col gap-1.5">
