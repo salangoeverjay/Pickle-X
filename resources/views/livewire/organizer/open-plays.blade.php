@@ -411,7 +411,14 @@
                         @php($linkedN = collect($paidPreview)->whereNotNull('user')->count())
                         @php($reviewN = collect($paidPreview)->where('review', true)->count())
                         @php($guestN = count($paidPreview) - $linkedN - $reviewN)
-                        <div class="flex animate-fade flex-col overflow-hidden rounded-2xl border border-line bg-surface">
+                        {{-- Link / Unlink / keep as guest re-renders the row and drops the button you tapped: put focus back on that row
+                             (without scrolling) so the sheet doesn't jump and keyboard users keep their place. --}}
+                        <div x-data="{
+                                 // Run a row action, then put focus back on that row once it re-renders.
+                                 init() { this.box = this.$el },
+                                 act(row, call) { call.then(() => requestAnimationFrame(() => (this.box.querySelector(`[data-row='${row}'] button`) || document.getElementById('c-paid'))?.focus({ preventScroll: true }))) },
+                             }"
+                             class="flex animate-fade flex-col overflow-hidden rounded-2xl border border-line bg-surface">
                             <div class="border-b border-line px-3.5 py-2.5 text-[13px] font-bold">
                                 {{ count($paidPreview) }} {{ Str::plural('name', count($paidPreview)) }} · {{ $linkedN }} linked · {{ $reviewN ? $reviewN.' to review · ' : '' }}{{ $guestN }} {{ Str::plural('guest', $guestN) }}
                             </div>
@@ -423,7 +430,7 @@
                             @endif
                             @foreach ($paidPreview as $row)
                                 @php($u = $row['user'])
-                                <div wire:key="paid-{{ md5($row['key']) }}" class="flex flex-col gap-2 border-b border-line px-3.5 py-2.5 last:border-b-0">
+                                <div wire:key="paid-{{ md5($row['key']) }}" data-row="{{ md5($row['key']) }}" class="flex flex-col gap-2 border-b border-line px-3.5 py-2.5 last:border-b-0">
                                     <div class="flex items-center gap-2.5">
                                         @if ($u)
                                             <x-avatar :name="$u->name" :color="$u->color()" :src="$u->avatarUrl()" :frame="$u->frameClass()" class="size-7.5 text-[11px]" />
@@ -448,7 +455,7 @@
                                             <span @class(['inline-flex h-6 shrink-0 items-center rounded-full px-2.25 text-[11px] font-bold', 'bg-hot-soft text-hot' => $row['review'], 'bg-surface2 text-ink2' => ! $row['review']])>{{ $row['review'] ? 'Needs review' : 'Guest' }}</span>
                                         @endif
                                         @if ($u || $row['guest'])
-                                            <button type="button" wire:click="unlinkPaid(@js($row['key']))" @if ($u) aria-label="Unlink {{ $row['line'] }}" @endif
+                                            <button type="button" x-on:click="act(@js(md5($row['key'])), $wire.unlinkPaid(@js($row['key'])))" @if ($u) aria-label="Unlink {{ $row['line'] }}" @endif
                                                     class="h-7.5 shrink-0 cursor-pointer rounded-full border-[1.5px] border-line2 px-2.5 text-xs font-bold text-ink transition hover:brightness-96 active:scale-97">{{ $u ? 'Unlink' : 'Undo' }}</button>
                                         @endif
                                     </div>
@@ -461,11 +468,11 @@
                                                         <span class="truncate text-[13px] font-bold">{{ $c['user']->name }}</span>
                                                         <span class="truncate text-[11px] text-ink3"><strong class="font-bold text-ink2">{{ $c['why'] }}</strong> · {{ $c['user']->email }}{{ $c['user']->club ? ' · '.$c['user']->club : '' }}</span>
                                                     </span>
-                                                    <button type="button" wire:click="linkPaid(@js($row['key']), {{ $c['user']->id }})" aria-label="Link {{ $row['line'] }} to {{ $c['user']->name }}, {{ $c['user']->email }}"
+                                                    <button type="button" x-on:click="act(@js(md5($row['key'])), $wire.linkPaid(@js($row['key']), {{ $c['user']->id }}))" aria-label="Link {{ $row['line'] }} to {{ $c['user']->name }}, {{ $c['user']->email }}"
                                                             class="h-8 shrink-0 cursor-pointer rounded-full bg-ink px-3 text-xs font-bold text-bg transition hover:brightness-96 active:scale-97">Link</button>
                                                 </div>
                                             @endforeach
-                                            <button type="button" wire:click="keepGuest(@js($row['key']))" class="h-8 cursor-pointer self-start px-1 text-xs font-bold text-ink2 underline underline-offset-3">None of these · keep as guest</button>
+                                            <button type="button" x-on:click="act(@js(md5($row['key'])), $wire.keepGuest(@js($row['key'])))" class="h-8 cursor-pointer self-start px-1 text-xs font-bold text-ink2 underline underline-offset-3">None of these · keep as guest</button>
                                         </div>
                                     @endif
                                 </div>
