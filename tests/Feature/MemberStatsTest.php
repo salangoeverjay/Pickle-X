@@ -79,7 +79,7 @@ class MemberStatsTest extends TestCase
         $this->assertEqualsCanonicalizing([$mika->id, $rico->id, $ben->id], $s->opponents->pluck('user.id')->all());
         $this->assertSame(2 * 10 + 3 * 3 + 1 * 2, $s->points());
         $this->assertSame('6-11', $s->recent()->first()->score);
-        $this->assertSame('Guest', $s->recent()->first()->partner);
+        $this->assertSame('Guest Pat', $s->recent()->first()->partner);
         $this->assertSame(3, $s->weeks()[7]->v);
         $this->assertSame('This wk', $s->weeks()[7]->label);
     }

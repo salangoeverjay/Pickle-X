@@ -12,7 +12,7 @@
             <section aria-labelledby="ow-h" class="grid animate-rise items-center gap-7 rounded-[28px] bg-ink p-5.5 text-bg lg:grid-cols-2 lg:p-9">
                 <div class="flex min-w-0 flex-col items-start gap-3.5">
                     <span class="inline-flex h-7 items-center gap-2 rounded-full bg-lime px-3 font-mono text-xs tracking-[.08em] text-on-lime uppercase"><x-icon name="check" :size="14" :stroke="2.6" />Organizer approved</span>
-                    <h2 id="ow-h" class="m-0 font-display text-[32px] leading-none font-extrabold tracking-[-0.04em] lg:text-[44px]">Welcome, {{ auth()->user()->firstName() }}. Let's run your first open play.</h2>
+                    <h2 id="ow-h" class="m-0 font-display text-[32px] leading-none font-extrabold tracking-[-0.04em] md:text-[38px] xl:text-[44px]">Welcome, {{ auth()->user()->firstName() }}. Let's run your first open play.</h2>
                     <p class="m-0 max-w-130 text-base leading-normal opacity-82">{{ $club }} is set up on PickleX. Create an open play and members can find it, join and pay before they arrive.</p>
                     <button type="button" wire:click="openCreate" class="mt-1 inline-flex h-13 cursor-pointer items-center gap-2 rounded-full bg-lime px-6 text-[15px] font-extrabold text-on-lime transition hover:brightness-96 active:scale-97">
                         <x-icon name="plus" :size="18" :stroke="2.4" />Create your first open play
@@ -43,9 +43,9 @@
                     <span class="inline-flex h-7 items-center gap-2 self-start rounded-full bg-black/25 px-2.75 font-mono text-[11px] tracking-widest">
                         <span class="size-1.75 animate-live rounded-full bg-lime"></span>LIVE NOW · {{ ago((int) $play->started_at?->diffInSeconds(now())) }}{{ $play->starter && ! $play->starter->is(auth()->user()) ? ' · started by '.$play->starter->firstName() : '' }}
                     </span>
-                    <h2 class="m-0 font-display text-[32px] leading-none font-extrabold tracking-[-0.04em] lg:text-[44px]">{{ $play->title }}</h2>
+                    <h2 class="m-0 font-display text-[32px] leading-none font-extrabold tracking-[-0.04em] md:text-[38px] xl:text-[44px]">{{ $play->title }}</h2>
                     <span class="text-sm text-white/90">{{ $play->venue }} · {{ $play->timeRange() }}</span>
-                    <div class="mt-1 mb-0.5 grid max-w-120 grid-cols-2 gap-2 lg:grid-cols-4">
+                    <div class="mt-1 mb-0.5 grid max-w-120 grid-cols-2 gap-2 md:max-w-none md:grid-cols-4 lg:max-w-120">
                         @foreach ([[$play->busyCourtCount() * 4, 'on court'], [$play->queuedPlayerCount(), 'in queue'], [$play->games_count, 'games'], [$play->checkedInCount().'/'.count($play->sessionPlayerIds()), 'checked in']] as [$n, $label])
                             <div class="flex flex-col gap-0.5 rounded-[14px] bg-white/12 px-3 py-2.5">
                                 <span class="font-display text-[22px] leading-[1.1] font-extrabold">{{ $n }}</span>
@@ -60,7 +60,7 @@
                     </div>
                 </div>
                 @if ($longest !== null)
-                    <x-live-court :play="$play" :court="$play->boardCourts()[$longest]" :index="$longest" class="h-42.5 shadow-[0_30px_50px_-25px_rgba(0,0,0,.6)] lg:aspect-[12/5] lg:h-auto" />
+                    <x-live-court :play="$play" :court="$play->boardCourts()[$longest]" :index="$longest" class="h-42.5 shadow-[0_30px_50px_-25px_rgba(0,0,0,.6)] md:aspect-[12/5] md:h-auto" />
                 @endif
             </div>
         @endforeach
@@ -238,7 +238,7 @@
 
     <livewire:past-results />
 
-    {{-- Create open play: bottom sheet on mobile, right drawer on desktop. --}}
+    {{-- Create open play: bottom sheet on phones, right drawer on tablets and desktop. --}}
     <div x-show="$wire.create" x-cloak x-on:keydown.escape.window="$wire.$set('create', false)" class="fixed inset-0 z-60 flex items-end justify-end">
         <button type="button" x-on:click="$wire.$set('create', false)" aria-label="Close" class="absolute inset-0 animate-fade cursor-pointer bg-[rgba(18,23,15,.45)] dark:bg-black/62"></button>
 
@@ -246,9 +246,9 @@
               role="dialog" aria-modal="true" aria-labelledby="create-title"
               x-show="$wire.create" x-trap.noscroll="$wire.create"
               x-transition:enter="transition-transform duration-[420ms] ease-[cubic-bezier(.2,.8,.2,1)]"
-              x-transition:enter-start="translate-y-full lg:translate-x-full lg:translate-y-0"
+              x-transition:enter-start="translate-y-full md:translate-x-full md:translate-y-0"
               x-transition:enter-end="translate-x-0 translate-y-0"
-              class="relative flex h-[92%] w-full flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_-10px_60px_rgba(0,0,0,.3)] lg:h-full lg:w-130 lg:rounded-l-[28px] lg:rounded-tr-none">
+              class="relative flex h-[92%] w-full flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_-10px_60px_rgba(0,0,0,.3)] md:h-full md:w-140 md:rounded-l-[28px] md:rounded-tr-none lg:w-130">
             <div class="flex shrink-0 items-center justify-between gap-3 border-b border-line pt-5 pr-5 pb-4 pl-6">
                 <div class="flex flex-col gap-0.5">
                     <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">{{ $club }}</span>
@@ -399,7 +399,8 @@
 
                 <x-segmented label="Race to" model="raceTo" :options="[11 => '11', 15 => '15', 21 => '21']" />
                 <x-segmented label="Rotation" model="rotation" :options="['rotate' => 'Everyone rotates', 'winners' => 'Winners stay (2 max)']" :hints="['rotate' => 'Fewest games tonight play first, and partners mix so everyone plays with someone new each game. You can switch modes during the open play.', 'winners' => 'Winners stay on for up to 2 games in a row; challengers come from the front of the line.']" />
-                <x-segmented label="Warmup" model="warmup" :options="App\Models\OpenPlay::WARMUPS" :hints="[0 => 'Games start the moment a foursome goes on court. You can turn warmup on during the open play.'] + collect([2, 3, 5])->mapWithKeys(fn ($m) => [$m => "Each new foursome gets a {$m}-minute countdown before the game clock starts, so warmup is never counted as play time. Winners who stay on skip it. You can change it during the open play."])->all()" />
+                @php($warmHint = fn ($m) => "Each new foursome gets a {$m}-minute countdown before the game clock starts, so warmup is never counted as play time. Winners who stay on skip it. You can change it during the open play.")
+                <x-segmented label="Warmup" model="warmup" :options="App\Models\OpenPlay::WARMUPS" :hints="[0 => 'Games start the moment a foursome goes on court. You can turn warmup on during the open play.', 2 => $warmHint(2), 3 => $warmHint(3), 5 => $warmHint(5)]" />
                 <x-segmented label="Who can join" model="visibility" :options="['public' => 'Any member', 'invite' => 'Invite only']" />
 
                 <div class="flex flex-col gap-2">

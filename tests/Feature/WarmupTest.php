@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Livewire\Organizer\CourtBoard;
+use App\Livewire\Organizer\OpenPlays;
 use App\Models\OpenPlay;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -69,5 +70,13 @@ class WarmupTest extends TestCase
         $play->fresh()->setRotation('rotate');
         $play->fresh()->recordScore(1, 11, 6);
         $this->assertFalse(OpenPlay::isWarming($play->fresh()->boardCourts()[0]));
+    }
+
+    public function test_the_create_form_offers_the_warmup_length(): void
+    {
+        $org = User::factory()->create(['organizer_status' => 'approved']);
+
+        Livewire::actingAs($org)->test(OpenPlays::class)->set('create', true)
+            ->assertSee('Warmup')->assertSee('5 min')->assertSee('Each new foursome gets a 3-minute countdown')->assertDontSee('all()', false);
     }
 }

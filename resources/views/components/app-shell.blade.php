@@ -38,9 +38,69 @@
     };
 @endphp
 
-<div class="flex min-h-dvh flex-col lg:flex-row">
+<div class="flex min-h-dvh flex-col md:flex-row">
+    {{-- Tablet rail (768 to 1279px wide): the sidebar as a slim column of icons. --}}
+    <aside aria-label="PickleX" class="sticky top-0 z-30 hidden h-dvh w-24 shrink-0 flex-col items-center gap-3.5 border-r border-line bg-surface px-2.5 pt-5 pb-4 md:flex xl:hidden">
+        <a href="{{ route($user->homeRoute()) }}" wire:navigate aria-label="PickleX home" class="flex size-13 shrink-0 items-center justify-center rounded-2xl bg-lime text-on-lime transition active:scale-97">
+            <svg width="30" height="30" viewBox="20 14 228 228" aria-hidden="true"><path fill="currentColor" d="M28.14 65.15 L189.85 226.86 A24.37 24.37 0 0 0 224.31 192.4 L62.6 30.69 A24.37 24.37 0 0 0 28.14 65.15 Z M108.99 111.55 L28.14 192.4 A24.37 24.37 0 0 0 62.6 226.86 L143.45 146.01 A24.37 24.37 0 0 0 108.99 111.55 Z M145.32 84.37 A25.31 25.31 0 1 1 195.93 84.37 A25.31 25.31 0 1 1 145.32 84.37 Z M190.39 39.31 A25.31 25.31 0 1 1 241 39.31 A25.31 25.31 0 1 1 190.39 39.31 Z" /></svg>
+        </a>
+        @if ($other)
+            <div role="radiogroup" aria-label="Mode" class="flex w-19 flex-col gap-0.5 rounded-[14px] border border-line bg-surface2 p-0.75">
+                @foreach (['organizer' => ['organizer.plays', 'Organizer'], 'member' => ['member.dashboard', 'Player']] as $m => [$route, $label])
+                    <a href="{{ route($route) }}" wire:navigate role="radio" aria-checked="{{ $mode === $m ? 'true' : 'false' }}" @class(['flex h-7.5 items-center justify-center rounded-[10px] text-[11px] font-bold transition-colors', 'bg-ink text-bg' => $mode === $m, 'text-ink2 hover:text-ink' => $mode !== $m])>{{ $label }}</a>
+                @endforeach
+            </div>
+        @else
+            <span class="inline-flex h-5.5 items-center rounded-full border border-line bg-surface2 px-2 font-mono text-[10px] tracking-widest text-ink2 uppercase">{{ $user->roleLabel() }}</span>
+        @endif
+        <nav aria-label="Main" class="flex flex-col items-center gap-1.5">
+            @foreach ($nav as [$route, $label, $icon, $badge])
+                @php($on = $isPage($route))
+                <a href="{{ route($route) }}" wire:navigate @if ($on) aria-current="page" @endif @class(['relative flex min-h-15 w-19 flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-center text-[11.5px] leading-[1.15] font-bold transition active:scale-97', 'bg-lime text-on-lime' => $on, 'text-ink2 hover:bg-surface2 hover:text-ink' => ! $on])>
+                    <x-icon :name="$icon" :size="22" /><span>{{ $label }}</span>
+                    @if ($badge)
+                        <span class="absolute top-1 right-1.5 inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-hot px-1.25 font-mono text-[10px] font-semibold text-white">{{ $badge }}</span>
+                    @endif
+                </a>
+            @endforeach
+        </nav>
+        @if ($mode === 'organizer')
+            <a href="{{ route('organizer.plays', ['create' => 1]) }}" wire:navigate aria-label="Create open play" class="flex min-h-15 w-19 flex-col items-center justify-center gap-1 rounded-2xl border-[1.5px] border-dashed border-line2 px-1 py-2 text-[11.5px] leading-[1.15] font-bold text-ink transition hover:bg-surface2 active:scale-97">
+                <x-icon name="plus" :size="20" /><span>Create</span>
+            </a>
+        @endif
+        <div class="flex-1"></div>
+        <x-theme-toggle class="size-12 rounded-[14px] border-0 bg-transparent text-ink2" />
+        <div class="relative" x-data="{ open: false }" x-on:keydown.escape="open = false">
+            <button type="button" x-on:click="open = ! open" aria-haspopup="menu" x-bind:aria-expanded="open" aria-controls="px-rm" aria-label="Account menu for {{ $user->name }}{{ $wnU ? ", {$wnU} new in What's new" : '' }}" class="relative flex size-13 cursor-pointer items-center justify-center rounded-full active:scale-97">
+                <x-avatar :src="$user->avatarUrl()" :frame="$user->frameClass()" :name="$user->name" :color="$user->color()" class="size-11 text-sm" />
+                @if ($wnU)
+                    <span aria-hidden="true" class="absolute top-0.5 right-0.5 z-1 size-2.75 rounded-full border-2 border-surface bg-hot"></span>
+                @endif
+            </button>
+            <template x-if="open">
+                <div>
+                    <button type="button" tabindex="-1" aria-hidden="true" x-on:click="open = false" class="fixed inset-0 z-40 cursor-default"></button>
+                    <div id="px-rm" role="menu" aria-label="Your account" class="px-pm-pop absolute bottom-0 left-[calc(100%+22px)] z-41 flex w-70 flex-col gap-0.5 rounded-[18px] border border-line bg-surface p-1.5 shadow-card">
+                        <div class="flex min-w-0 flex-col px-3 pt-2.5 pb-2"><span class="truncate font-bold">{{ $user->name }}</span><span class="truncate text-[13px] text-ink3">{{ $user->email }}</span></div>
+                        @unless ($user->isAdmin())
+                            <a href="{{ route('whats-new') }}" wire:navigate role="menuitem" class="flex h-11.5 w-full cursor-pointer items-center gap-3 rounded-xl px-3 text-left text-sm font-bold text-ink transition hover:bg-surface2 active:scale-97"><x-icon name="news" /><span class="flex-1">What's new</span>@if ($wnU)<span class="inline-flex h-5.5 items-center rounded-full bg-lime px-2 text-[11.5px] font-extrabold text-on-lime">{{ $wnU }} new</span>@endif</a>
+                        @endunless
+                        <a href="{{ route('settings') }}" wire:navigate role="menuitem" class="flex h-11.5 w-full cursor-pointer items-center gap-3 rounded-xl px-3 text-left text-sm font-bold text-ink transition hover:bg-surface2 active:scale-97"><x-icon name="settings" /><span class="flex-1">Account settings</span></a>
+                        <a href="{{ route('about') }}" wire:navigate role="menuitem" class="flex h-11.5 w-full cursor-pointer items-center gap-3 rounded-xl px-3 text-left text-sm font-bold text-ink transition hover:bg-surface2 active:scale-97"><x-icon name="love" /><span class="flex-1">Meet the developer</span></a>
+                        <button type="button" role="menuitem" x-on:click="open = false; $dispatch('open-coffee')" aria-haspopup="dialog" class="flex h-11.5 w-full cursor-pointer items-center gap-3 rounded-xl px-3 text-left text-sm font-bold text-ink transition hover:bg-surface2 active:scale-97"><x-icon name="coffee" :stroke="1.8" /><span class="flex-1">Buy me a coffee</span></button>
+                        <form method="POST" action="{{ route('logout') }}" x-data x-on:submit="$dispatch('px-loading', { kind: 'logout', first: @js($user->firstName()) })">
+                            @csrf
+                            <button type="submit" role="menuitem" class="flex h-11.5 w-full cursor-pointer items-center gap-3 rounded-xl px-3 text-left text-sm font-bold text-ink transition hover:bg-surface2 active:scale-97 text-hot!"><x-icon name="logout" /><span class="flex-1">Log out</span></button>
+                        </form>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </aside>
+
     {{-- Desktop sidebar --}}
-    <aside class="sticky top-0 hidden h-dvh w-65 shrink-0 flex-col gap-5 border-r border-line bg-surface px-4 pt-6.5 pb-4.5 lg:flex">
+    <aside class="sticky top-0 hidden h-dvh w-65 shrink-0 flex-col gap-5 border-r border-line bg-surface px-4 pt-6.5 pb-4.5 xl:flex">
         <a href="{{ route($user->homeRoute()) }}" wire:navigate aria-label="PickleX home" class="self-start px-2 text-ink">
             <x-logo class="text-[27px]" />
         </a>
@@ -141,7 +201,7 @@
     </aside>
 
     {{-- Mobile top bar --}}
-    <header x-data="{ open: false }" x-on:keydown.escape.window="open = false" class="sticky top-0 z-20 flex h-15 shrink-0 items-center justify-between border-b border-line bg-surface pr-2.5 pl-4 lg:hidden">
+    <header x-data="{ open: false }" x-on:keydown.escape.window="open = false" class="sticky top-0 z-20 flex h-15 shrink-0 items-center justify-between border-b border-line bg-surface pr-2.5 pl-4 md:hidden">
         <a href="{{ route($user->homeRoute()) }}" wire:navigate aria-label="PickleX home" class="text-ink"><x-logo class="text-2xl" /></a>
         <div class="flex items-center gap-1">
             @if ($other)
@@ -183,7 +243,7 @@
         </div>
     </header>
 
-    <main id="main" tabindex="-1" @class(['relative min-w-0 flex-1', 'pb-19 lg:pb-0' => count($nav) > 1])>
+    <main id="main" tabindex="-1" @class(['relative min-w-0 flex-1', 'pb-19 md:pb-0' => count($nav) > 1])>
         {{ $slot }}
     </main>
 
@@ -191,7 +251,7 @@
     @if (count($nav) > 1)
         {{-- Steps aside while the keyboard is up, so it doesn't cover what you're typing into. --}}
         <nav aria-label="Main" x-data="{ typing: false }" x-on:focusin.window="typing = $event.target.matches('input:not([type=radio], [type=checkbox], [type=file]), textarea, select')" x-on:focusout.window="typing = false"
-             x-show="! typing" class="fixed inset-x-0 bottom-0 z-20 flex h-19 border-t border-line bg-surface px-1.5 pt-1.5 pb-3.5 lg:hidden">
+             x-show="! typing" class="fixed inset-x-0 bottom-0 z-20 flex h-19 border-t border-line bg-surface px-1.5 pt-1.5 pb-3.5 md:hidden">
             @foreach ($nav as [$route, $label, $icon, $badge])
                 @php($on = $isPage($route))
                 <a href="{{ route($route) }}" wire:navigate @if ($on) aria-current="page" @endif @class(['flex min-w-0 flex-1 flex-col items-center justify-center gap-1 text-[11px] font-bold', 'text-ink' => $on, 'text-ink3' => ! $on])>
@@ -211,9 +271,9 @@
     @if ($wnU && ! $isPage('whats-new'))
         @php($wnList = \App\Models\News::unreadBy($user)->get())
         <div wire:key="wn-pop" x-data="{ open: true, close() { this.open = false; fetch(@js(route('whats-new.read')), { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content }, body: JSON.stringify({ ids: @js($wnList->pluck('id')) }) }) } }"
-             x-show="open" x-on:keydown.escape.window="close()" class="fixed inset-0 z-67 flex items-end justify-center lg:items-center lg:p-6">
+             x-show="open" x-on:keydown.escape.window="close()" class="fixed inset-0 z-67 flex items-end justify-center md:items-center md:p-6">
             <button type="button" x-on:click="close()" aria-label="Close" class="absolute inset-0 animate-fade cursor-pointer bg-[rgba(18,23,15,.45)] dark:bg-black/62"></button>
-            <div role="dialog" aria-modal="true" aria-labelledby="wn-title" x-trap.noscroll="open" class="relative flex max-h-full w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] lg:w-135 lg:rounded-[28px]">
+            <div role="dialog" aria-modal="true" aria-labelledby="wn-title" x-trap.noscroll="open" class="relative flex max-h-full w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:w-135 md:max-w-full md:rounded-[28px]">
                 <div class="flex shrink-0 items-start justify-between gap-3 border-b border-line pt-5 pr-5 pb-4 pl-6">
                     <div class="flex min-w-0 flex-col gap-1">
                         <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">What's new in PickleX</span>

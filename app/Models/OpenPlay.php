@@ -303,8 +303,8 @@ class OpenPlay extends Model
     /** First names joined with "&": "Ben & Mika". */
     public function names(array $ids): string
     {
-        // "Kai", "Kai & Rico", "Kai, Rico & Ana".
-        return collect($ids)->map(fn ($id) => $this->participant($id)?->firstName() ?? 'Guest')->join(', ', ' & ');
+        // Each player as others see them (full name, display name, or the guest's typed name): "Kai Santos & Test 123".
+        return collect($ids)->map(fn ($id) => $this->participant($id)?->name ?? 'Guest')->join(', ', ' & ');
     }
 
     public function queue(): array

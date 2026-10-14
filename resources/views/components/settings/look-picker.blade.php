@@ -60,7 +60,7 @@
     </div>
 
     {{-- data-still pauses the preview: resources/js/looks.js keeps looks inside it still. --}}
-    <div x-data="{ paused: false }" :data-still="paused" class="flex flex-col gap-4 rounded-[18px] border border-line bg-surface p-4 lg:flex-row lg:items-center">
+    <div x-data="{ paused: false }" :data-still="paused" class="flex flex-col gap-4 rounded-[18px] border border-line bg-surface p-4 md:flex-row md:items-center">
         <div class="flex shrink-0 items-center gap-3.5">
             <x-avatar :src="$user->avatarUrl()" :frame="$pvFr" :name="$user->shownName()" :color="$user->color()" class="size-17 text-[22px]" aria-hidden="true" />
             <div class="flex flex-col gap-0.5">
@@ -83,14 +83,14 @@
             </div>
         </div>
         <button type="button" x-on:click="paused = ! paused; $nextTick(() => window.pxLooks?.())" :aria-pressed="paused" :aria-label="paused ? 'Play the preview animation' : 'Pause the preview animation'"
-                class="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 self-start rounded-full border-[1.5px] border-line2 bg-bg px-3 text-[13px] font-bold text-ink transition active:scale-97 lg:self-center">
+                class="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 self-start rounded-full border-[1.5px] border-line2 bg-bg px-3 text-[13px] font-bold text-ink transition active:scale-97 md:self-center">
             <svg x-show="paused" x-cloak width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12-7.5Z" /></svg>
             <svg x-show="! paused" width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.5 4.5h4v15h-4zM13.5 4.5h4v15h-4z" /></svg>
             <span x-text="paused ? 'Play' : 'Pause'">Pause</span>
         </button>
     </div>
 
-    <div role="tablist" aria-label="Customize" class="flex self-stretch rounded-2xl border-[1.5px] border-line bg-surface2 p-1 lg:self-start">
+    <div role="tablist" aria-label="Customize" class="flex self-stretch rounded-2xl border-[1.5px] border-line bg-surface2 p-1 md:self-start">
         @foreach (['border' => 'Avatar border', 'queue' => 'Queue background'] as $t => $label)
             <button type="button" role="tab" id="look-tab-{{ $t }}" aria-selected="{{ $tab === $t ? 'true' : 'false' }}" aria-controls="look-panel" wire:click="$set('lookTab', '{{ $t }}')"
                     @class(['min-h-10 flex-1 cursor-pointer rounded-xl px-2.5 text-sm font-bold whitespace-nowrap transition-colors duration-200 lg:px-4', 'bg-surface text-ink shadow-[0_1px_2px_rgba(18,23,15,.12),0_4px_12px_-6px_rgba(18,23,15,.25)]' => $tab === $t, 'text-ink2' => $tab !== $t])>{{ $label }}</button>
@@ -98,7 +98,7 @@
     </div>
 
     <div id="look-panel" role="tabpanel" aria-labelledby="look-tab-{{ $tab }}" class="flex flex-col gap-3.5">
-        <div role="tablist" aria-label="Kind of look" class="grid grid-cols-2 gap-1.5 lg:grid-cols-[repeat(4,max-content)]">
+        <div role="tablist" aria-label="Kind of look" class="grid grid-cols-2 gap-1.5 md:grid-cols-[repeat(4,max-content)]">
             @foreach ($catTabs as $c => [$clabel, $cn, $icon])
                 @php($on = $c === $cat)
                 <button type="button" role="tab" aria-selected="{{ $on ? 'true' : 'false' }}" aria-label="{{ $clabel }}{{ $c === $wearing ? ', you are wearing one of these' : '' }}" wire:click="$set('lookCat.{{ $tab }}', '{{ $c }}')"
@@ -137,7 +137,7 @@
                     <p class="-mt-1 mb-0 text-[13px] leading-[1.4] text-ink3">{{ $exNote }}</p>
                 @endif
                 {{-- data-still: tiles always show each look's still version (resources/js/looks.js). --}}
-                <div role="radiogroup" aria-labelledby="look-{{ $kind }}-{{ $gid }}" data-still @class(['grid gap-2.5', 'grid-cols-4 lg:grid-cols-6' => $kind === 'frame', 'grid-cols-2 lg:grid-cols-4' => $kind === 'queue'])>
+                <div role="radiogroup" aria-labelledby="look-{{ $kind }}-{{ $gid }}" data-still @class(['grid gap-2.5', 'grid-cols-4 md:grid-cols-5 lg:grid-cols-6' => $kind === 'frame', 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4' => $kind === 'queue'])>
                     @foreach ($items as $id => $item)
                         @php([$label, $anim] = $item)
                         @php($locked = $isEx && $item[3])
@@ -150,7 +150,7 @@
                                     'relative flex min-w-0 cursor-pointer rounded-[18px] border-2 transition active:scale-97',
                                     'flex-col items-center gap-2.5 px-1 pt-4 pb-2.5' => $kind === 'frame',
                                     'flex-col items-stretch gap-2 p-2 pb-2.25 text-left' => $kind === 'queue',
-                                    'col-span-2 lg:col-span-1' => $isEx && $kind === 'frame',
+                                    'col-span-2 md:col-span-1' => $isEx && $kind === 'frame',
                                     'border-ink bg-surface' => $on,
                                     'border-dashed border-line2' => $locked,
                                     'border-line' => ! $on && ! $locked,

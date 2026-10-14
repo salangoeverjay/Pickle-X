@@ -6,11 +6,11 @@
 @php($left = max(0, $play->cap - $total))
 @php($spots = $left ? $left.' '.Str::plural('spot', $left).' left' : 'Full')
 @php($pad = 'px-3.5 lg:px-4.5')
-<div wire:key="who-{{ $play->id }}" x-data x-on:keydown.escape.window="$wire.closeWho()" class="fixed inset-0 z-66 flex items-end justify-center lg:items-center lg:p-6">
+<div wire:key="who-{{ $play->id }}" x-data x-on:keydown.escape.window="$wire.closeWho()" class="fixed inset-0 z-66 flex items-end justify-center md:items-center md:p-6">
     <button type="button" wire:click="closeWho" aria-label="Close player list" class="absolute inset-0 animate-fade cursor-pointer bg-[rgba(18,23,15,.45)] dark:bg-black/62"></button>
 
     <div role="dialog" aria-modal="true" aria-labelledby="who-title" x-trap.noscroll="true"
-         class="relative flex max-h-[92%] w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] lg:max-h-full lg:w-215 lg:rounded-[28px]">
+         class="relative flex max-h-[92%] w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:max-h-full md:w-215 md:max-w-full md:rounded-[28px]">
         <div class="flex shrink-0 items-center justify-between gap-3 border-b border-line pt-5 pr-5 pb-4 pl-6">
             <div class="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">{{ $live ? "Live now · who's here" : "Upcoming open play · who's in" }}</span>

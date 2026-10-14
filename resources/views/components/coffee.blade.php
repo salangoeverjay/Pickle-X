@@ -1,9 +1,9 @@
 {{-- Buy me a coffee: Jayvee's QR Ph code (InstaPay, BPI). Opened from the sidebar or the mobile account menu with $dispatch('open-coffee'). --}}
 <div x-data="{ open: false }" x-on:open-coffee.window="open = true" x-on:keydown.escape.window="open = false">
     <template x-if="open">
-        <div class="fixed inset-0 z-66 flex items-end justify-center lg:items-center lg:p-6">
+        <div class="fixed inset-0 z-66 flex items-end justify-center md:items-center md:p-6">
             <button type="button" x-on:click="open = false" aria-label="Close" class="absolute inset-0 animate-fade cursor-pointer bg-[rgba(18,23,15,.45)] dark:bg-black/62"></button>
-            <div role="dialog" aria-modal="true" aria-labelledby="coffee-title" x-trap.noscroll="open" class="relative flex max-h-full w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] lg:w-170 lg:rounded-[28px]">
+            <div role="dialog" aria-modal="true" aria-labelledby="coffee-title" x-trap.noscroll="open" class="relative flex max-h-full w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:w-170 md:max-w-full md:rounded-[28px]">
                 <div class="flex shrink-0 items-center justify-between gap-3 border-b border-line pt-5 pr-5 pb-4 pl-6">
                     <div class="flex min-w-0 flex-col gap-0.5">
                         <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">Support PickleX</span>

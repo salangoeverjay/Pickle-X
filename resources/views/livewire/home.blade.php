@@ -51,8 +51,8 @@
         </div>
 
         {{-- Hero visual: tilted court with floating cards --}}
-        <div class="relative h-75 lg:h-155">
-            <div class="absolute inset-x-2 top-13.5 h-49 animate-rise [animation-delay:.2s] lg:top-25 lg:right-0 lg:left-24 lg:aspect-[9/5] lg:h-auto">
+        <div class="relative h-75 md:h-105 lg:h-155">
+            <div class="absolute inset-x-2 top-13.5 h-49 animate-rise [animation-delay:.2s] md:inset-x-[12%] md:top-16 md:aspect-[9/5] md:h-auto lg:top-25 lg:right-0 lg:left-24">
                 <div class="relative size-full rounded-3xl shadow-[0_50px_80px_-40px_rgba(8,30,18,.75)] transform-[perspective(900px)_rotateX(24deg)_rotateZ(-5deg)] lg:transform-[perspective(1400px)_rotateX(30deg)_rotateZ(-7deg)]">
                     <x-court class="absolute inset-0 rounded-3xl" player-class="size-8 text-[11px] lg:size-12 lg:text-[15px]"
                              :players="[['RD', '#CDEBB0'], ['CM', '#F7C9DB'], ['PC', '#BCD9F7'], ['TR', '#FFD3A3']]" />

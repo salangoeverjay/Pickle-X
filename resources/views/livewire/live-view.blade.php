@@ -45,12 +45,12 @@
 
             <div class="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
                 {{-- Courts + results (second on mobile) --}}
-                <div class="order-2 flex min-w-0 flex-col gap-4 lg:order-0">
-                    <div class="grid gap-3 lg:grid-cols-2">
+                <div class="@container order-2 flex min-w-0 flex-col gap-4 lg:order-0">
+                    <div class="grid gap-3 @min-[600px]:grid-cols-2">
                         @foreach ($courts as $i => $court)
                             <div wire:key="court-{{ $court['n'] }}" class="flex flex-col gap-2.5 rounded-[22px] border border-line bg-surface p-3">
-                                <div class="flex items-center justify-between gap-2.5 px-1 pt-0.5">
-                                    <span class="flex items-center gap-2"><span class="font-display text-[19px] font-extrabold tracking-[-0.03em]">Court {{ $court['n'] }}</span>
+                                <div class="flex flex-wrap items-center justify-between gap-x-2.5 gap-y-1 px-1 pt-0.5">
+                                    <span class="flex min-w-0 items-center gap-2"><span class="font-display text-[19px] whitespace-nowrap font-extrabold tracking-[-0.03em]">Court {{ $court['n'] }}</span>
                                         @if ($court['a'] && ! empty($court['closing']))
                                             <span class="inline-flex h-6 items-center rounded-full bg-ink px-2.25 text-xs font-bold text-bg">Last game</span>
                                         @elseif (App\Models\OpenPlay::isWarming($court))
@@ -58,21 +58,21 @@
                                         @endif
                                     </span>
                                     @if ($court['a'])
-                                        <x-live-timer :start="now()->timestamp - $court['started_at']" before="Warmup " class="font-mono text-sm font-semibold text-ink2" />
+                                        <x-live-timer :start="now()->timestamp - $court['started_at']" class="font-mono text-sm font-semibold whitespace-nowrap text-ink2" />
                                     @else
                                         <span class="inline-flex h-6 items-center rounded-full bg-hot-soft px-2.25 text-xs font-bold text-hot">Open</span>
                                     @endif
                                 </div>
 
                                 @if ($court['a'])
-                                    <x-live-court :play="$play" :court="$court" :me="$me" :badge="false" :locks="true" :index="$i" class="h-41 rounded-2xl! lg:aspect-[21/10] lg:h-auto" player-class="size-8.5 text-xs lg:size-9.5" />
+                                    <x-live-court :play="$play" :court="$court" :me="$me" :badge="false" :locks="true" :index="$i" class="h-41 rounded-2xl! md:aspect-[21/10] md:h-auto" player-class="size-8.5 text-xs lg:size-9.5" />
                                     <div class="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-1 pb-0.5">
-                                        <span class="flex min-w-0 items-center gap-1.25">@if ($court['a']['locked'] ?? false)<span role="img" aria-label="Locked partners" title="Locked partners" class="flex size-4.5 shrink-0 items-center justify-center rounded-full bg-lime text-on-lime"><x-icon name="lock" :size="10" :stroke="2.8" /></span>@endif<span class="truncate text-sm font-bold">{{ $play->names($court['a']['ids']) }}</span></span>
+                                        <span class="flex min-w-0 items-center gap-1.25">@if ($court['a']['locked'] ?? false)<span role="img" aria-label="Locked partners" title="Locked partners" class="flex size-4.5 shrink-0 items-center justify-center rounded-full bg-lime text-on-lime"><x-icon name="lock" :size="10" :stroke="2.8" /></span>@endif<span class="flex min-w-0 flex-col text-sm leading-tight font-bold">@foreach ($court['a']['ids'] as $pid)<span class="truncate">{{ $play->participant($pid)?->name ?? 'Guest' }}</span>@endforeach</span></span>
                                         <span class="font-mono text-[11px] text-ink3">VS</span>
-                                        <span class="flex min-w-0 items-center justify-end gap-1.25"><span class="truncate text-right text-sm font-bold">{{ $play->names($court['b']['ids']) }}</span>@if ($court['b']['locked'] ?? false)<span role="img" aria-label="Locked partners" title="Locked partners" class="flex size-4.5 shrink-0 items-center justify-center rounded-full bg-lime text-on-lime"><x-icon name="lock" :size="10" :stroke="2.8" /></span>@endif</span>
+                                        <span class="flex min-w-0 items-center justify-end gap-1.25"><span class="flex min-w-0 flex-col items-end text-right text-sm leading-tight font-bold">@foreach ($court['b']['ids'] as $pid)<span class="max-w-full truncate">{{ $play->participant($pid)?->name ?? 'Guest' }}</span>@endforeach</span>@if ($court['b']['locked'] ?? false)<span role="img" aria-label="Locked partners" title="Locked partners" class="flex size-4.5 shrink-0 items-center justify-center rounded-full bg-lime text-on-lime"><x-icon name="lock" :size="10" :stroke="2.8" /></span>@endif</span>
                                     </div>
                                 @else
-                                    <x-court class="relative h-41 rounded-2xl lg:aspect-[21/10] lg:h-auto" :label="'Court '.$court['n'].' is open'">
+                                    <x-court class="relative h-41 rounded-2xl md:aspect-[21/10] md:h-auto" :label="'Court '.$court['n'].' is open'">
                                         <div class="absolute inset-0 flex items-center justify-center bg-[rgba(8,20,14,.32)]">
                                             <span class="inline-flex h-8.5 items-center rounded-full bg-white/96 px-3.5 text-[13px] font-extrabold text-on-lime">Next group being called</span>
                                         </div>

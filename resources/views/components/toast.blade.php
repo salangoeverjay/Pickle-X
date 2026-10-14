@@ -9,7 +9,7 @@
         } }"
     x-init="message && show(message)"
     x-on:toast.window="show($event.detail.message)"
-    class="pointer-events-none fixed inset-x-0 bottom-22.5 z-90 flex justify-center px-4 lg:bottom-7"
+    class="pointer-events-none fixed inset-x-0 bottom-22.5 z-90 flex justify-center px-4 md:bottom-7"
 >
     <template x-if="message">
         <div role="status" aria-live="polite" x-bind:class="{ 'px-toast-b': n % 2 === 0, 'px-toast-out': out }" class="px-toast flex max-w-140 items-center gap-2.5 rounded-full bg-ink py-2.5 pr-4.5 pl-2.5 text-sm leading-[1.35] font-semibold text-bg shadow-[0_20px_40px_-12px_rgba(0,0,0,.45)]">

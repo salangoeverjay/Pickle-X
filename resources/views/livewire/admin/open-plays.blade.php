@@ -104,11 +104,11 @@
         @php($host = $play->organizer)
         @php($hf = $host?->firstName() ?? 'the organizer')
         @php($n = $people->count())
-        <div wire:key="apdel-{{ $play->id }}" x-data x-on:keydown.escape.window="$wire.cancelDelete()" class="fixed inset-0 z-66 flex items-end justify-center lg:items-center lg:p-6">
+        <div wire:key="apdel-{{ $play->id }}" x-data x-on:keydown.escape.window="$wire.cancelDelete()" class="fixed inset-0 z-66 flex items-end justify-center md:items-center md:p-6">
             <button type="button" wire:click="cancelDelete" aria-label="Keep open play" class="absolute inset-0 animate-fade cursor-pointer bg-[rgba(18,23,15,.45)] dark:bg-black/62"></button>
 
             <div role="alertdialog" aria-modal="true" aria-labelledby="apd-title" aria-describedby="apd-desc" x-trap.noscroll="true"
-                 class="relative flex max-h-full w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] lg:w-120 lg:rounded-[28px]">
+                 class="relative flex max-h-full w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:w-120 md:max-w-full md:rounded-[28px]">
                 <div class="flex flex-col gap-4 overflow-y-auto px-6 pt-6.5 pb-4.5">
                     <span class="flex size-13 shrink-0 items-center justify-center rounded-2xl border border-hot-line bg-hot-soft text-hot"><x-icon name="trash" :size="22" /></span>
                     <div class="flex flex-col gap-1.5">

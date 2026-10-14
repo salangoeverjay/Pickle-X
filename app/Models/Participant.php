@@ -38,13 +38,13 @@ class Participant extends Model
         return $this->user?->name ?? $this->name;
     }
 
+    /**
+     * How a player is labelled on courts, queues, toasts and standings: the whole shown name (display name,
+     * full name, or the guest's typed name). Cutting it to the first word made "Test 123" read as "Test".
+     */
     public function firstName(): string
     {
-        if ($this->user?->usesDisplayName()) {
-            return $this->user->display_name;
-        }
-
-        return strtok(trim($this->name), ' ') ?: $this->name;
+        return $this->name;
     }
 
     public function initials(): string

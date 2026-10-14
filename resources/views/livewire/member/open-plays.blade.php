@@ -31,7 +31,7 @@
                     <span class="inline-flex h-7 items-center gap-2 self-start rounded-full bg-ink px-2.75 font-mono text-[11px] tracking-[.08em] text-bg uppercase">
                         <span class="size-1.75 animate-live rounded-full bg-lime"></span>Live · {{ $play->title }}
                     </span>
-                    <h2 class="m-0 font-display text-[32px] leading-none font-extrabold tracking-[-0.04em] lg:text-[44px]">{{ $head }}</h2>
+                    <h2 class="m-0 font-display text-[32px] leading-none font-extrabold tracking-[-0.04em] md:text-[38px] xl:text-[44px]">{{ $head }}</h2>
                     <p class="m-0 text-[15px] text-ink2">
                         @switch($s['state'])
                             @case('court')
@@ -104,7 +104,7 @@
 
                 @if ($my['court'])
                     <div class="flex flex-col gap-2">
-                        <x-live-court :play="$play" :court="$my['court']" :index="$my['index']" :me="auth()->user()" class="h-42.5 lg:aspect-[12/5] lg:h-auto" />
+                        <x-live-court :play="$play" :court="$my['court']" :index="$my['index']" :me="auth()->user()" class="h-42.5 md:aspect-[12/5] md:h-auto" />
                         <span class="text-[13px] text-ink3">
                             {{ $s['state'] === 'court' ? "That's you with the lime ring." : "Court {$my['court']['n']} has played the longest, so it is likely the next to open." }}
                         </span>
@@ -120,7 +120,7 @@
             @if ($live->isEmpty())
                 <p class="m-0 rounded-[20px] border-[1.5px] border-dashed border-line2 p-5 text-ink2">No open plays are live right now. Check the upcoming sessions below.</p>
             @endif
-            <div class="grid gap-3.5 lg:grid-cols-2">
+            <div class="grid gap-3.5 md:grid-cols-2">
                 @foreach ($live as $p)
                     <x-plays.card :play="$p" :joined="in_array($p->id, $joined)" :paid="in_array($p->id, $paidIds)" :claimed="in_array($p->id, $claimedIds)" wire:key="live-{{ $p->id }}" />
                 @endforeach
@@ -129,7 +129,7 @@
 
         <section class="flex flex-col gap-3.5">
             <h2 class="m-0 font-display text-[22px] font-bold tracking-[-0.02em]">Upcoming</h2>
-            <div class="grid gap-3.5 lg:grid-cols-2 2xl:grid-cols-3">
+            <div class="grid gap-3.5 md:grid-cols-2 2xl:grid-cols-3">
                 @foreach ($upcoming as $p)
                     <x-plays.card :play="$p" :joined="in_array($p->id, $joined)" :paid="in_array($p->id, $paidIds)" :claimed="in_array($p->id, $claimedIds)" wire:key="up-{{ $p->id }}" />
                 @endforeach
@@ -213,9 +213,9 @@
     {{-- Pay for an open play: bottom sheet on mobile, centered on desktop. --}}
     @if ($payPlay)
         @php($sent = in_array($payPlay->id, $claimedIds))
-        <div wire:key="pay-{{ $payPlay->id }}" x-data x-on:keydown.escape.window="$wire.closePay()" class="fixed inset-0 z-66 flex items-end justify-center lg:items-center lg:p-6">
+        <div wire:key="pay-{{ $payPlay->id }}" x-data x-on:keydown.escape.window="$wire.closePay()" class="fixed inset-0 z-66 flex items-end justify-center md:items-center md:p-6">
             <button type="button" wire:click="closePay" aria-label="Close payment" class="absolute inset-0 animate-fade cursor-pointer bg-[rgba(18,23,15,.45)] dark:bg-black/62"></button>
-            <div role="dialog" aria-modal="true" aria-labelledby="pay-title" x-trap.noscroll="true" class="relative flex max-h-full w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] lg:w-170 lg:rounded-[28px]">
+            <div role="dialog" aria-modal="true" aria-labelledby="pay-title" x-trap.noscroll="true" class="relative flex max-h-full w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:w-170 md:max-w-full md:rounded-[28px]">
                 <div class="flex shrink-0 items-center justify-between gap-3 border-b border-line pt-5 pr-5 pb-4 pl-6">
                     <div class="flex min-w-0 flex-col gap-0.5">
                         <span class="truncate font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">{{ $payPlay->title }}</span>

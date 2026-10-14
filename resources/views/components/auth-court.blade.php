@@ -6,7 +6,7 @@
 @php($players = [['BT', '#E2D2FF'], ['ML', '#FFEFA3'], ['RT', '#CDEBB0'], ['KS', '#BCD9F7']])
 
 @if ($strip)
-    <div class="relative mx-4 mt-1 h-37.5 shrink-0 lg:hidden">
+    <div class="relative mx-4 mt-1 h-37.5 shrink-0 md:mx-auto md:mt-3 md:aspect-[37/20] md:h-auto md:w-[calc(100%-4rem)] md:max-w-140 lg:hidden">
         <x-court class="absolute inset-0 rounded-[22px]" player-class="size-7.5 text-[10px]" :players="$players" />
         <span class="absolute top-2.5 left-2.5 inline-flex h-6 items-center gap-1.5 rounded-full bg-black/35 px-2.25 font-mono text-[10px] tracking-widest text-white">
             <span class="size-1.5 animate-live rounded-full bg-lime"></span>COURT 3 · <x-live-timer />

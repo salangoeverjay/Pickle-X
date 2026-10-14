@@ -59,7 +59,7 @@ class RosterTest extends TestCase
             ->set('rosterQ', 'zzz')->assertSee('No one here matches');
 
         $ben2 = $play->participants()->where('user_id', $ben->id)->first();
-        $c->set('rosterQ', '')->call('setPaid', $ben2->id, true)->assertDispatched('toast', message: 'Ben marked as paid');
+        $c->set('rosterQ', '')->call('setPaid', $ben2->id, true)->assertDispatched('toast', message: "{$ben2->name} marked as paid");
         $this->assertTrue($ben2->fresh()->paid);
 
         $c->call('setPaid', $ben2->id, false);

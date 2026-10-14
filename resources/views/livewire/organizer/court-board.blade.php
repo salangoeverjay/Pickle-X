@@ -13,7 +13,7 @@
         @if (! $play)
             <div class="flex flex-col items-start gap-3.5 rounded-[28px] border-[1.5px] border-dashed border-line2 bg-surface p-8">
                 <span class="flex size-14 items-center justify-center rounded-[18px] bg-surface2"><x-icon name="court" :size="26" :stroke="1.9" /></span>
-                <h1 class="m-0 font-display text-[32px] leading-none font-extrabold tracking-[-0.04em] lg:text-[44px]">No live session</h1>
+                <h1 class="m-0 font-display text-[32px] leading-none font-extrabold tracking-[-0.04em] md:text-[38px] xl:text-[44px]">No live session</h1>
                 <p class="m-0 text-ink2">{{ ! auth()->user()->isOrganizer() || session('mode') === 'member' ? 'The court board opens here when an open play you co-host is live.' : (auth()->user()->openPlays()->exists() ? 'Start one from your open plays when players arrive, and the court board opens here.' : 'Your first live session opens here. Create an open play, then start it on the day when players arrive.') }}</p>
                 <a href="{{ route(auth()->user()->mode() === 'organizer' ? 'organizer.plays' : 'member.plays') }}" wire:navigate class="inline-flex h-12 items-center rounded-full bg-ink px-5 font-bold text-bg transition hover:brightness-96 active:scale-97">Go to open plays</a>
             </div>
@@ -25,7 +25,7 @@
                         <span class="inline-flex h-7 items-center gap-1.75 rounded-full bg-ink px-2.75 font-mono text-[11px] tracking-widest text-bg"><span class="size-1.75 animate-live rounded-full bg-lime"></span>LIVE</span>
                         <span class="text-[13px] text-ink3">{{ $started }} · {{ $play->rotationLabel() }} · Race to {{ $play->race_to }} · {{ $play->warmupLabel() }}</span>
                     </div>
-                    <h1 class="m-0 font-display text-[32px] leading-none font-extrabold tracking-[-0.04em] lg:text-[44px]">{{ $play->title }}</h1>
+                    <h1 class="m-0 font-display text-[32px] leading-none font-extrabold tracking-[-0.04em] md:text-[38px] xl:text-[44px]">{{ $play->title }}</h1>
                     @unless ($autoEnd['soon'])
                         <span class="inline-flex items-center gap-1.5 text-[13px] text-ink2"><x-icon name="clock" :size="15" />{{ $autoEnd['note'] }}</span>
                     @endunless
@@ -98,22 +98,23 @@
             </div>
 
             {{-- Mobile column switch --}}
-            <div role="tablist" aria-label="Court board view" class="grid grid-cols-3 rounded-full border border-line bg-surface p-1 lg:hidden">
+            <div role="tablist" aria-label="Court board view" class="grid grid-cols-3 rounded-full border border-line bg-surface p-1 md:hidden">
                 @foreach (['courts' => 'Courts · '.$busy.'/'.count($courts), 'queue' => 'Queue · '.$inQueue, 'stand' => 'Standings'] as $key => $label)
                     <button type="button" role="tab" aria-selected="{{ $tab === $key ? 'true' : 'false' }}" wire:click="$set('tab', '{{ $key }}')"
                             @class(['h-11 cursor-pointer rounded-full text-sm font-bold transition-colors', 'bg-ink text-bg' => $tab === $key, 'text-ink2' => $tab !== $key])>{{ $label }}</button>
                 @endforeach
             </div>
 
-            <div class="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
+            <div class="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_350px] xl:grid-cols-[minmax(0,1fr)_380px]">
                 {{-- Courts column: courts, results and standings (standings has its own tab on mobile) --}}
-                <div @class(['min-w-0 flex-col gap-4', 'flex' => $tab !== 'queue', 'hidden lg:flex' => $tab === 'queue'])>
-                    <div @class(['grid-cols-1 gap-3.5 lg:grid-cols-2', 'grid' => $tab !== 'stand', 'hidden lg:grid' => $tab === 'stand'])>
+                {{-- Courts go two across only when their column has room for it (a container query, not the screen width). --}}
+                <div @class(['@container min-w-0 flex-col gap-4', 'flex' => $tab !== 'queue', 'hidden md:flex' => $tab === 'queue'])>
+                    <div @class(['grid-cols-1 gap-3.5 @min-[600px]:grid-cols-2', 'grid' => $tab !== 'stand', 'hidden md:grid' => $tab === 'stand'])>
                         @foreach ($courts as $i => $court)
                             <div wire:key="court-{{ $court['n'] }}" class="flex flex-col gap-3 rounded-3xl border border-line bg-surface p-3.5 shadow-card">
-                                <div class="flex items-center justify-between gap-2.5 px-1 pt-0.5">
+                                <div class="flex flex-wrap items-center justify-between gap-x-2.5 gap-y-1 px-1 pt-0.5">
                                     <div class="flex items-center gap-2.5">
-                                        <span class="font-display text-xl font-extrabold tracking-[-0.03em]">Court {{ $court['n'] }}</span>
+                                        <span class="font-display text-xl font-extrabold tracking-[-0.03em] whitespace-nowrap">Court {{ $court['n'] }}</span>
                                         @php($warming = App\Models\OpenPlay::isWarming($court))
                                         @if ($court['a'] && ! empty($court['closing']))
                                             <span class="inline-flex h-6 items-center rounded-full bg-ink px-2.25 text-xs font-bold text-bg">Last game</span>
@@ -126,13 +127,13 @@
                                         @endif
                                     </div>
                                     @if ($court['a'])
-                                        <span class="inline-flex items-center gap-1.5 font-mono text-[15px] font-semibold text-ink2">
-                                            <x-icon name="clock" :size="15" /><x-live-timer :start="now()->timestamp - $court['started_at']" before="Warmup " :refresh="$warming" />
+                                        <span class="inline-flex items-center gap-1.5 font-mono text-[15px] font-semibold whitespace-nowrap text-ink2">
+                                            <x-icon name="clock" :size="15" class="lg:max-xl:hidden" /><x-live-timer :start="now()->timestamp - $court['started_at']" :refresh="$warming" />
                                         </span>
                                     @endif
                                 </div>
 
-                                <x-live-court :play="$play" :court="$court" :badge="false" :locks="true" :index="$i" class="h-41 lg:aspect-[21/10] lg:h-auto" player-class="size-8.5 text-xs lg:size-9.5" />
+                                <x-live-court :play="$play" :court="$court" :badge="false" :locks="true" :index="$i" class="h-41 md:aspect-[21/10] md:h-auto" player-class="size-8.5 text-xs lg:size-9.5" />
 
                                 @if ($court['a'])
                                     <div class="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-1">
@@ -142,8 +143,13 @@
                                             @endif
                                             <div @class(['flex min-w-0 flex-col gap-0.5', 'items-end' => $side === 'b'])>
                                                 <span class="font-mono text-[10px] tracking-[.12em] text-ink3">TEAM {{ strtoupper($side) }}</span>
-                                                <span @class(['flex min-w-0 items-center gap-1.5 text-[15px] font-bold', 'flex-row-reverse' => $side === 'b'])>
-                                                    <span class="truncate">{{ $play->names($court[$side]['ids']) }}</span>
+                                                <span @class(['flex min-w-0 max-w-full items-center gap-1.5 text-[15px] leading-tight font-bold', 'flex-row-reverse' => $side === 'b'])>
+                                                    {{-- One line per player, so full names fit. --}}
+                                                    <span @class(['flex min-w-0 flex-col', 'items-end text-right' => $side === 'b'])>
+                                                        @foreach ($court[$side]['ids'] as $pid)
+                                                            <span class="max-w-full truncate">{{ $play->participant($pid)?->name ?? 'Guest' }}</span>
+                                                        @endforeach
+                                                    </span>
                                                     @if ($court[$side]['locked'])
                                                         <x-icon name="lock" :size="12" :stroke="2.6" class="text-lime-text" />
                                                     @endif
@@ -212,13 +218,13 @@
                             </div>
                         @endforeach
                         <button type="button" wire:click="openCourts" aria-haspopup="dialog"
-                                class="flex min-h-14 cursor-pointer items-center justify-center gap-2.5 rounded-3xl border-[1.5px] border-dashed border-line2 px-4 text-[15px] font-bold text-ink2 transition hover:border-ink hover:text-ink active:scale-99 lg:col-span-2">
+                                class="flex min-h-14 cursor-pointer items-center justify-center gap-2.5 rounded-3xl border-[1.5px] border-dashed border-line2 px-4 text-[15px] font-bold text-ink2 transition hover:border-ink hover:text-ink active:scale-99 @min-[600px]:col-span-2">
                             <span aria-hidden="true" class="flex size-7 items-center justify-center rounded-full bg-surface2"><x-icon name="plus" :size="14" :stroke="2.6" /></span>Got another court? Add it
                         </button>
                     </div>
 
                     @if ($results->isNotEmpty())
-                        <div @class(['flex-col rounded-3xl border border-line bg-surface p-4.5', 'flex' => $tab !== 'stand', 'hidden lg:flex' => $tab === 'stand'])>
+                        <div @class(['flex-col rounded-3xl border border-line bg-surface p-4.5', 'flex' => $tab !== 'stand', 'hidden md:flex' => $tab === 'stand'])>
                             <div class="mb-2 flex items-baseline justify-between gap-2.5">
                                 <h2 class="m-0 font-display text-xl font-extrabold tracking-[-0.03em]">Latest results</h2>
                                 <span class="text-[13px] text-ink3">{{ $games }} games logged tonight</span>
@@ -247,17 +253,17 @@
                         </div>
                     @endif
 
-                    <div @class(['hidden lg:block' => $tab === 'courts'])>
+                    <div @class(['hidden md:block' => $tab === 'courts'])>
                         <x-standings :play="$play" :rows="$standings" :page="$standingsPage" :fresh="$podNew" heading="standings-board" class="rounded-3xl" />
                     </div>
                 </div>
 
                 {{-- Queue column --}}
-                <div @class(['flex-col gap-3.5 rounded-3xl border border-line bg-surface p-4.5 shadow-card lg:sticky lg:top-5 lg:max-h-260 lg:overflow-y-auto lg:[scrollbar-width:thin] [&>*]:shrink-0', 'flex' => $tab === 'queue', 'hidden lg:flex' => $tab !== 'queue'])>
-                    <div class="flex items-center justify-between gap-2.5">
+                <div @class(['flex-col gap-3.5 rounded-3xl border border-line bg-surface p-4.5 shadow-card lg:sticky lg:top-5 lg:max-h-260 lg:overflow-y-auto lg:[scrollbar-width:thin] [&>*]:shrink-0', 'flex' => $tab === 'queue', 'hidden md:flex' => $tab !== 'queue'])>
+                    <div class="flex flex-wrap items-center justify-between gap-2.5">
                         <div class="flex items-center gap-2.5">
                             <h2 class="m-0 font-display text-[22px] font-extrabold tracking-[-0.03em]">Queue</h2>
-                            <span class="inline-flex h-6.5 items-center rounded-full border border-line bg-surface2 px-2.5 font-mono text-xs">{{ $inQueue }} players</span>
+                            <span class="inline-flex h-6.5 items-center rounded-full border border-line bg-surface2 px-2.5 font-mono text-xs whitespace-nowrap">{{ $inQueue }} players</span>
                         </div>
                         <button type="button" id="rotm-btn" x-on:click="rotm = ! rotm" x-bind:aria-expanded="rotm" aria-controls="rotm" aria-label="Game mode: {{ $play->rotationLabel() }}. Change it"
                                 class="inline-flex h-8.5 cursor-pointer items-center gap-1.5 rounded-full border-[1.5px] border-line2 bg-surface px-3 text-xs font-bold whitespace-nowrap text-ink transition hover:brightness-96 active:scale-97">
@@ -592,7 +598,7 @@
     {{-- Score entry: bottom sheet on mobile, centered modal on desktop. --}}
     @if ($play && $scoring)
         @php($to = $play->race_to)
-        <div wire:key="score-{{ $scoring['n'] }}" class="fixed inset-0 z-65 flex items-end justify-center lg:items-center lg:p-6"
+        <div wire:key="score-{{ $scoring['n'] }}" class="fixed inset-0 z-65 flex items-end justify-center md:items-center md:p-6"
              x-data="{
                 a: $wire.entangle('scoreA'), b: $wire.entangle('scoreB'), to: {{ $to }}, names: @js(['a' => $play->names($scoring['a']['ids']), 'b' => $play->names($scoring['b']['ids'])]),
                 n(v) { return v === null || v === '' ? null : Number(v) },
@@ -614,7 +620,7 @@
             <button type="button" wire:click="closeScore" aria-label="Close score entry" class="absolute inset-0 animate-fade cursor-pointer bg-[rgba(18,23,15,.45)] dark:bg-black/62"></button>
 
             <form wire:submit="saveScore" role="dialog" aria-modal="true" aria-labelledby="score-title"
-                  class="relative flex max-h-full w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] lg:w-160 lg:rounded-[28px]">
+                  class="relative flex max-h-full w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:w-160 md:max-w-full md:rounded-[28px]">
                 <div class="flex shrink-0 items-center justify-between gap-3 border-b border-line pt-5 pr-5 pb-4 pl-6">
                     <div class="flex flex-col gap-0.5">
                         <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">Court {{ $scoring['n'] }} · Race to {{ $to }} · <x-live-timer :start="now()->timestamp - $scoring['started_at']" /></span>
@@ -693,11 +699,11 @@
     @if ($play && $courtsDialog)
         @php($cd = $courtsDialog)
         @php($rc = $cd['remove'])
-        <div wire:key="courts-{{ $rc['n'] ?? 'list' }}" x-data x-on:keydown.escape.window="$wire.{{ $rc ? "set('crt.step', 'list')" : "set('crt', null)" }}" class="fixed inset-0 z-66 flex items-end justify-center lg:items-center lg:p-6">
+        <div wire:key="courts-{{ $rc['n'] ?? 'list' }}" x-data x-on:keydown.escape.window="$wire.{{ $rc ? "set('crt.step', 'list')" : "set('crt', null)" }}" class="fixed inset-0 z-66 flex items-end justify-center md:items-center md:p-6">
             <button type="button" wire:click="$set('crt', null)" aria-label="Close" class="absolute inset-0 animate-fade cursor-pointer bg-[rgba(18,23,15,.45)] dark:bg-black/62"></button>
 
             <div role="dialog" aria-modal="true" aria-labelledby="crt-title" x-trap.noscroll="true"
-                 class="relative flex max-h-[92%] w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] lg:max-h-full lg:w-170 lg:rounded-[28px]">
+                 class="relative flex max-h-[92%] w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:max-h-full md:w-170 md:max-w-full md:rounded-[28px]">
                 <div class="flex shrink-0 items-center justify-between gap-3 border-b border-line pt-5 pr-5 pb-4 pl-6">
                     <div class="flex min-w-0 flex-col gap-0.5">
                         <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">{{ $rc ? 'Live session · remove a court' : 'Live session · courts' }}</span>
@@ -832,11 +838,11 @@
         @php($outs = $this->csub['out'])
         @php($opt = fn ($on) => $on ? 'border-ink bg-surface' : 'border-line bg-transparent')
         @php($dot = fn ($on) => '<span aria-hidden="true" class="ml-auto flex size-4.5 shrink-0 items-center justify-center rounded-full border-2 '.($on ? 'border-ink' : 'border-line2').'"><span class="size-2 rounded-full '.($on ? 'bg-ink' : '').'"></span></span>')
-        <div wire:key="csub-{{ $ct['n'] }}" x-data x-on:keydown.escape.window="$wire.set('csub', null)" class="fixed inset-0 z-66 flex items-end justify-center lg:items-center lg:p-6">
+        <div wire:key="csub-{{ $ct['n'] }}" x-data x-on:keydown.escape.window="$wire.set('csub', null)" class="fixed inset-0 z-66 flex items-end justify-center md:items-center md:p-6">
             <button type="button" wire:click="$set('csub', null)" aria-label="Close" class="absolute inset-0 animate-fade cursor-pointer bg-[rgba(18,23,15,.45)] dark:bg-black/62"></button>
 
             <div role="dialog" aria-modal="true" aria-labelledby="cs-title" x-trap.noscroll="true"
-                 class="relative flex max-h-[92%] w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] lg:max-h-full lg:w-190 lg:rounded-[28px]">
+                 class="relative flex max-h-[92%] w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:max-h-full md:w-190 md:max-w-full md:rounded-[28px]">
                 <div class="flex shrink-0 items-center justify-between gap-3 border-b border-line pt-5 pr-5 pb-4 pl-6">
                     <div class="flex min-w-0 flex-col gap-0.5">
                         <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">Live court · substitution</span>
@@ -947,11 +953,11 @@
     @if ($play)
         {{-- Share view mode: bottom sheet on mobile, centered modal on desktop. --}}
         @if ($shareUrl)
-            <div x-show="share" x-cloak x-on:keydown.escape.window="share = false" class="fixed inset-0 z-66 flex items-end justify-center lg:items-center lg:p-6">
+            <div x-show="share" x-cloak x-on:keydown.escape.window="share = false" class="fixed inset-0 z-66 flex items-end justify-center md:items-center md:p-6">
                 <button type="button" x-on:click="share = false" aria-label="Close share" class="absolute inset-0 animate-fade cursor-pointer bg-[rgba(18,23,15,.45)] dark:bg-black/62"></button>
 
                 <div role="dialog" aria-modal="true" aria-labelledby="share-title" x-trap.noscroll="share"
-                     class="relative flex max-h-full w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] lg:w-180 lg:rounded-[28px]">
+                     class="relative flex max-h-full w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:w-180 md:max-w-full md:rounded-[28px]">
                     <div class="flex shrink-0 items-center justify-between gap-3 border-b border-line pt-5 pr-5 pb-4 pl-6">
                         <div class="flex min-w-0 flex-1 flex-col gap-0.5">
                             <span class="truncate font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">{{ $play->title }}</span>
@@ -1004,11 +1010,11 @@
         @endif
 
         {{-- End session confirm (same sheet/modal pattern). --}}
-        <div x-show="confirmEnd" x-cloak x-on:keydown.escape.window="confirmEnd = false" class="fixed inset-0 z-66 flex items-end justify-center lg:items-center lg:p-6">
+        <div x-show="confirmEnd" x-cloak x-on:keydown.escape.window="confirmEnd = false" class="fixed inset-0 z-66 flex items-end justify-center md:items-center md:p-6">
             <button type="button" x-on:click="confirmEnd = false" aria-label="Keep playing" class="absolute inset-0 animate-fade cursor-pointer bg-[rgba(18,23,15,.45)] dark:bg-black/62"></button>
 
             <div role="alertdialog" aria-modal="true" aria-labelledby="end-title" aria-describedby="end-desc" x-trap.noscroll="confirmEnd"
-                 class="relative flex max-h-full w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] lg:w-130 lg:rounded-[28px]">
+                 class="relative flex max-h-full w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:w-130 md:max-w-full md:rounded-[28px]">
                 <div class="flex min-h-0 flex-col gap-4 overflow-y-auto px-6 pt-6.5 pb-4.5">
                     <span class="flex size-13 items-center justify-center rounded-2xl border border-hot-line bg-hot-soft text-hot"><x-icon name="stop" :size="22" :stroke="2.2" /></span>
                     <div class="flex flex-col gap-1.5">

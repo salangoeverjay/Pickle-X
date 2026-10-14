@@ -4,9 +4,9 @@
 @php($row = function ($u) use ($cohosts) {
     return ($u->isOrganizer() ? 'Organizer' : 'Player').(in_array($u->id, $cohosts['joined']) ? ' · joined this' : '').($u->club ? ' · '.$u->club : '').' · '.$u->email;
 })
-<div wire:key="cohosts-{{ $play->id }}" x-data x-on:keydown.escape.window="$wire.closeCohosts()" class="fixed inset-0 z-66 flex items-end justify-center lg:items-center lg:p-6">
+<div wire:key="cohosts-{{ $play->id }}" x-data x-on:keydown.escape.window="$wire.closeCohosts()" class="fixed inset-0 z-66 flex items-end justify-center md:items-center md:p-6">
     <button type="button" wire:click="closeCohosts" aria-label="Close" class="absolute inset-0 animate-fade cursor-pointer bg-[rgba(18,23,15,.45)] dark:bg-black/62"></button>
-    <div role="dialog" aria-modal="true" aria-labelledby="coh-title" x-trap.noscroll="true" class="relative flex max-h-[92%] w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] lg:max-h-full lg:w-190 lg:rounded-[28px]">
+    <div role="dialog" aria-modal="true" aria-labelledby="coh-title" x-trap.noscroll="true" class="relative flex max-h-[92%] w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:max-h-full md:w-190 md:max-w-full md:rounded-[28px]">
         <div class="flex shrink-0 items-center justify-between gap-3 border-b border-line pt-5 pr-5 pb-4 pl-6">
             <div class="flex min-w-0 flex-col gap-0.5">
                 <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">Co-hosts</span>
