@@ -49,6 +49,8 @@ class Settings extends Component
 
     public string $rotation = 'rotate';
 
+    public $warmup = 3;
+
     public bool $confirmingDelete = false;
 
     // "Organize open plays" request (players in member mode)
@@ -88,6 +90,7 @@ class Settings extends Component
             'courts' => (int) $user->pref('defaults.courts'),
             'raceTo' => (int) $user->pref('defaults.race_to'),
             'rotation' => $user->pref('defaults.rotation'),
+            'warmup' => (int) $user->pref('defaults.warmup'),
         ]);
     }
 
@@ -241,11 +244,13 @@ class Settings extends Component
             'courts' => 'required|integer|between:1,12',
             'raceTo' => 'required|in:11,15,21',
             'rotation' => 'required|in:rotate,winners',
+            'warmup' => 'required|in:0,2,3,5',
         ]);
 
         $user->setPref('defaults.courts', $this->courts);
         $user->setPref('defaults.race_to', (int) $this->raceTo);
         $user->setPref('defaults.rotation', $this->rotation);
+        $user->setPref('defaults.warmup', (int) $this->warmup);
         $user->save();
 
         $this->dispatch('toast', message: 'Defaults saved. New open plays will start with them.');

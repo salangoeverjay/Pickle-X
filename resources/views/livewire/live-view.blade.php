@@ -35,7 +35,7 @@
                     <span class="font-mono text-xs text-ink3">{{ $play->share_code }}</span>
                 </div>
                 <h1 class="m-0 font-display text-[28px] leading-[1.02] font-extrabold tracking-[-0.04em] lg:text-[40px]">{{ $play->title }}</h1>
-                <span class="text-sm text-ink2">{{ $play->club }} · {{ $play->venue }} · Race to {{ $play->race_to }} · {{ $play->rotationLabel() }}</span>
+                <span class="text-sm text-ink2">{{ $play->club }} · {{ $play->venue }} · Race to {{ $play->race_to }} · {{ $play->rotationLabel() }} · {{ $play->warmupLabel() }}</span>
                 <div class="mt-0.5 flex flex-wrap gap-2">
                     @foreach ([$busy, $here, $started] as $chip)
                         <span class="inline-flex h-7.5 items-center rounded-full border border-line bg-surface px-3 text-[13px] font-bold">{{ $chip }}</span>
@@ -53,10 +53,12 @@
                                     <span class="flex items-center gap-2"><span class="font-display text-[19px] font-extrabold tracking-[-0.03em]">Court {{ $court['n'] }}</span>
                                         @if ($court['a'] && ! empty($court['closing']))
                                             <span class="inline-flex h-6 items-center rounded-full bg-ink px-2.25 text-xs font-bold text-bg">Last game</span>
+                                        @elseif (App\Models\OpenPlay::isWarming($court))
+                                            <span class="inline-flex h-5.5 items-center gap-1.25 rounded-full bg-lime px-2 text-[11px] font-bold text-on-lime"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2h4M12 14l3-3M12 22a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z" /></svg>Warmup</span>
                                         @endif
                                     </span>
                                     @if ($court['a'])
-                                        <x-live-timer :start="now()->timestamp - $court['started_at']" class="font-mono text-sm font-semibold text-ink2" />
+                                        <x-live-timer :start="now()->timestamp - $court['started_at']" before="Warmup " class="font-mono text-sm font-semibold text-ink2" />
                                     @else
                                         <span class="inline-flex h-6 items-center rounded-full bg-hot-soft px-2.25 text-xs font-bold text-hot">Open</span>
                                     @endif

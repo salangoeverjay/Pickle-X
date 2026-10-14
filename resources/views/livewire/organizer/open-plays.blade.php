@@ -399,6 +399,7 @@
 
                 <x-segmented label="Race to" model="raceTo" :options="[11 => '11', 15 => '15', 21 => '21']" />
                 <x-segmented label="Rotation" model="rotation" :options="['rotate' => 'Everyone rotates', 'winners' => 'Winners stay (2 max)']" :hints="['rotate' => 'Fewest games tonight play first, and partners mix so everyone plays with someone new each game. You can switch modes during the open play.', 'winners' => 'Winners stay on for up to 2 games in a row; challengers come from the front of the line.']" />
+                <x-segmented label="Warmup" model="warmup" :options="App\Models\OpenPlay::WARMUPS" :hints="[0 => 'Games start the moment a foursome goes on court. You can turn warmup on during the open play.'] + collect([2, 3, 5])->mapWithKeys(fn ($m) => [$m => "Each new foursome gets a {$m}-minute countdown before the game clock starts, so warmup is never counted as play time. Winners who stay on skip it. You can change it during the open play."])->all()" />
                 <x-segmented label="Who can join" model="visibility" :options="['public' => 'Any member', 'invite' => 'Invite only']" />
 
                 <div class="flex flex-col gap-2">

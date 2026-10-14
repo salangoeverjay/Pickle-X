@@ -37,7 +37,7 @@
 
     @if ($busy && $badge)
         <span class="absolute top-2.5 left-2.5 z-1 inline-flex h-6 items-center gap-1.5 rounded-full bg-black/38 px-2.25 font-mono text-[11px] tracking-[.08em] text-white">
-            COURT {{ $court['n'] }} · <x-live-timer :start="$elapsed" />
+            COURT {{ $court['n'] }} · <x-live-timer :start="$elapsed" before="WARMUP " />
         </span>
     @endif
 </x-court>

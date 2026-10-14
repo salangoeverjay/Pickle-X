@@ -222,6 +222,26 @@ class CourtBoard extends Component
         $this->dispatch('toast', message: $play->rotationLabel().' from the next game · games on court finish as they are');
     }
 
+    /** Warmup length, changed mid-session from the header. Applies to the next foursome that goes on. */
+    public function setWarmup(int $minutes): void
+    {
+        $play = $this->play();
+        if ($play->warmup === $minutes) {
+            return;
+        }
+        $play->setWarmup($minutes);
+        $this->dispatch('toast', message: ($minutes ? "{$minutes}-minute warmup" : 'No warmup').' from the next game · courts on now keep their clock');
+    }
+
+    /** Skip the rest of a court's warmup: the game clock starts now. */
+    public function startNow(int $n): void
+    {
+        $warmed = $this->play()->startNow($n);
+        if ($warmed !== null) {
+            $this->dispatch('toast', message: "Court {$n}: game on · warmed up for ".sprintf('%02d:%02d', intdiv($warmed, 60), $warmed % 60));
+        }
+    }
+
     public function openCourts(): void
     {
         $taken = collect($this->play()->boardCourts())->pluck('n')->all();
@@ -557,6 +577,8 @@ class CourtBoard extends Component
             'sb' => $g->score_b,
             'aWon' => $g->winner === 'a',
             'subs' => $g->subs ? 'Sub: '.$this->subLine($play, $g->subs) : null,
+            'played' => sprintf('%02d:%02d', intdiv($p = max(0, $g->played_at->timestamp - $g->started_at->timestamp), 60), $p % 60),
+            'warmup' => $g->warmup_seconds ? sprintf('%02d:%02d', intdiv($g->warmup_seconds, 60), $g->warmup_seconds % 60) : null,
         ]);
 
         $busy = $play->busyCourtCount();

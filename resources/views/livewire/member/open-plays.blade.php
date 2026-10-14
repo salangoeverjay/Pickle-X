@@ -35,7 +35,7 @@
                     <p class="m-0 text-[15px] text-ink2">
                         @switch($s['state'])
                             @case('court')
-                                {{ $s['partner'] ? "With {$s['partner']} vs " : 'Against ' }}{{ $s['opponents'] }} · <x-live-timer :start="now()->timestamp - $s['started_at']" />
+                                {{ $s['partner'] ? "With {$s['partner']} vs " : 'Against ' }}{{ $s['opponents'] }} · <x-live-timer :start="now()->timestamp - $s['started_at']" before="warming up, game starts in " />
                                 @break
                             @case('next')
                                 {{ $s['partner'] ? "With {$s['partner']} vs " : 'Against ' }}{{ $s['opponents'] }}{{ $s['court'] ? " on Court {$s['court']}. Grab your paddle." : '. You go on as soon as a court finishes.' }}

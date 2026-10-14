@@ -14,7 +14,7 @@
                     <div class="flex min-w-0 flex-1 flex-col gap-0.75">
                         <span class="flex items-center gap-2 font-mono text-[11px] tracking-widest uppercase"><span class="size-1.75 animate-live rounded-full bg-lime"></span>Live · {{ $live['title'] }}</span>
                         <span class="font-display text-[22px] leading-[1.1] font-extrabold tracking-[-0.03em]">{{ $live['head'] }}</span>
-                        <span class="text-sm opacity-80">{{ $live['sub'] }}@isset($live['timer'])<x-live-timer :start="$live['timer']" />@endisset</span>
+                        <span class="text-sm opacity-80">{{ $live['sub'] }}@isset($live['timer'])<x-live-timer :start="$live['timer']" before="warming up, game starts in " />@endisset</span>
                         @if ($live['standing'])
                             <span class="mt-1.5 inline-flex min-h-6.5 max-w-full items-center gap-1.5 self-start rounded-full bg-lime px-2.5 py-0.75 text-xs font-extrabold whitespace-nowrap text-on-lime">
                                 <x-icon name="trophy" :size="13" :stroke="2.2" /><span>{{ $live['standing'] }}</span>

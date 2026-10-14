@@ -72,7 +72,7 @@ class User extends Authenticatable implements HasPasskeys
             'requests' => true, 'adminRecap' => false,
         ],
         'privacy' => ['ranked' => true, 'statsPublic' => true],
-        'defaults' => ['courts' => 4, 'race_to' => 11, 'rotation' => 'rotate'],
+        'defaults' => ['courts' => 4, 'race_to' => 11, 'rotation' => 'rotate', 'warmup' => 3],
     ];
 
     /**

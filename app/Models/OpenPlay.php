@@ -20,7 +20,8 @@ use InvalidArgumentException;
  * board = [
  *   'seq'    => int,  // last queue entry id handed out
  *   'queue'  => [['id' => int, 'ids' => [participantId, ...], 'locked' => bool], ...],
- *   'courts' => [['n' => 1, 'a' => ['ids' => [..], 'locked' => bool]|null, 'b' => ..., 'started_at' => unix|null, 'wins' => int], ...],
+ *   'courts' => [['n' => 1, 'a' => ['ids' => [..], 'locked' => bool]|null, 'b' => ..., 'started_at' => unix|null, 'wins' => int, 'w0' => unix|null], ...],
+ *                started_at is when the game clock starts: a new foursome warms up first (from w0), so it's in the future until then.
  * ]
  *
  * A queue entry is one waiting player, or two locked partners who always play together.
@@ -33,7 +34,7 @@ class OpenPlay extends Model
 {
     protected $fillable = [
         'organizer_id', 'title', 'club', 'venue', 'starts_at', 'ends_at', 'courts', 'cap',
-        'race_to', 'rotation', 'visibility', 'fee', 'status', 'auto_fill', 'board', 'started_at', 'ended_at', 'share_code',
+        'race_to', 'rotation', 'warmup', 'visibility', 'fee', 'status', 'auto_fill', 'board', 'started_at', 'ended_at', 'share_code',
         'pay_method', 'pay_name', 'pay_number', 'pay_qr_version', 'link_code', 'link_guests',
     ];
 
@@ -47,6 +48,7 @@ class OpenPlay extends Model
             'auto_ended' => 'boolean',
             'auto_fill' => 'boolean',
             'link_guests' => 'boolean',
+            'warmup' => 'integer',
             'board' => 'array',
         ];
     }
@@ -201,6 +203,21 @@ class OpenPlay extends Model
     public function rotationLabel(): string
     {
         return $this->rotation === 'winners' ? 'Winners stay (2 max)' : 'Everyone rotates';
+    }
+
+    /** Warmup lengths an organizer can pick, in minutes (0 = off). */
+    public const WARMUPS = [0 => 'Off', 2 => '2 min', 3 => '3 min', 5 => '5 min'];
+
+    /** "3 min warmup" or "No warmup". */
+    public function warmupLabel(): string
+    {
+        return $this->warmup ? "{$this->warmup} min warmup" : 'No warmup';
+    }
+
+    /** A court whose foursome is still warming up (its game clock hasn't started). */
+    public static function isWarming(array $court): bool
+    {
+        return $court['a'] && $court['started_at'] > now()->timestamp;
     }
 
     public function feeLabel(): string
@@ -892,7 +909,9 @@ class OpenPlay extends Model
 
             $game = $play->games()->create([
                 'court' => $n, 'score_a' => $scoreA, 'score_b' => $scoreB, 'winner' => $side, 'subs' => $court['subs'] ?? null,
-                'started_at' => $court['started_at'] ? now()->setTimestamp($court['started_at']) : now(), 'played_at' => now(),
+                // Entered during warmup: the game clock starts now. Warmup time is never counted as play time.
+                'started_at' => now()->setTimestamp(min($court['started_at'] ?: now()->timestamp, now()->timestamp)), 'played_at' => now(),
+                'warmup_seconds' => ($court['w0'] ?? null) ? max(0, min($court['started_at'], now()->timestamp) - $court['w0']) : null,
             ]);
             $users = $play->participants()->pluck('user_id', 'id');
             foreach (['a', 'b'] as $team) {
@@ -925,7 +944,8 @@ class OpenPlay extends Model
                 $requeue($lose);
                 if ($challenger = self::nextTeam($board['queue'], $play->checkedInIds())) {
                     $board['queue'] = array_values(array_filter($board['queue'], fn ($e) => ! in_array($e['id'], $challenger['used'])));
-                    $court = ['n' => $n, 'a' => $win, 'b' => $challenger['team'], 'started_at' => now()->timestamp, 'wins' => $wins];
+                    // Winners who stay on skip the warmup.
+                    $court = ['n' => $n, 'a' => $win, 'b' => $challenger['team'], 'started_at' => now()->timestamp, 'wins' => $wins, 'w0' => null];
                 } else {
                     $requeue($win);
                 }
@@ -1022,6 +1042,29 @@ class OpenPlay extends Model
         if (count($ids) !== count(array_unique($ids))) {
             $this->mutate(fn () => null);
         }
+    }
+
+    /** Change the warmup mid-session. It applies to the next foursome that goes on; courts warming up keep their countdown. */
+    public function setWarmup(int $minutes): void
+    {
+        abort_unless(isset(self::WARMUPS[$minutes]), 422);
+        $this->update(['warmup' => $minutes]);
+    }
+
+    /** Skip the rest of a court's warmup: the game clock starts now. Returns how long they warmed up (seconds), or null if it wasn't warming up. */
+    public function startNow(int $n): ?int
+    {
+        return $this->mutate(function (array &$board) use ($n) {
+            foreach ($board['courts'] as &$court) {
+                if ($court['n'] === $n && self::isWarming($court)) {
+                    $court['started_at'] = now()->timestamp;
+
+                    return now()->timestamp - ($court['w0'] ?? now()->timestamp);
+                }
+            }
+
+            return null;
+        });
     }
 
     /** Switch the game mode mid-session. It applies from the next game; games on court finish as they are. */
@@ -1381,7 +1424,8 @@ class OpenPlay extends Model
         }
         foreach ($board['courts'] as &$court) {
             if ($court['n'] === $n && ! $court['a']) {
-                $court = ['n' => $n, 'a' => $next['a'], 'b' => $next['b'], 'started_at' => now()->timestamp, 'wins' => 0];
+                $warm = $play->warmup * 60;
+                $court = ['n' => $n, 'a' => $next['a'], 'b' => $next['b'], 'started_at' => now()->timestamp + $warm, 'wins' => 0, 'w0' => $warm ? now()->timestamp : null];
                 $board['queue'] = array_values(array_filter($board['queue'], fn ($e) => ! in_array($e['id'], $next['used'])));
 
                 return $next;

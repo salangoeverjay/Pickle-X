@@ -12,6 +12,8 @@
     $isPage = fn (string $name) => Str::is($name, (string) $page);
     // One account, two modes: approved organizers switch between organizer and player.
     $other = $user->isOrganizer() ? ($mode === 'organizer' ? ['member.dashboard', 'Switch to player mode'] : ['organizer.plays', 'Switch to organizer mode']) : null;
+    // What's new: unread updates for this person (admins write them, so they don't get any).
+    $wnU = $user->isAdmin() ? 0 : \App\Models\News::unreadBy($user)->count();
     $nav = match ($mode) {
         'organizer' => [
             ['organizer.plays', 'Open plays', 'calendar', null],
@@ -21,6 +23,7 @@
             ['admin.requests', 'Requests', 'shield', \App\Models\User::where('organizer_status', 'pending')->count() ?: null],
             ['admin.users', 'Users', 'users', null],
             ['admin.plays', 'Open plays', 'calendar', null],
+            ['admin.whats-new', "What's new", 'news', null],
             ['admin.developers', 'Developers', 'code', null],
             ['admin.sponsors', 'Sponsors', 'heart', null],
         ],
@@ -98,16 +101,19 @@
         </button>
 
         {{-- Account card: opens a menu with Account settings and Meet the developer. --}}
-        @php($acct = $isPage('settings') || $isPage('about'))
+        @php($acct = $isPage('settings') || $isPage('about') || $isPage('whats-new'))
         <div class="relative" x-data="{ open: false }" x-on:keydown.escape="open = false">
             <template x-if="open">
                 <div>
                     <button type="button" tabindex="-1" aria-hidden="true" x-on:click="open = false" class="fixed inset-0 z-40 cursor-default"></button>
                     <div id="px-pm" role="menu" aria-label="Your account" class="px-pm-pop absolute inset-x-0 bottom-[calc(100%+8px)] z-41 flex flex-col gap-0.5 rounded-[18px] border border-line bg-surface p-1.5 shadow-card">
-                        @foreach ([['settings', 'Account settings', 'settings'], ['about', 'Meet the developer', 'love']] as [$route, $label, $icon])
+                        @foreach ([...($user->isAdmin() ? [] : [['whats-new', "What's new", 'news']]), ['settings', 'Account settings', 'settings'], ['about', 'Meet the developer', 'love']] as [$route, $label, $icon])
                             <a href="{{ route($route) }}" wire:navigate role="menuitem" @if ($isPage($route)) aria-current="page" @endif
                                @class(['flex h-11.5 items-center gap-3 rounded-xl px-3 text-sm font-bold text-ink transition hover:bg-surface2 active:scale-97', 'bg-lime-soft' => $isPage($route)])>
                                 <x-icon :name="$icon" /><span class="flex-1">{{ $label }}</span>
+                                @if ($route === 'whats-new' && $wnU)
+                                    <span class="inline-flex h-5.5 items-center rounded-full bg-lime px-2 text-[11.5px] font-extrabold text-on-lime">{{ $wnU }} new</span>
+                                @endif
                             </a>
                         @endforeach
                     </div>
@@ -121,6 +127,9 @@
                         <span class="truncate text-sm font-bold">{{ $user->name }}</span>
                         <span class="truncate text-xs text-ink3">{{ $user->email }}</span>
                     </span>
+                    @if ($wnU)
+                        <span role="img" aria-label="{{ $wnU }} new in What's new" class="size-2.25 shrink-0 rounded-full bg-hot"></span>
+                    @endif
                     <x-icon name="chevron-down" :size="16" :stroke="2.2" class="shrink-0 text-ink3 transition-transform duration-200" x-bind:class="open && 'rotate-180'" />
                 </button>
                 <form method="POST" action="{{ route('logout') }}" x-data x-on:submit="$dispatch('px-loading', { kind: 'logout', first: @js($user->firstName()) })">
@@ -143,8 +152,11 @@
                 <span class="mr-0.5 inline-flex h-6 items-center rounded-full border border-line bg-surface2 px-2 font-mono text-[10px] tracking-widest text-ink2 uppercase">{{ $user->roleLabel() }}</span>
             @endif
             <x-theme-toggle class="border-0 bg-transparent" />
-            <button type="button" x-on:click="open = ! open" aria-label="Account menu" x-bind:aria-expanded="open" class="flex size-11 cursor-pointer items-center justify-center rounded-full">
+            <button type="button" x-on:click="open = ! open" aria-label="Account menu{{ $wnU ? ", {$wnU} new in What's new" : '' }}" x-bind:aria-expanded="open" class="relative flex size-11 cursor-pointer items-center justify-center rounded-full">
                 <x-avatar :src="$user->avatarUrl()" :frame="$user->frameClass()" :name="$user->name" :color="$user->color()" class="size-8.5 text-xs" />
+                @if ($wnU)
+                    <span aria-hidden="true" class="absolute top-1.25 right-1.25 z-1 size-2.5 rounded-full border-2 border-bg bg-hot"></span>
+                @endif
             </button>
         </div>
 
@@ -156,6 +168,9 @@
             @if ($other)
                 <a href="{{ route($other[0]) }}" wire:navigate class="flex h-11 items-center gap-2.5 rounded-xl px-2.5 text-sm font-bold text-ink transition hover:bg-surface2"><x-icon name="swap" />{{ $other[1] }}</a>
             @endif
+            @unless ($user->isAdmin())
+                <a href="{{ route('whats-new') }}" wire:navigate class="flex h-11 items-center gap-2.5 rounded-xl px-2.5 text-sm font-bold text-ink transition hover:bg-surface2"><x-icon name="news" /><span class="flex-1">What's new</span>@if ($wnU)<span class="inline-flex h-5.5 items-center rounded-full bg-lime px-2 text-[11.5px] font-extrabold text-on-lime">{{ $wnU }} new</span>@endif</a>
+            @endunless
             <a href="{{ route('settings') }}" wire:navigate class="flex h-11 items-center gap-2.5 rounded-xl px-2.5 text-sm font-bold text-ink transition hover:bg-surface2"><x-icon name="settings" />Account settings</a>
             <a href="{{ route('about') }}" wire:navigate class="flex h-11 items-center gap-2.5 rounded-xl px-2.5 text-sm font-bold text-ink transition hover:bg-surface2"><x-icon name="love" />Meet the developer</a>
             <button type="button" x-on:click="open = false; $dispatch('open-coffee')" aria-haspopup="dialog" class="flex h-11 cursor-pointer items-center gap-2.5 rounded-xl px-2.5 text-left text-sm font-bold text-ink transition hover:bg-surface2">
@@ -190,6 +205,36 @@
                 </a>
             @endforeach
         </nav>
+    @endif
+
+    {{-- What's new popup: unread updates, once. Closing it either way marks them read. --}}
+    @if ($wnU && ! $isPage('whats-new'))
+        @php($wnList = \App\Models\News::unreadBy($user)->get())
+        <div wire:key="wn-pop" x-data="{ open: true, close() { this.open = false; fetch(@js(route('whats-new.read')), { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content }, body: JSON.stringify({ ids: @js($wnList->pluck('id')) }) }) } }"
+             x-show="open" x-on:keydown.escape.window="close()" class="fixed inset-0 z-67 flex items-end justify-center lg:items-center lg:p-6">
+            <button type="button" x-on:click="close()" aria-label="Close" class="absolute inset-0 animate-fade cursor-pointer bg-[rgba(18,23,15,.45)] dark:bg-black/62"></button>
+            <div role="dialog" aria-modal="true" aria-labelledby="wn-title" x-trap.noscroll="open" class="relative flex max-h-full w-full animate-rise flex-col overflow-hidden rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] lg:w-135 lg:rounded-[28px]">
+                <div class="flex shrink-0 items-start justify-between gap-3 border-b border-line pt-5 pr-5 pb-4 pl-6">
+                    <div class="flex min-w-0 flex-col gap-1">
+                        <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">What's new in PickleX</span>
+                        <h2 id="wn-title" class="m-0 font-display text-[26px] leading-[1.1] font-extrabold tracking-[-0.03em]">{{ $wnU === 1 ? 'One update since you were last here' : "{$wnU} updates since you were last here" }}</h2>
+                    </div>
+                    <button type="button" x-on:click="close()" aria-label="Close" class="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-line bg-surface text-ink"><x-icon name="x" :size="18" /></button>
+                </div>
+                <div class="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto px-6 py-4.5">
+                    @foreach ($wnList->take(3) as $n)
+                        <x-news-card :news="$n" :fresh="true" />
+                    @endforeach
+                    @if ($wnU > 3)
+                        <span class="text-[13px] text-ink3">+ {{ $wnU - 3 }} more in What's new</span>
+                    @endif
+                </div>
+                <div class="flex shrink-0 gap-2.5 border-t border-line px-6 pt-3.5 pb-5.5">
+                    <a href="{{ route('whats-new') }}" wire:navigate x-on:click="open = false" class="flex h-13 flex-1 items-center justify-center rounded-full border-[1.5px] border-line2 text-[15px] font-bold text-ink transition hover:brightness-96 active:scale-97">See all updates</a>
+                    <button type="button" x-on:click="close()" class="h-13 flex-1 cursor-pointer rounded-full border-2 border-cta-border bg-lime text-[15px] font-extrabold text-on-lime shadow-cta transition hover:brightness-96 active:scale-97">Got it</button>
+                </div>
+            </div>
+        </div>
     @endif
 
     <x-coffee />

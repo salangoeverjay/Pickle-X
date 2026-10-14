@@ -55,7 +55,7 @@
                         @foreach ([
                             ['calendar', $play->starts_at->isToday() ? 'Today' : $play->starts_at->format('l, M j'), $play->timeRange()],
                             ['pin', $play->venue, $play->club],
-                            ['court', $play->fee ? $play->feeLabel().' per player' : 'Free', $play->courts.' '.Str::plural('court', $play->courts).' · race to '.$play->race_to.' · '.($play->rotation === 'winners' ? 'winners stay' : 'everyone rotates').($play->hasPaymentQr() ? ' · pay by '.$play->payMethodLabel() : '')],
+                            ['court', $play->fee ? $play->feeLabel().' per player' : 'Free', $play->courts.' '.Str::plural('court', $play->courts).' · race to '.$play->race_to.' · '.($play->rotation === 'winners' ? 'winners stay' : 'everyone rotates').' · '.Str::lower($play->warmupLabel()).($play->hasPaymentQr() ? ' · pay by '.$play->payMethodLabel() : '')],
                         ] as [$icon, $a, $b])
                             <span class="flex items-start gap-2.5">
                                 <x-icon :name="$icon" :size="18" class="mt-px shrink-0 text-ink3" />

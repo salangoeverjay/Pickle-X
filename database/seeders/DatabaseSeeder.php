@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\News;
 use App\Models\OpenPlay;
 use App\Models\User;
 use App\Support\PaidList;
@@ -152,6 +153,18 @@ class DatabaseSeeder extends Seeder
         $this->playSession($gerald, 'TEST - please ignore', Carbon::today()->previous(Carbon::SUNDAY)->setTime(19, 0), $members->take(7)->push($gerald), 6, 2, 1, null);
         $this->withJoins($this->play($davao, "Beginners' Open Court", $sat->copy()->addDay()->setTime(16, 0), 2, 12, 11, 'rotate', null, 3), $members->slice(4, 6));
         $this->withJoins($this->play($digos, 'Midweek Mixer', Carbon::today()->next(Carbon::WEDNESDAY)->setTime(19, 0), 3, 16, 15, 'rotate', '₱100', 3), $members->slice(8, 12));
+
+        // What's new: four published updates and a draft. Kai hasn't read the latest two and Ely the latest three,
+        // so they pop up after logging in; admin@picklex.app writes them under Admin › What's new.
+        $update = function (string $kind, string $audience, string $title, string $body, ?int $daysAgo, $readers) use ($admin) {
+            $n = News::create(compact('kind', 'audience', 'title', 'body') + ['published_at' => $daysAgo === null ? null : now()->subDays($daysAgo), 'published_by' => $daysAgo === null ? null : $admin->id]);
+            $n->readers()->attach(collect($readers)->pluck('id'));
+        };
+        $update('feature', 'all', 'Co-hosts can run the court board', 'Hosts can add up to 3 co-hosts to an open play. Co-hosts can start it, fill courts and enter scores; only the host marks who has paid.', 19, News::audience('all')->get());
+        $update('fix', 'organizer', 'Fixed: score entry after a mid-game sub', 'After you subbed a player in mid-game, Enter score could still show the four who started. It now shows who actually finished the game.', 11, [$gerald]);
+        $update('enhancement', 'all', 'Your look opens faster', 'Account settings now shows one kind of look at a time and only your preview moves, so picking a border or queue background stays smooth on older phones.', 4, $members->slice(1, 17));
+        $update('feature', 'all', 'Warmup countdown on every court', 'Each new foursome gets a short warmup before the game clock starts, so your game time only counts real play. Your court shows WARMUP and the time left.', 0, $members->only([2, 4, 8, 11]));
+        $update('feature', 'all', 'PickleX jerseys are on the way', 'Full-sublimation polo jerseys in lime, ink and white, with your name and number on the back. Pre-orders open soon from your club.', null, []);
     }
 
     /** Demo GCash QR. It encodes a note, not a real payment account. */

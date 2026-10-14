@@ -168,7 +168,9 @@
                         <x-segmented label="Default race to" model="raceTo" :options="[11 => '11', 15 => '15', 21 => '21']" class="max-w-115" />
                         <x-segmented label="Default rotation" model="rotation" :options="['rotate' => 'Everyone rotates', 'winners' => 'Winners stay (2 max)']" :hints="['rotate' => 'Fewest games tonight play first, and partners mix so everyone plays with someone new each game.', 'winners' => 'Winners stay on for up to 2 games in a row; challengers come from the front of the line.']" class="max-w-115" />
 
-                        @if ($message = $firstError(['courts', 'raceTo', 'rotation']))
+                        <x-segmented label="Default warmup" model="warmup" :options="App\Models\OpenPlay::WARMUPS" :hints="[0 => 'Games start the moment a foursome goes on court.', 2 => $warm = 'Each new foursome warms up before the game clock starts, so play time stays separate. Winners who stay on skip it.', 3 => $warm, 5 => $warm]" class="max-w-115" />
+
+                        @if ($message = $firstError(['courts', 'raceTo', 'rotation', 'warmup']))
                             <x-alert>{{ $message }}</x-alert>
                         @endif
 

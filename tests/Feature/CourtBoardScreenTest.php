@@ -34,7 +34,7 @@ class CourtBoardScreenTest extends TestCase
     {
         $this->livePlay();
 
-        $this->actingAs($this->org)->get(route('organizer.board'))->assertOk()->assertSee('Monday Night')->assertSee('Enter score');
+        $this->actingAs($this->org)->get(route('organizer.board'))->assertOk()->assertSee('Monday Night')->assertSee('Start game now')->assertSee('3 min warmup');
         $this->actingAs(User::factory()->create(['role' => 'member']))->get(route('organizer.board'))->assertForbidden();
     }
 

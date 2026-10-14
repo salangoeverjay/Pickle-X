@@ -11,6 +11,8 @@ use App\Livewire\LiveView;
 use App\Livewire\Member;
 use App\Livewire\Organizer;
 use App\Livewire\Settings;
+use App\Livewire\WhatsNew;
+use App\Models\News;
 use App\Models\OpenPlay;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -107,6 +109,13 @@ Route::livewire('/live/{play:share_code}', LiveView::class)->name('live');
 
 Route::middleware('auth')->group(function () {
     Route::livewire('/settings', Settings::class)->name('settings');
+    Route::livewire('/whats-new', WhatsNew::class)->name('whats-new');
+    // The What's new popup was closed: what it showed counts as read.
+    Route::post('/whats-new/read', function (Request $request) {
+        News::markRead($request->user(), News::for($request->user())->whereIn('id', (array) $request->input('ids'))->pluck('id'));
+
+        return response()->noContent();
+    })->name('whats-new.read');
 
     Route::middleware('role:member')->group(function () {
         Route::livewire('/dashboard', Member\Dashboard::class)->name('member.dashboard');
@@ -140,6 +149,7 @@ Route::middleware('auth')->group(function () {
         Route::livewire('/requests', Admin\Requests::class)->name('requests');
         Route::livewire('/users', Admin\Users::class)->name('users');
         Route::livewire('/open-plays', Admin\OpenPlays::class)->name('plays');
+        Route::livewire('/whats-new', Admin\WhatsNew::class)->name('whats-new');
         Route::livewire('/developers', Admin\Developers::class)->name('developers');
         Route::livewire('/sponsors', Admin\Sponsors::class)->name('sponsors');
     });

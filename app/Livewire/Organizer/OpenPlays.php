@@ -52,6 +52,9 @@ class OpenPlays extends Component
 
     public string $rotation = 'rotate';
 
+    // Minutes each new foursome warms up before the game clock starts (0 = off).
+    public int $warmup = 3;
+
     public string $visibility = 'public';
 
     public string $fee = '';
@@ -131,6 +134,7 @@ class OpenPlays extends Component
         $this->cap = $play->cap;
         $this->raceTo = $play->race_to;
         $this->rotation = $play->rotation;
+        $this->warmup = $play->warmup;
         $this->visibility = $play->visibility;
         $this->fee = (string) $play->fee;
         [$this->paid, $this->links] = self::paidLines($play);
@@ -246,6 +250,7 @@ class OpenPlays extends Component
             'cap' => 'integer|between:4,64',
             'raceTo' => 'in:11,15,21',
             'rotation' => 'in:rotate,winners',
+            'warmup' => 'in:'.implode(',', array_keys(OpenPlay::WARMUPS)),
             'visibility' => 'in:public,invite',
             'fee' => 'max:40',
             'payMethod' => 'in:'.implode(',', array_keys(OpenPlay::PAY_METHODS)),
@@ -341,6 +346,7 @@ class OpenPlays extends Component
             'cap' => $this->cap,
             'race_to' => $this->raceTo,
             'rotation' => $this->rotation,
+            'warmup' => $this->warmup,
             'visibility' => $this->visibility,
             'fee' => $fee ?: null,
             'status' => 'upcoming',
@@ -386,6 +392,7 @@ class OpenPlays extends Component
             'cap' => $this->cap,
             'race_to' => $this->raceTo,
             'rotation' => $this->rotation,
+            'warmup' => $this->warmup,
             'visibility' => $this->visibility,
             'fee' => $form['fee'] ?: null,
         ] + $this->payFields($form['png']));
@@ -464,7 +471,7 @@ class OpenPlays extends Component
             'title' => ['Title', $this->title],
             'when' => ['When', $form['starts']->format('l, M j').' · '.OpenPlay::rangeLabel($form['starts'], $form['ends']).' · '.OpenPlay::lengthLabel($form['minutes'])],
             'venue' => ['Venue', $this->venue],
-            'format' => ['Format', self::format($this->courts, $this->raceTo, $this->rotation)],
+            'format' => ['Format', self::format($this->courts, $this->raceTo, $this->rotation, $this->warmup)],
             'cap' => ['Player cap', "{$this->cap} players"],
             'vis' => ['Who can join', $this->visibility === 'invite' ? 'Invite only' : 'Any member'],
             'fee' => ['Fee', $form['fee'] ? "{$form['fee']} per player" : 'Free'],
@@ -478,7 +485,7 @@ class OpenPlays extends Component
                 'title' => $play->title,
                 'when' => $play->starts_at->format('l, M j').' · '.$play->timeRange().' · '.OpenPlay::lengthLabel((int) $play->starts_at->diffInMinutes($play->ends_at)),
                 'venue' => $play->venue,
-                'format' => self::format($play->courts, $play->race_to, $play->rotation),
+                'format' => self::format($play->courts, $play->race_to, $play->rotation, $play->warmup),
                 'cap' => "{$play->cap} players",
                 'vis' => $play->visibility === 'invite' ? 'Invite only' : 'Any member',
                 'fee' => $play->fee ? "{$play->fee} per player" : 'Free',
@@ -499,9 +506,9 @@ class OpenPlays extends Component
         ])->values()->all();
     }
 
-    private static function format(int $courts, int $raceTo, string $rotation): string
+    private static function format(int $courts, int $raceTo, string $rotation, int $warmup): string
     {
-        return $courts.' '.Str::plural('court', $courts)." · race to {$raceTo} · ".($rotation === 'winners' ? 'winners stay (2 max)' : 'everyone rotates');
+        return $courts.' '.Str::plural('court', $courts)." · race to {$raceTo} · ".($rotation === 'winners' ? 'winners stay (2 max)' : 'everyone rotates').' · '.($warmup ? "{$warmup} min warmup" : 'no warmup');
     }
 
     private function paidRows(): array
@@ -755,6 +762,7 @@ class OpenPlays extends Component
         $this->courts = (int) $user->pref('defaults.courts');
         $this->raceTo = (int) $user->pref('defaults.race_to');
         $this->rotation = $user->pref('defaults.rotation');
+        $this->warmup = (int) $user->pref('defaults.warmup');
         $this->cap = max(8, $this->courts * 4 + 4);
         $this->date = now()->addDay()->format('Y-m-d');
         $this->starts = '18:00';
