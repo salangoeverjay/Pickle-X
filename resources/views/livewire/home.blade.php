@@ -154,7 +154,7 @@
     </section>
 
     {{-- ============ FOR ORGANIZERS ============ --}}
-    <section id="organizers" class="p-4 lg:px-14 lg:py-6">
+    <section id="organizers" class="p-4 lg:px-14 lg:py-6" x-data="{ demo: false, openDemo() { this.demo = true; this.$nextTick(() => this.$refs.demoVideo?.play().catch(() => {})) }, closeDemo() { this.demo = false; this.$refs.demoVideo?.pause() } }">
         <div class="relative grid grid-cols-1 items-center gap-8 overflow-hidden rounded-[28px] bg-court px-5 py-8 text-white lg:grid-cols-2 lg:gap-14 lg:rounded-[36px] lg:p-16">
             <div aria-hidden="true" class="pointer-events-none absolute -top-20 -right-30 h-90 w-130 -rotate-12 rounded-md border-[3px] border-white/12">
                 <div class="absolute inset-y-0 left-1/2 border-l-[3px] border-white/12"></div>
@@ -180,11 +180,16 @@
                         </div>
                     @endforeach
                 </div>
-                <div>
+                <div class="flex flex-wrap gap-3">
                     <a href="{{ route('signup', ['role' => 'organizer']) }}" wire:navigate class="inline-flex h-13.5 items-center gap-2.5 rounded-full bg-lime px-6 text-base font-bold text-on-lime transition hover:brightness-96 active:scale-97">
                         Host open plays
                         <x-icon name="arrow-right" :size="18" :stroke="2.2" />
                     </a>
+                    <button type="button" x-on:click="openDemo()" aria-haspopup="dialog"
+                            class="inline-flex h-13.5 cursor-pointer items-center gap-2.5 rounded-full border-[1.5px] border-white/45 bg-white/8 pr-6 pl-2 text-base font-bold text-white transition hover:bg-white/14 active:scale-97">
+                        <span aria-hidden="true" class="flex size-9.5 items-center justify-center rounded-full bg-white text-court"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l10.5-6.5z" /></svg></span>
+                        Watch this quick video demo
+                    </button>
                 </div>
             </div>
 
@@ -233,6 +238,27 @@
                 </div>
             </div>
         </div>
+
+        {{-- Video demo: a 3-minute walkthrough of running an open play, from sign-up to the last game. --}}
+        <template x-teleport="body">
+            <div x-show="demo" x-cloak x-on:keydown.escape.window="demo && closeDemo()" class="fixed inset-0 z-90 flex items-center justify-center p-4 lg:p-8">
+                <button type="button" x-on:click="closeDemo()" aria-label="Close video" class="absolute inset-0 animate-fade cursor-pointer bg-[rgba(8,12,7,.78)]"></button>
+                <div role="dialog" aria-modal="true" aria-labelledby="demo-title" x-trap.noscroll="demo"
+                     class="relative flex w-full max-w-[min(1100px,calc((100dvh-9rem)*1.6))] animate-rise flex-col gap-3">
+                    <div class="flex items-center justify-between gap-3 text-white">
+                        <div class="flex min-w-0 flex-col">
+                            <span class="font-mono text-[11px] tracking-[.12em] text-white/70 uppercase">PickleX for organizers · 3 min</span>
+                            <h2 id="demo-title" class="m-0 font-display text-lg leading-tight font-extrabold tracking-[-0.03em] md:truncate md:text-xl lg:text-2xl">Your first open play, from sign-up to game point</h2>
+                        </div>
+                        <button type="button" x-on:click="closeDemo()" aria-label="Close video" class="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-white/12 text-white transition hover:bg-white/20 active:scale-97"><x-icon name="x" :size="18" :stroke="2.2" /></button>
+                    </div>
+                    <video x-ref="demoVideo" src="{{ asset('videos/picklex-demo.mp4') }}" controls playsinline preload="none"
+                           class="aspect-[16/10] w-full rounded-[20px] bg-black shadow-[0_40px_80px_-30px_rgba(0,0,0,.8)]">
+                        Your browser can't play this video.
+                    </video>
+                </div>
+            </div>
+        </template>
     </section>
 
     {{-- ============ FOR PLAYERS ============ --}}

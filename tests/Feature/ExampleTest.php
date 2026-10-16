@@ -18,6 +18,12 @@ class ExampleTest extends TestCase
             ->assertSee('<meta name="description"', false);
     }
 
+    public function test_the_organizers_section_offers_the_video_demo(): void
+    {
+        $this->get('/')->assertOk()->assertSee('Watch this quick video demo')->assertSee('videos/picklex-demo.mp4', false);
+        $this->assertFileExists(public_path('videos/picklex-demo.mp4'));
+    }
+
     public function test_error_pages_are_branded(): void
     {
         $this->get('/no-such-page')->assertNotFound()->assertSee('That one landed out.')->assertSee('Back to home')->assertSee('Create an account');
