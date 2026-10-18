@@ -12,7 +12,7 @@
 
 <x-app-shell>
     <x-page>
-        <x-page-header eyebrow="Admin" title="Sponsors" description="Acknowledge the people who cover some of PickleX’s costs. Each tier unlocks its own animated avatar decoration and queue background. Only admins can change this." />
+        <x-page-header eyebrow="Admin" title="Sponsors" description="People who help cover PickleX’s costs. Each tier unlocks its own avatar look and queue background." />
 
         <div class="grid gap-3.5 lg:grid-cols-3">
             @foreach (App\Support\Looks::TIERS as $t => $label)
@@ -75,13 +75,13 @@
                     </div>
                     <x-pager :page="$sponsorsPage" noun="sponsors" class="pt-0.5" />
                 @endif
-                <p class="m-0 text-[13px] leading-[1.45] text-ink3">Changing a tier swaps their look to the new tier. Removing a sponsor locks the look again.</p>
+                <p class="m-0 text-[13px] leading-[1.45] text-ink3">Changing tier swaps their look. Removing them locks it again.</p>
             </section>
 
             <section aria-labelledby="sp-add-h" class="flex flex-col gap-3.5 rounded-3xl border border-line bg-surface p-4.5 lg:p-6">
                 <div>
                     <h2 id="sp-add-h" class="m-0 font-display text-[21px] font-bold tracking-[-0.02em]">Acknowledge a sponsor</h2>
-                    <p class="mt-1 mb-0 text-sm leading-[1.45] text-ink2">Pick their tier, then find their account. Check the email so you pick the right person.</p>
+                    <p class="mt-1 mb-0 text-sm leading-[1.45] text-ink2">Pick a tier, then find their account. Check the email.</p>
                 </div>
                 <div class="flex flex-wrap items-center gap-2.5">
                     <span class="text-[13px] font-bold text-ink2">Tier</span>

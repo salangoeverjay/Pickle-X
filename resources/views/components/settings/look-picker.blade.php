@@ -24,10 +24,10 @@
     $open = collect($exItems)->reject(fn ($l) => $l[3])->count();
     $tierName = Looks::TIERS[$tier] ?? null;
     $exNote = match (true) {
-        $dev && (bool) $tierName => "An admin marked you as a developer and a {$tierName} sponsor, so these are unlocked for you.",
-        $dev => 'An admin marked your account as a developer, so this is unlocked for you.',
-        (bool) $tierName => "Thanks for sponsoring PickleX. Your {$tierName} sponsor look is unlocked.",
-        default => 'For developers and sponsors who help cover PickleX’s costs. An admin unlocks them.',
+        $dev && (bool) $tierName => "Unlocked: developer and {$tierName} sponsor.",
+        $dev => 'Unlocked: developer.',
+        (bool) $tierName => "Thanks for sponsoring. Your {$tierName} look is unlocked.",
+        default => 'For PickleX developers and sponsors. An admin unlocks them.',
     };
     $ex = ['Exclusive', $open ? $open.' of '.count($exItems).' unlocked' : 'Locked', 'ex', $exItems];
     $groups = collect([...$std, $ex])->keyBy(2);
@@ -54,7 +54,7 @@
     <div class="flex flex-wrap items-end justify-between gap-3">
         <div class="flex min-w-0 flex-col gap-0.75">
             <h3 class="m-0 font-display text-lg font-bold tracking-[-0.02em]">Your look</h3>
-            <span class="text-[13px] leading-[1.4] text-ink3">A border for your avatar everywhere it shows, and a background for your spot when you join the queue.</span>
+            <span class="text-[13px] leading-[1.4] text-ink3">An avatar border, plus a background for your queue spot.</span>
         </div>
         <span role="status" aria-live="polite" class="font-mono text-xs tracking-[.08em] text-ink3 uppercase">{{ $saved ? 'Saved' : 'Changes save right away' }}</span>
     </div>
@@ -113,7 +113,7 @@
             @endforeach
         </div>
         @if ($cat !== 'still')
-            <p class="-mt-1 mb-0 flex items-start gap-2 text-[13px] leading-[1.4] text-ink3"><x-icon name="sparkle" :size="15" class="mt-px shrink-0" /><span>Shown still here so the page stays smooth. Pick one to see it move in the preview.</span></p>
+            <p class="-mt-1 mb-0 flex items-start gap-2 text-[13px] leading-[1.4] text-ink3"><x-icon name="sparkle" :size="15" class="mt-px shrink-0" /><span>Paused here. Pick one to see it move.</span></p>
         @endif
         @foreach ([$groups[$cat]] as [$glabel, $n, $gid, $items])
             @php($isEx = $gid === 'ex')

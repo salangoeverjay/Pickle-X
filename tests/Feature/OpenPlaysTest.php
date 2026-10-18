@@ -89,7 +89,7 @@ class OpenPlaysTest extends TestCase
             ->call('joinPlay', $play->id)
             ->assertDispatched('toast', message: "You're in the queue. Check in when you reach the courts.")
             ->assertSee('Check in to get on court')
-            ->assertSee("You're #1 in line. Organizers only call players who are checked in", false)
+            ->assertSee("You're #1 in line. Tap Check in when you reach the courts.", false)
             ->assertSee('Live board')
             ->assertSee('Leave open play')
             ->call('checkInPlay', $play->id)

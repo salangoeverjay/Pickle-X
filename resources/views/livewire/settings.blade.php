@@ -9,7 +9,7 @@
 
 <x-app-shell>
     <x-page>
-        <x-page-header :eyebrow="$user->roleLabel().' account'" title="Account settings" description="Update your profile, password and notifications, and choose how PickleX looks." />
+        <x-page-header :eyebrow="$user->roleLabel().' account'" title="Account settings" description="Profile, password, notifications and looks." />
 
         <div class="grid items-start gap-7 lg:grid-cols-[200px_minmax(0,1fr)]">
             <nav aria-label="Settings sections" class="sticky top-5 hidden flex-col gap-0.5 lg:flex">
@@ -55,7 +55,7 @@
                         <div class="flex flex-col gap-2">
                             <label for="sf-phone" class="text-[13px] font-bold text-ink2">Mobile number <span class="font-medium text-ink3">(optional)</span></label>
                             <input id="sf-phone" type="tel" autocomplete="tel" placeholder="+63 9XX XXX XXXX" wire:model="phone" aria-describedby="sf-phone-hint" class="input">
-                            <span id="sf-phone-hint" class="text-xs/[1.4] text-ink3">Only organizers of open plays you join can see it, in case they need to reach you. PickleX never sends texts.</span>
+                            <span id="sf-phone-hint" class="text-xs/[1.4] text-ink3">Only organizers of open plays you join can see it. PickleX never sends texts.</span>
                         </div>
                         @if ($homeClubEditable)
                             <x-field label="Home club" id="sf-club" placeholder="The club you play with most" wire:model="club" />
@@ -104,7 +104,7 @@
                     <div class="flex flex-wrap items-start justify-between gap-3">
                         <div class="min-w-0 flex-[1_1_320px]">
                             <h2 id="set-passkeys-h" class="{{ $h2 }}">Passkeys</h2>
-                            <p class="{{ $lede }}">Log in with your fingerprint, face or screen lock instead of typing your password. A passkey stays on your device and can't be phished or reused.</p>
+                            <p class="{{ $lede }}">Log in with your fingerprint, face or screen lock instead of a password. Passkeys can't be phished.</p>
                         </div>
                         <button type="button" x-on:click="add()" class="{{ $ghost }} inline-flex h-11 items-center gap-2 px-4.5 text-sm"><x-icon name="plus" :size="16" :stroke="2.4" /><span x-text="here.length ? 'Replace on this device' : 'Add a passkey'">Add a passkey</span></button>
                     </div>
@@ -122,11 +122,11 @@
                                 </li>
                             @endforeach
                         </ul>
-                        <p x-show="! here.length" x-cloak class="m-0 text-[13px] leading-[1.45] text-ink2">This device doesn't have a passkey yet. Add one to skip your password here too.</p>
+                        <p x-show="! here.length" x-cloak class="m-0 text-[13px] leading-[1.45] text-ink2">No passkey on this device yet. Add one to skip your password.</p>
                     @else
                         <div class="flex items-center gap-3 rounded-[18px] border-[1.5px] border-dashed border-line2 px-4 py-3.5">
                             <span aria-hidden="true" class="text-ink3"><x-icon name="passkey" :size="22" :stroke="1.9" /></span>
-                            <span class="text-sm leading-[1.45] text-ink2">No passkeys yet. Add one on this device, then tap Log in with a passkey next time.</span>
+                            <span class="text-sm leading-[1.45] text-ink2">No passkeys yet. Add one to log in without a password.</span>
                         </div>
                     @endif
 
@@ -166,9 +166,9 @@
 
                         <x-stepper label="Courts at your venue" model="courts" :value="$courts" :min="1" :max="12" class="max-w-55" />
                         <x-segmented label="Default race to" model="raceTo" :options="[11 => '11', 15 => '15', 21 => '21']" class="max-w-115" />
-                        <x-segmented label="Default rotation" model="rotation" :options="['rotate' => 'Everyone rotates', 'winners' => 'Winners stay (2 max)']" :hints="['rotate' => 'Fewest games tonight play first, and partners mix so everyone plays with someone new each game.', 'winners' => 'Winners stay on for up to 2 games in a row; challengers come from the front of the line.']" class="max-w-115" />
+                        <x-segmented label="Default rotation" model="rotation" :options="['rotate' => 'Everyone rotates', 'winners' => 'Winners stay (2 max)']" :hints="['rotate' => 'Fewest games play first, and partners mix every game.', 'winners' => 'Winners stay on for up to 2 games; challengers come from the front of the line.']" class="max-w-115" />
 
-                        <x-segmented label="Default warmup" model="warmup" :options="App\Models\OpenPlay::WARMUPS" :hints="[0 => 'Games start the moment a foursome goes on court.', 2 => $warm = 'Each new foursome warms up before the game clock starts, so play time stays separate. Winners who stay on skip it.', 3 => $warm, 5 => $warm]" class="max-w-115" />
+                        <x-segmented label="Default warmup" model="warmup" :options="App\Models\OpenPlay::WARMUPS" :hints="[0 => 'Games start the moment a foursome goes on court.', 2 => $warm = 'New foursomes warm up before the game clock starts. Winners who stay on skip it.', 3 => $warm, 5 => $warm]" class="max-w-115" />
 
                         @if ($message = $firstError(['courts', 'raceTo', 'rotation', 'warmup']))
                             <x-alert>{{ $message }}</x-alert>
@@ -196,7 +196,7 @@
                         @elseif ($user->organizer_status === 'pending')
                             <div class="flex items-start gap-3 rounded-2xl border border-hot-line bg-hot-soft p-3.5">
                                 <span class="mt-1 size-3 shrink-0 animate-live rounded-full bg-lime outline-[1.5px] -outline-offset-[1.5px] outline-on-lime"></span>
-                                <span class="text-sm leading-[1.45]">Your request for <strong>{{ $user->club }}</strong> is with a PickleX admin. Organizer tools appear here, on this same account, once it's approved.</span>
+                                <span class="text-sm leading-[1.45]">Your request for <strong>{{ $user->club }}</strong> is with a PickleX admin. Organizer tools appear here once it's approved.</span>
                             </div>
                         @else
                             @if ($user->organizer_status === 'declined')
@@ -227,7 +227,7 @@
                     @endforeach
                     <p class="flex items-start gap-2 border-t border-line pt-3 text-[13px]/[1.45] text-ink3">
                         <x-icon name="mail" :size="14" :stroke="2" class="mt-0.5" />
-                        <span>Account and security emails are always sent: password resets, passkeys, role changes, suspensions and account deletion.</span>
+                        <span>Account and security emails are always sent.</span>
                     </p>
                 </section>
 
@@ -318,7 +318,7 @@
                     <span aria-hidden="true" class="flex size-14 items-center justify-center rounded-full bg-lime text-on-lime"><x-icon name="check" :size="26" :stroke="2.6" /></span>
                     <div class="flex flex-col gap-1.5">
                         <h2 id="pkn-title" class="m-0 font-display text-[26px] leading-[1.1] font-extrabold tracking-[-0.03em]">Passkey saved</h2>
-                        <p id="pkn-desc" class="m-0 text-[15px] leading-normal text-ink2">Next time, tap Log in with a passkey. Give it a name so you can tell your devices apart.</p>
+                        <p id="pkn-desc" class="m-0 text-[15px] leading-normal text-ink2">Name it so you can tell your devices apart.</p>
                     </div>
                     <x-field label="Passkey name" id="pkn-name" maxlength="40" autocomplete="off" wire:model="passkeyName" />
                 </div>
@@ -335,10 +335,10 @@
                     <span aria-hidden="true" class="flex size-14 items-center justify-center rounded-full bg-hot-soft text-hot"><x-icon name="passkey" :size="26" :stroke="1.9" /></span>
                     <div class="flex flex-col gap-1.5">
                         <h2 id="pkd-title" class="m-0 font-display text-[26px] leading-[1.1] font-extrabold tracking-[-0.03em]">Remove this passkey?</h2>
-                        <p id="pkd-desc" class="m-0 text-[15px] leading-normal text-ink2">You won't be able to log in with <strong class="text-ink">{{ $pkGone->name }}</strong> anymore. Your password still works, and you can add the passkey again any time.</p>
+                        <p id="pkd-desc" class="m-0 text-[15px] leading-normal text-ink2">You won't be able to log in with <strong class="text-ink">{{ $pkGone->name }}</strong> anymore. Your password still works.</p>
                     </div>
                     @if ($passkeys->count() === 1)
-                        <p class="m-0 rounded-[14px] bg-surface2 px-3.5 py-3 text-sm text-ink2">It's your only passkey, so you'll log in with your password until you add another.</p>
+                        <p class="m-0 rounded-[14px] bg-surface2 px-3.5 py-3 text-sm text-ink2">It's your only passkey. You'll use your password until you add another.</p>
                     @endif
                 </div>
                 <div class="flex gap-2 border-t border-line px-5 py-4">

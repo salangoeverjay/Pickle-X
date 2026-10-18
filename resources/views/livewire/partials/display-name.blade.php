@@ -44,7 +44,7 @@
         <span class="flex min-w-0 flex-1 flex-col gap-0.5">
             <span class="font-mono text-[11px] tracking-widest text-ink3 uppercase">Others see you as</span>
             <span class="truncate text-base font-extrabold" x-text="shown"></span>
-            <span class="text-xs leading-[1.4] text-ink3" x-text="useD ? 'Your full name stays on your account. Organizers still see it next to your email.' : 'Add a display name to show a nickname instead.'"></span>
+            <span class="text-xs leading-[1.4] text-ink3" x-text="useD ? 'Organizers still see your full name.' : 'Add a display name to show a nickname instead.'"></span>
         </span>
     </div>
 </div>

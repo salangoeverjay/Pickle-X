@@ -8,7 +8,7 @@
 @section('pill', 'NET FAULT')
 @section('scene', 'A ball stuck in the net')
 @section('foot', '500 Internal Server Error · '.$id)
-@section('lead', 'Something broke on our side, not yours. Your queue spot and game scores are safe. Try again in a moment.')
+@section('lead', 'Something broke on our side. Your queue spot and scores are safe. Try again in a moment.')
 @section('body')
     <div x-data="{ copied: false }" class="flex items-center gap-3 rounded-2xl border border-line bg-surface py-3 pr-3 pl-4">
         <div class="flex min-w-0 flex-1 flex-col gap-px">

@@ -11,7 +11,7 @@
 @section('pill', 'RESURFACING')
 @section('scene', 'A court taped off with cones while it is resurfaced')
 @section('foot', '503 Service Unavailable')
-@section('lead', 'PickleX is down for scheduled maintenance. Open plays, queues and scores are saved and will be right where you left them.')
+@section('lead', 'PickleX is down for scheduled maintenance. Open plays, queues and scores are safe.')
 @section('body')
     <div x-data="{ checking: false }" class="contents">
         <div class="flex flex-col gap-2.5 rounded-[20px] border border-line bg-surface px-4.5 py-4">

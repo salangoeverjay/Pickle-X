@@ -167,7 +167,7 @@
                         @endif
                     </div>
 
-                    <p class="m-0 px-1 text-[13px] leading-normal text-ink3">Joined this open play? Check in from your PickleX app when you reach the courts so the organizer can call you.</p>
+                    <p class="m-0 px-1 text-[13px] leading-normal text-ink3">Joined? Check in on PickleX when you reach the courts.</p>
                 </div>
             </div>
         </div>

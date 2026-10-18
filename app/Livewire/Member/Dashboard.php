@@ -35,11 +35,11 @@ class Dashboard extends Component
                 ],
                 'checkin' => [
                     'head' => 'Check in to get on court',
-                    'sub' => "You're #{$s['position']} in line. Organizers only call players who are checked in, so tap Check in when you reach the courts.",
+                    'sub' => "You're #{$s['position']} in line. Tap Check in when you reach the courts.",
                 ],
                 'paused' => [
                     'head' => 'You stepped out',
-                    'sub' => "Someone subbed in for you. Tap I'm back when you're ready. You kept your spot at #{$s['position']}.",
+                    'sub' => "Someone subbed in for you. You're still #{$s['position']}. Tap I'm back when ready.",
                 ],
                 default => [
                     'head' => "#{$s['position']} in line",

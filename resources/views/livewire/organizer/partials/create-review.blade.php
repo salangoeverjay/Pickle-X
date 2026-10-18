@@ -13,7 +13,7 @@
                 {{ $editId ? ($changes ? $changes.' '.($changes === 1 ? 'change' : 'changes').' to review' : 'Nothing has changed yet') : 'Check the details before you publish' }}
             </span>
             <span class="text-[13px] leading-[1.45] text-ink2">
-                {{ $editId ? ($changes ? 'Changed details are highlighted. Save to update the open play for everyone.' : 'Go back and change a detail, or close the sheet to keep it as it is.') : 'This is what members will see. Go back to fix anything first.' }}
+                {{ $editId ? ($changes ? 'Changes are highlighted. Save to update it for everyone.' : 'Go back and change a detail, or close the sheet to keep it as it is.') : 'This is what members will see. Go back to fix anything first.' }}
             </span>
         </div>
     </div>

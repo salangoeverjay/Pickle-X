@@ -12,7 +12,7 @@
 
 <x-app-shell>
     <x-page>
-        <x-page-header eyebrow="Admin" title="Users" description="Everyone with a PickleX account. Change roles, suspend or restore accounts, sign people out everywhere and delete accounts." />
+        <x-page-header eyebrow="Admin" title="Users" description="Every PickleX account. Change roles, suspend, sign out or delete." />
 
         <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
             @foreach ($tiles as [$label, $n])
@@ -168,7 +168,7 @@
                                             </div>
                                         @endif
                                         <div class="flex flex-wrap items-center gap-x-3.5 gap-y-2.5">
-                                            <span class="min-w-0 flex-[1_1_220px] text-[13px] leading-[1.45] text-ink2">Restoring lets them log in and join open plays again. We email them that it's lifted.</span>
+                                            <span class="min-w-0 flex-[1_1_220px] text-[13px] leading-[1.45] text-ink2">They can log in and join open plays again. We'll email them.</span>
                                             <button type="button" wire:click="restore" class="{{ $btn }} border-lime bg-lime text-on-lime hover:brightness-96">Restore now</button>
                                         </div>
                                     </div>
@@ -180,7 +180,7 @@
                                     <div role="group" aria-labelledby="um-sus-h" class="flex animate-fade flex-col gap-4.5 bg-surface2 px-4 pt-4.5 pb-4">
                                         <div class="flex flex-col gap-1">
                                             <span id="um-sus-h" class="font-display text-lg font-extrabold tracking-[-0.02em]">Suspend {{ $first }}'s account</span>
-                                            <span class="text-[13px] leading-[1.45] text-ink2">They can't log in, join open plays or check in. Their games and stats stay, and spots they hold in upcoming open plays are freed.</span>
+                                            <span class="text-[13px] leading-[1.45] text-ink2">They can't log in or join open plays. Games and stats stay; upcoming spots are freed.</span>
                                         </div>
                                         <div class="flex flex-col gap-2">
                                             <span id="um-sus-r" class="text-sm font-bold">Reason</span>
@@ -224,14 +224,14 @@
                                     </div>
                                 @else
                                     <div class="{{ $row }}">
-                                        <div class="{{ $text }}"><span class="text-[15px] font-bold">Suspend account</span><span class="text-[13px] leading-[1.45] text-ink2">Pick a reason and how long. They can't log in or join open plays until it lifts, and we email them why.</span></div>
+                                        <div class="{{ $text }}"><span class="text-[15px] font-bold">Suspend account</span><span class="text-[13px] leading-[1.45] text-ink2">Pick a reason and length. We email them why.</span></div>
                                         <button type="button" wire:click="startSuspend" class="{{ $btn }} border-hot-line bg-hot-soft text-hot hover:brightness-96">Suspend…</button>
                                     </div>
                                 @endif
                                 @if ($confirmDelete)
                                     <div role="alert" class="flex animate-fade flex-col gap-3 bg-hot-soft p-4">
                                         <span class="font-extrabold text-hot">Delete {{ $managed->name }}'s account?</span>
-                                        <span class="text-sm leading-normal text-ink2">This can't be undone. They lose their login, profile, passkeys and looks. Logged games stay in other players' history as Former player.</span>
+                                        <span class="text-sm leading-normal text-ink2">This can't be undone. Their login, profile, passkeys and looks go. Logged games stay as Former player.</span>
                                         <div class="flex flex-wrap gap-2">
                                             <button type="button" wire:click="$set('confirmDelete', false)" class="{{ $btn }} border-line2 text-ink hover:bg-surface">Keep account</button>
                                             <button type="button" wire:click="delete" class="{{ $btn }} border-hot bg-hot font-extrabold text-bg hover:brightness-96">Delete account</button>
@@ -239,7 +239,7 @@
                                     </div>
                                 @else
                                     <div class="{{ $row }}">
-                                        <div class="{{ $text }}"><span class="text-[15px] font-bold">Delete account</span><span class="text-[13px] leading-[1.45] text-ink2">Removes their login, profile and passkeys. Games they played stay in other players' history as Former player.</span></div>
+                                        <div class="{{ $text }}"><span class="text-[15px] font-bold">Delete account</span><span class="text-[13px] leading-[1.45] text-ink2">Removes their login, profile and passkeys. Logged games stay as Former player.</span></div>
                                         <button type="button" wire:click="askDelete" class="{{ $btn }} border-hot-line text-hot hover:bg-hot-soft">Delete</button>
                                     </div>
                                 @endif

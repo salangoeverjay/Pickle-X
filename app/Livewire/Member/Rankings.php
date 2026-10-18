@@ -69,9 +69,9 @@ class Rankings extends Component
             'unranked' => $me ? null : [
                 'games' => "0 games {$per}",
                 'body' => match (true) {
-                    $all => 'Your first game at any PickleX open play puts you on the table. Wins, losses and new partners all earn points.',
-                    $period === 'month' => "No games at {$scope} open plays this month yet. Your next game there puts you on this table.",
-                    default => "Your first game at a {$scope} open play puts you on this table. Wins, losses and new partners all earn points.",
+                    $all => 'Play one game at any open play to get on the table.',
+                    $period === 'month' => "No games at {$scope} open plays this month. Play one to get on the table.",
+                    default => "Play one game at a {$scope} open play to get on the table.",
                 },
                 'tips' => [
                     ['Your first game', 'Up to 15 pts', '+3 for playing, +10 for a win, +2 for a new partner'],

@@ -13,14 +13,14 @@
                     <span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-lime font-mono text-[13px] font-semibold text-on-lime">M</span>
                     <div>
                         <div class="text-base font-bold">Members</div>
-                        <div class="text-sm leading-normal opacity-82">Join open plays, see your place in the queue, and track stats and rankings.</div>
+                        <div class="text-sm leading-normal opacity-82">Join open plays, see your queue spot, track your stats.</div>
                     </div>
                 </div>
                 <div class="flex gap-3.5">
                     <span class="flex size-9 shrink-0 items-center justify-center rounded-full border-[1.5px] border-current font-mono text-[13px] font-semibold">O</span>
                     <div>
                         <div class="text-base font-bold">Organizers</div>
-                        <div class="text-sm leading-normal opacity-82">Host sessions and run the court board. A PickleX admin approves each organizer first.</div>
+                        <div class="text-sm leading-normal opacity-82">Host sessions and run the court board. Needs admin approval.</div>
                     </div>
                 </div>
             </div>
@@ -33,7 +33,7 @@
                 @include('livewire.partials.join-banner', ['kicker' => 'Create your account to join'])
                 <div class="flex flex-col gap-2">
                     <h1 class="m-0 font-display text-4xl leading-none font-extrabold tracking-[-0.04em] lg:text-[46px]">Create your account</h1>
-                    <p class="m-0 text-[15px] text-ink2">Members can play right away. Organizer accounts are approved by a PickleX admin.</p>
+                    <p class="m-0 text-[15px] text-ink2">Members play right away. Organizers need admin approval.</p>
                 </div>
 
                 <div role="radiogroup" aria-label="Account type" class="grid grid-cols-2 gap-2.5">
@@ -84,12 +84,12 @@
 
                         <div class="flex flex-col gap-2">
                             <label for="su-note" class="text-[13px] font-bold text-ink2">Tell the admin about your sessions</label>
-                            <textarea id="su-note" rows="3" placeholder="Which nights you play, how many regulars, anything that helps approval." wire:model="note" class="input h-auto resize-y py-3.5 leading-normal"></textarea>
+                            <textarea id="su-note" rows="3" placeholder="Play nights, number of regulars, anything that helps." wire:model="note" class="input h-auto resize-y py-3.5 leading-normal"></textarea>
                         </div>
 
                         <div class="flex items-start gap-3 rounded-2xl border border-hot-line bg-hot-soft px-4 py-3.5">
                             <x-icon name="shield" :stroke="1.9" class="mt-px text-hot" />
-                            <span class="text-sm leading-[1.45] text-ink">One account does both. You can play as a member straight away, and organizer tools switch on for this same account once a PickleX admin approves your club.</span>
+                            <span class="text-sm leading-[1.45] text-ink">One account does both. Play now; organizer tools switch on once an admin approves your club.</span>
                         </div>
                     </div>
                 @endif

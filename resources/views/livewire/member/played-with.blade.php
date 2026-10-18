@@ -1,14 +1,14 @@
 <x-app-shell>
     <x-page>
-        <x-page-header eyebrow="Your people" title="Played with" description="Everyone you've partnered with or faced, counted from logged open-play games." />
+        <x-page-header eyebrow="Your people" title="Played with" description="Everyone you've partnered with or faced in logged games." />
 
         @if ($guide)
             @php
                 $joined = $guide['joined'];
                 $steps = [
                     ['Join an open play', $joined ? "You're in · {$joined->title}, {$joined->whenLabel()}" : 'Pick one on Open plays and tap Join.'],
-                    ['Get queued on a court', 'The organizer rotates everyone through the courts, so you meet new players.'],
-                    ['Scores get logged', 'Your partner and both opponents land here, with your record together and against.'],
+                    ['Get queued on a court', 'The rotation mixes you with new players.'],
+                    ['Scores get logged', 'Your partner and opponents land here, with your record.'],
                 ];
                 $current = $joined ? 1 : 0; // steps before this one are done
                 $steps = collect($steps)->map(fn ($st, $i) => [...$st, $i < $current, $i === $current])->all();
@@ -18,7 +18,7 @@
                     <span class="font-mono text-xs tracking-[.12em] text-lime-on-ink uppercase">{{ $joined ? "You're in · first game coming up" : 'No logged games yet' }}</span>
                     <h2 id="pwn-h" class="m-0 font-display text-[30px] leading-[1.05] font-extrabold tracking-[-0.035em]">Your people show up here</h2>
                     <p class="m-0 max-w-118 text-[15px] leading-normal opacity-82">
-                        {{ $joined ? "Your first game at {$joined->title} adds a partner and two opponents. Records and win rates build from there." : 'Every logged doubles game adds a partner and two opponents. Records, win rates and your best partner build from there.' }}
+                        {{ $joined ? "Your first game at {$joined->title} adds a partner and two opponents. Records and win rates build from there." : 'Each logged game adds a partner and two opponents. Records and win rates build from there.' }}
                     </p>
                     <a href="{{ route('member.plays') }}" wire:navigate class="mt-2 inline-flex h-12.5 items-center justify-center gap-2 rounded-full bg-lime px-5.5 text-[15px] font-extrabold text-on-lime transition hover:brightness-96 active:scale-97">
                         {{ $joined ? 'See your open play' : 'Find an open play' }}<x-icon name="arrow-right" :size="17" :stroke="2.2" />
@@ -196,7 +196,7 @@
                 </div>
 
                 @if ($rows->isEmpty())
-                    <p class="m-0 px-6 py-7 text-ink2">{{ trim($search) !== '' ? 'No one matches that search yet.' : ($tab === 'opponents' ? 'No opponents yet. Everyone you face in a logged game shows up here.' : 'No partners yet. Everyone you team up with in a logged game shows up here.') }}</p>
+                    <p class="m-0 px-6 py-7 text-ink2">{{ trim($search) !== '' ? 'No one matches that search yet.' : ($tab === 'opponents' ? 'No opponents yet. They show up after your first logged game.' : 'No partners yet. They show up after your first logged game.') }}</p>
                 @endif
                 <x-pager :page="$rowsPage" :noun="$tab === 'partners' ? 'partners' : 'opponents'" class="px-5 py-3" />
             </div>

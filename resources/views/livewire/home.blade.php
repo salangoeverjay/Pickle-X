@@ -138,9 +138,9 @@
         <h2 class="m-0 max-w-[14ch] font-display text-[38px] leading-[.98] font-extrabold tracking-[-0.04em] text-balance lg:sticky lg:top-28 lg:self-start lg:text-6xl">From sign-up to game point.</h2>
         <ol class="m-0 flex list-none flex-col p-0">
             @foreach ([
-                ['calendar', 'An organizer opens a play', 'Venue, time, courts and a player cap. Only admin-approved organizers can host, so every session is legit.'],
+                ['calendar', 'An organizer opens a play', 'Venue, time, courts and a player cap. Only approved organizers can host.'],
                 ['rotate', 'Players join and check in', 'Members join from their phone and check in at the courts. The queue rotates everyone fairly.'],
-                ['chart', 'Every game counts', 'Winners are logged court-side. Stats, partners and rankings update on their own. No DUPR needed.'],
+                ['chart', 'Every game counts', 'Winners are logged court-side. Stats and rankings update on their own.'],
             ] as [$icon, $heading, $body])
                 <li class="flex gap-5 border-t border-line py-7 first:border-t-0 first:pt-0 lg:gap-7 lg:py-9">
                     <span class="flex size-13 shrink-0 items-center justify-center rounded-2xl bg-lime text-on-lime lg:size-15"><x-icon :name="$icon" :size="24" :stroke="1.9" /></span>

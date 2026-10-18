@@ -223,7 +223,7 @@ class CourtBoardScreenTest extends TestCase
             // In-app confirm dialog, not the browser's native prompt.
             ->assertSeeHtml('role="alertdialog"')
             ->assertSee('End Monday Night?')
-            ->assertSee("This closes the court board and the players' live view. Every logged game and stat stays saved.", false)
+            ->assertSee("Closes the court board and live view. Logged games and stats stay saved.", false)
             ->assertSee('2 courts are still mid-game.')
             ->assertSeeInOrder(['Games', '1', 'Checked in', '9', 'Running'])
             ->assertDontSeeHtml('wire:confirm')

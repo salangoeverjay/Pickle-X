@@ -1,13 +1,13 @@
 <x-app-shell>
     <x-page wire:poll.10s>
-        <x-page-header eyebrow="Open plays" title="Find your next game" description="Join a session and the organizer's queue handles the rest. You'll see here when you're up." />
+        <x-page-header eyebrow="Open plays" title="Find your next game" description="Join a session. You'll see here when you're up." />
 
         @if ($firstTime)
             <div class="flex animate-rise flex-wrap items-center gap-x-4.5 gap-y-3.5 rounded-[22px] border-[1.5px] border-lime bg-lime-soft px-5 py-4">
                 <span aria-hidden="true" class="flex size-11 shrink-0 items-center justify-center rounded-[14px] bg-lime text-on-lime"><x-icon name="calendar" :size="22" :stroke="2" /></span>
                 <div class="flex min-w-0 flex-[1_1_280px] flex-col gap-0.5">
                     <span class="text-base font-extrabold">New here? Join any open play below.</span>
-                    <span class="text-sm leading-[1.45] text-ink2">Pay by QR if there's a fee, tap Check in when you reach the courts, and the organizer's queue calls you up. Your first game puts you on the rankings.</span>
+                    <span class="text-sm leading-[1.45] text-ink2">Pay by QR if there's a fee, then tap Check in at the courts. The queue calls you up.</span>
                 </div>
             </div>
         @endif
@@ -44,7 +44,7 @@
                                 Waiting for {{ $s['need'] }} more checked-in {{ $s['need'] === 1 ? 'player' : 'players' }} to fill a game. Stay close to the courts.
                                 @break
                             @case('checkin')
-                                You're #{{ $s['position'] }} in line. Organizers only call players who are checked in, so tap Check in when you reach the courts.
+                                You're #{{ $s['position'] }} in line. Tap Check in when you reach the courts.
                                 @break
                             @case('paused')
                                 Someone subbed in for you. Tap I'm back when you're ready. You kept your spot at #{{ $s['position'] }}.
@@ -106,7 +106,7 @@
                     <div class="flex flex-col gap-2">
                         <x-live-court :play="$play" :court="$my['court']" :index="$my['index']" :me="auth()->user()" class="h-42.5 md:aspect-[12/5] md:h-auto" />
                         <span class="text-[13px] text-ink3">
-                            {{ $s['state'] === 'court' ? "That's you with the lime ring." : "Court {$my['court']['n']} has played the longest, so it is likely the next to open." }}
+                            {{ $s['state'] === 'court' ? "That's you with the lime ring." : "Court {$my['court']['n']} has played longest, so it likely opens next." }}
                         </span>
                     </div>
                 @endif
@@ -118,7 +118,7 @@
                 <span class="size-2.5 animate-live rounded-full bg-lime outline-[1.5px] outline-on-lime"></span>Live now
             </h2>
             @if ($live->isEmpty())
-                <p class="m-0 rounded-[20px] border-[1.5px] border-dashed border-line2 p-5 text-ink2">No open plays are live right now. Check the upcoming sessions below.</p>
+                <p class="m-0 rounded-[20px] border-[1.5px] border-dashed border-line2 p-5 text-ink2">Nothing live right now. See upcoming sessions below.</p>
             @endif
             <div class="grid gap-3.5 md:grid-cols-2">
                 @foreach ($live as $p)
@@ -256,7 +256,7 @@
                         @foreach ([
                             "Open {$payPlay->payApp()} and scan the QR. On your phone, save the image and upload it from your gallery.",
                             'Send <strong>'.e($payPlay->feeLabel()).'</strong> and check the name reads <strong>'.e($payPlay->pay_name).'</strong> before you confirm.',
-                            'Keep the receipt. The organizer marks you as paid, and you can show it at check-in if needed.',
+                            'Keep the receipt in case the organizer asks at check-in.',
                         ] as $step)
                             <li class="flex items-start gap-3 text-sm leading-[1.45]">
                                 <span aria-hidden="true" class="flex size-6 shrink-0 items-center justify-center rounded-full bg-lime text-xs font-extrabold text-on-lime">{{ $loop->iteration }}</span>
@@ -266,7 +266,7 @@
                     </ol>
 
                     @if ($sent)
-                        <div role="status" class="flex items-start gap-2.5 rounded-[14px] border border-lime bg-lime-soft px-3.5 py-3 text-sm leading-[1.45] font-semibold"><x-icon name="check" :size="18" :stroke="2.4" class="mt-px" />You told the organizer you've paid. You'll show as paid once they confirm it.</div>
+                        <div role="status" class="flex items-start gap-2.5 rounded-[14px] border border-lime bg-lime-soft px-3.5 py-3 text-sm leading-[1.45] font-semibold"><x-icon name="check" :size="18" :stroke="2.4" class="mt-px" />You'll show as paid once the organizer confirms.</div>
                     @endif
                 </div>
 

@@ -8,7 +8,7 @@
 
 <x-app-shell>
     <x-page>
-        <x-page-header eyebrow="Admin" title="Concluded open plays" description="Delete test or duplicate open plays after they end. Their games come off everyone's rankings, played-with lists and stats, so members only see real games." />
+        <x-page-header eyebrow="Admin" title="Concluded open plays" description="Delete test or duplicate open plays after they end. Their games come off rankings and stats." />
 
         <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
             @foreach ($tiles as [$label, $n, $hot])

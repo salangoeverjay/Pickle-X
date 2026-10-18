@@ -20,9 +20,9 @@
                 </div>
                 <ol aria-label="Getting started" class="m-0 flex min-w-0 list-none flex-col gap-2.5 p-0">
                     @foreach ([
-                        ['Create your first open play', 'Pick the date, time, courts, player cap and fee. It shows up in every member\'s Open plays right away.'],
-                        ['Add a payment QR (optional)', 'Upload your GCash or Maya QR while you create it, so players can pay the fee before they arrive.'],
-                        ['Run it on the day', 'Start the session from Your open plays. Check-ins, the queue, courts and scores all run from the court board.'],
+                        ['Create your first open play', 'Pick the date, time, courts, cap and fee. Members see it right away.'],
+                        ['Add a payment QR (optional)', 'Upload your GCash or Maya QR so players can pay before they arrive.'],
+                        ['Run it on the day', 'Start it from Your open plays. Check-ins, queue and scores run from the court board.'],
                     ] as $i => [$t, $d])
                         <li class="flex items-start gap-3.5 rounded-[20px] bg-[rgba(127,127,127,.12)] px-4.5 py-4">
                             <span aria-hidden="true" class="flex size-8 shrink-0 items-center justify-center rounded-full border-2 border-lime-on-ink font-mono text-base font-bold text-lime-on-ink">{{ $i + 1 }}</span>
@@ -398,15 +398,15 @@
                 </div>
 
                 <x-segmented label="Race to" model="raceTo" :options="[11 => '11', 15 => '15', 21 => '21']" />
-                <x-segmented label="Rotation" model="rotation" :options="['rotate' => 'Everyone rotates', 'winners' => 'Winners stay (2 max)']" :hints="['rotate' => 'Fewest games tonight play first, and partners mix so everyone plays with someone new each game. You can switch modes during the open play.', 'winners' => 'Winners stay on for up to 2 games in a row; challengers come from the front of the line.']" />
-                @php($warmHint = fn ($m) => "Each new foursome gets a {$m}-minute countdown before the game clock starts, so warmup is never counted as play time. Winners who stay on skip it. You can change it during the open play.")
-                <x-segmented label="Warmup" model="warmup" :options="App\Models\OpenPlay::WARMUPS" :hints="[0 => 'Games start the moment a foursome goes on court. You can turn warmup on during the open play.', 2 => $warmHint(2), 3 => $warmHint(3), 5 => $warmHint(5)]" />
+                <x-segmented label="Rotation" model="rotation" :options="['rotate' => 'Everyone rotates', 'winners' => 'Winners stay (2 max)']" :hints="['rotate' => 'Fewest games play first, and partners mix every game. You can switch modes later.', 'winners' => 'Winners stay on for up to 2 games; challengers come from the front of the line.']" />
+                @php($warmHint = fn ($m) => "Each new foursome gets a {$m}-minute warmup before the game clock starts. Winners who stay on skip it.")
+                <x-segmented label="Warmup" model="warmup" :options="App\Models\OpenPlay::WARMUPS" :hints="[0 => 'Games start the moment a foursome goes on court.', 2 => $warmHint(2), 3 => $warmHint(3), 5 => $warmHint(5)]" />
                 <x-segmented label="Who can join" model="visibility" :options="['public' => 'Any member', 'invite' => 'Invite only']" />
 
                 <div class="flex flex-col gap-2">
                     <label for="c-paid" class="text-[13px] font-bold text-ink2">Paid players <span class="font-medium text-ink3">(one per line)</span></label>
                     <textarea id="c-paid" rows="6" aria-describedby="c-paid-hint" wire:model.live.debounce.400ms="paid" placeholder="Rico Dizon&#10;mika@picklex.app&#10;Juan Dela Cruz" class="input h-auto resize-y py-3.5 font-mono text-sm leading-[1.6]"></textarea>
-                    <span id="c-paid-hint" class="text-xs text-ink3">Paste names or emails. We suggest matching PickleX accounts, and you link each one yourself. Linked players join the open play; everyone else is added as a guest.</span>
+                    <span id="c-paid-hint" class="text-xs text-ink3">Paste names or emails. Link each to a suggested PickleX account, or keep them as guests.</span>
                     @if ($paidPreview)
                         @php($linkedN = collect($paidPreview)->whereNotNull('user')->count())
                         @php($reviewN = collect($paidPreview)->where('review', true)->count())
@@ -522,7 +522,7 @@
                             <div class="flex min-w-45 flex-1 flex-col gap-2">
                                 <span x-show="qr === 'saved'" class="inline-flex h-6.5 items-center gap-1.5 self-start rounded-full border border-line bg-surface2 px-2.5 text-xs font-bold text-ink2"><x-icon name="history" :size="14" /><span x-text="savedLabel">Saved from your last open play</span></span>
                                 <span x-show="check === 'ok'" class="inline-flex h-6.5 animate-snap items-center gap-1.5 self-start rounded-full bg-lime-soft px-2.5 text-xs font-extrabold text-lime-text"><x-icon name="check" :size="14" :stroke="2.4" />QR code found</span>
-                                <span x-show="check === 'none'" role="alert" class="text-[13px] leading-[1.45] font-semibold text-hot">We couldn't spot a QR code in this image. Check that it's the QR from your payment app.</span>
+                                <span x-show="check === 'none'" role="alert" class="text-[13px] leading-[1.45] font-semibold text-hot">No QR code found in this image. Use the QR from your payment app.</span>
                                 <span class="truncate font-mono text-xs text-ink3" x-text="name"></span>
                                 <div class="flex flex-wrap gap-2">
                                     <label class="relative inline-flex h-9.5 cursor-pointer items-center overflow-hidden rounded-full border-[1.5px] border-line2 px-3.5 text-[13px] font-bold text-ink has-focus-visible:outline-2 has-focus-visible:outline-focus transition hover:brightness-96 active:scale-97">

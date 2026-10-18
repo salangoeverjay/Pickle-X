@@ -14,7 +14,7 @@
 
 <x-app-shell>
     <x-page>
-        <x-page-header eyebrow="Admin" title="What's new" description="Tell everyone what changed: new features, enhancements and bug fixes. A published update shows once to everyone in its audience who hasn't read it, then stays in What's new in their account menu.">
+        <x-page-header eyebrow="Admin" title="What's new" description="New features, improvements and fixes. Each update shows once to its audience, then stays in What's new.">
             <button type="button" wire:click="edit" aria-haspopup="dialog" class="inline-flex h-12.5 shrink-0 cursor-pointer items-center gap-2 rounded-full border-2 border-cta-border bg-lime px-5 text-[15px] font-extrabold text-on-lime shadow-cta transition hover:brightness-96 active:scale-97">
                 <x-icon name="plus" :size="18" :stroke="2.4" />New update
             </button>

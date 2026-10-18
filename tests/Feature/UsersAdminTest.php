@@ -39,7 +39,7 @@ class UsersAdminTest extends TestCase
         $this->actingAs($organizer)->get(route('admin.users'))->assertForbidden();
         $this->actingAs($this->super)->get(route('admin.requests'))->assertSee(route('admin.users'));
         $this->actingAs($this->super)->get(route('admin.users'))->assertOk()
-            ->assertSee('Change roles, suspend or restore accounts')->assertDontSee('Super admin');
+            ->assertSee('Change roles, suspend, sign out or delete.')->assertDontSee('Super admin');
     }
 
     public function test_lists_filters_and_searches_accounts(): void

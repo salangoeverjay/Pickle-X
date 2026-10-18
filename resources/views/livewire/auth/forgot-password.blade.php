@@ -2,7 +2,7 @@
 
 <x-auth-shell>
     <x-slot:aside class="w-[46%] bg-court text-white">
-        <x-auth-court title="Back on court in a minute." text="Reset your password with a code from your email. Your queue spot, stats and open plays stay right where you left them." />
+        <x-auth-court title="Back on court in a minute." text="Reset your password with a code from your email. Your stats and open plays stay put." />
     </x-slot:aside>
 
     <x-auth-court :strip="true" />
@@ -21,7 +21,7 @@
                 <form wire:key="step-email" wire:submit="send" novalidate class="flex animate-fade flex-col gap-4.5">
                     <div class="flex flex-col gap-2">
                         <h1 class="m-0 font-display text-4xl leading-none font-extrabold tracking-[-0.04em] lg:text-[46px]">Reset your password</h1>
-                        <p class="m-0 text-[15px] leading-normal text-ink2">Enter the email you use for PickleX and we'll send you a 6-digit code.</p>
+                        <p class="m-0 text-[15px] leading-normal text-ink2">Enter your PickleX email and we'll send a 6-digit code.</p>
                     </div>
                     <div class="flex flex-col gap-2">
                         <label for="rp-email" class="text-[13px] font-bold text-ink2">Email</label>
@@ -104,7 +104,7 @@
                     <span aria-hidden="true" class="flex size-16 animate-snap items-center justify-center rounded-[20px] border-2 border-cta-border bg-lime text-on-lime"><x-icon name="check" :size="30" :stroke="2.6" /></span>
                     <div class="flex flex-col gap-2">
                         <h1 class="m-0 font-display text-4xl leading-none font-extrabold tracking-[-0.04em] lg:text-[46px]">Password updated</h1>
-                        <p class="m-0 text-[15px] leading-normal text-ink2">You can log in with your new password now. For your security, we signed you out on your other devices.</p>
+                        <p class="m-0 text-[15px] leading-normal text-ink2">Log in with your new password. We signed you out on other devices.</p>
                     </div>
                     <button type="button" wire:click="finish" class="h-13.5 w-full cursor-pointer rounded-full border-2 border-cta-border bg-lime text-base font-bold text-on-lime shadow-cta transition hover:brightness-96 active:scale-97">Back to log in</button>
                 </div>

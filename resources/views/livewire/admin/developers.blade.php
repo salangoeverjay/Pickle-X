@@ -1,6 +1,6 @@
 <x-app-shell>
     <x-page>
-        <x-page-header eyebrow="Admin" title="Developers" description="Mark the accounts of the people who build PickleX. A developer account unlocks the exclusive Developer border and queue background. Only admins can change this." />
+        <x-page-header eyebrow="Admin" title="Developers" description="People who build PickleX. Developers unlock the Developer border and queue background." />
 
         <section aria-labelledby="dev-look-h" class="flex flex-col gap-5 rounded-3xl border border-line bg-[#12170F] p-4.5 text-[#F3F2EA] lg:flex-row lg:items-center lg:gap-9 lg:p-6">
             <div class="flex min-w-0 items-center gap-5">
@@ -8,7 +8,7 @@
                 <div class="flex min-w-0 flex-col gap-1.5">
                     <span class="inline-flex h-5.5 items-center self-start rounded-full bg-lime px-2.25 text-[11px] font-extrabold tracking-[.06em] text-on-lime">EXCLUSIVE</span>
                     <h2 id="dev-look-h" class="m-0 font-display text-2xl font-extrabold tracking-[-0.03em]">Developer look</h2>
-                    <span class="text-sm leading-[1.45] text-[#F3F2EA]/72">An animated avatar decoration: a code crown, a holographic ring and a bouncing pickleball. In the queue, code bits float up and a pickleball bounces along the row. Members see it locked in their picker.</span>
+                    <span class="text-sm leading-[1.45] text-[#F3F2EA]/72">A code crown, holographic ring and bouncing pickleball. In the queue, code bits float up. Members see it locked.</span>
                 </div>
             </div>
             <div class="flex min-w-0 flex-1 flex-col gap-2 lg:min-w-90">
@@ -54,7 +54,7 @@
                     </div>
                     <x-pager :page="$devsPage" noun="accounts" class="pt-0.5" />
                 @endif
-                <p class="m-0 text-[13px] leading-[1.45] text-ink3">Removing developer locks the look again. If they were wearing it, their border and queue background go back to none.</p>
+                <p class="m-0 text-[13px] leading-[1.45] text-ink3">Removing developer locks the look and clears it if they wore it.</p>
             </section>
 
             <section aria-labelledby="dev-add-h" class="flex flex-col gap-3.5 rounded-3xl border border-line bg-surface p-4.5 lg:p-6">

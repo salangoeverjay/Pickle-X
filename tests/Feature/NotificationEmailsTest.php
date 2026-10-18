@@ -60,7 +60,7 @@ class NotificationEmailsTest extends TestCase
         $this->actingAs($this->org)->withSession(['mode' => 'organizer'])->get(route('settings'))
             ->assertSee('A player says they paid')->assertDontSee('A court is open with players waiting')
             ->assertSee("PickleX notifies you by email only, at {$this->org->email}. No push notifications and no text messages.")
-            ->assertSee('Account and security emails are always sent: password resets, passkeys, role changes, suspensions and account deletion.')
+            ->assertSee('Account and security emails are always sent.')
             ->assertDontSee('Sent by push and SMS');
 
         $this->actingAs(User::factory()->create())->get(route('settings'))

@@ -7,7 +7,7 @@
 @section('pill', 'BALL OUT')
 @section('scene', 'A ball flying past the court lines and landing out')
 @section('foot', '404 Not Found')
-@section('lead', "We couldn't find this page. The link might be old, or the open play may have ended or been removed.")
+@section('lead', "The link may be old, or the open play ended or was removed.")
 @section('body')
     @php($chips = match (true) {
         ! $user => [['Log in', route('login'), 'login'], ['Create an account', route('signup'), 'users']],

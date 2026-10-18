@@ -53,11 +53,11 @@
                                     @class(['h-10.5 cursor-pointer rounded-xl text-sm font-bold transition-colors', 'bg-ink text-bg' => $on, 'text-ink2' => ! $on])>{{ $label }}</button>
                         @endforeach
                     </div>
-                    <p class="m-0 text-[13px] leading-[1.45] text-ink2">{{ $invite ? 'Hidden from Open plays. Only people you send the link to can see it and join.' : 'Shows in Open plays for every member, and the link works for anyone you send it to.' }}</p>
+                    <p class="m-0 text-[13px] leading-[1.45] text-ink2">{{ $invite ? 'Hidden from Open plays. Only people with the link can join.' : 'Listed in Open plays. The link works for anyone.' }}</p>
                 </section>
                 <section aria-label="Link settings" class="flex flex-col overflow-hidden rounded-[18px] border border-line bg-surface">
                     <div class="flex items-center gap-3.5 border-b border-line px-4 py-3.5">
-                        <div class="flex min-w-0 flex-1 flex-col gap-0.5"><span id="shl-g" class="text-sm font-bold">Guests can join without an account</span><span class="text-xs leading-[1.4] text-ink2">{{ $sp->link_guests ? 'They add their name (and an email if they like). They show as guests on your player list.' : 'Everyone who opens the link logs in or creates a free account first.' }}</span></div>
+                        <div class="flex min-w-0 flex-1 flex-col gap-0.5"><span id="shl-g" class="text-sm font-bold">Guests can join without an account</span><span class="text-xs leading-[1.4] text-ink2">{{ $sp->link_guests ? 'They add a name (email optional) and show as guests.' : 'Everyone who opens the link logs in or creates a free account first.' }}</span></div>
                         <x-switch :on="$sp->link_guests" wire:click="toggleLinkGuests" label="Guests can join without an account" />
                     </div>
                     <div class="flex items-center gap-3.5 px-4 py-3.5">
@@ -68,7 +68,7 @@
             @endif
 
             <p class="m-0 flex items-start gap-2 text-[13px] leading-[1.45] text-ink3"><x-icon name="alert" :size="16" class="mt-px shrink-0" />
-                <span>{{ $manage ? 'People who open the link see the details and join as a guest, create an account, or log in. Anyone already logged in is added straight away.' : 'Anyone with the link can see this open play and join'.($sp->link_guests ? ', with or without a PickleX account.' : ' with a PickleX account.') }}</span>
+                <span>{{ $manage ? 'They join as a guest, sign up or log in. Logged-in players join right away.' : 'Anyone with the link can see this open play and join'.($sp->link_guests ? ', with or without a PickleX account.' : ' with a PickleX account.') }}</span>
             </p>
         </div>
 

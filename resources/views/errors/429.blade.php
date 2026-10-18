@@ -8,7 +8,7 @@
 @section('pill', 'SLOW DOWN')
 @section('scene', 'A rush of balls flying toward the net at once')
 @section('foot', '429 Too Many Requests')
-@section('lead', 'You sent a lot of requests in a short time, so we paused things for a moment. This usually happens after refreshing the queue again and again.')
+@section('lead', 'Too many requests in a short time, so we paused for a moment.')
 @section('body')
     <div x-data="{ total: {{ $wait }}, left: {{ $wait }} }" x-init="let t = setInterval(() => left > 0 ? left-- : clearInterval(t), 1000)" class="contents">
         <div class="flex items-center gap-4 rounded-[20px] border border-line bg-surface py-3.5 pr-4.5 pl-3.5">

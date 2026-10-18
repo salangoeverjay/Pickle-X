@@ -46,12 +46,12 @@ class NewAccountsTest extends TestCase
             ->assertSee('Organizer approved')->assertSee("Welcome, Andrea. Let's run your first open play.", false)
             ->assertSee('Digos Dink Club is set up on PickleX.')->assertSee('Create your first open play')->assertSee('Add a payment QR (optional)')
             ->assertDontSee('No upcoming open plays');
-        $this->actingAs($andrea)->get(route('organizer.board'))->assertSee('Your first live session opens here.');
+        $this->actingAs($andrea)->get(route('organizer.board'))->assertSee('Create an open play, then start it on the day.');
 
         OpenPlay::create(['organizer_id' => $andrea->id, 'title' => 'First', 'club' => 'Digos Dink Club', 'venue' => 'Gym',
             'starts_at' => now()->addDay(), 'ends_at' => now()->addDay()->addHours(3), 'courts' => 1, 'cap' => 8]);
         Livewire::actingAs($andrea)->test(OrganizerPlays::class)->assertDontSee('Organizer approved')->assertSee('Upcoming');
-        $this->actingAs($andrea)->get(route('organizer.board'))->assertSee('Start one from your open plays');
+        $this->actingAs($andrea)->get(route('organizer.board'))->assertSee('Start an open play when players arrive');
     }
 
     public function test_new_members_see_how_open_plays_work_until_they_join_one(): void

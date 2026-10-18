@@ -122,7 +122,7 @@
 
             <p class="m-0 flex items-start gap-2 text-[12.5px] leading-[1.45] text-ink3">
                 <x-icon name="shield" :size="14" class="mt-px shrink-0" />
-                <span>Players show up by the name they chose to share. Emails and payments stay with the organizer.</span>
+                <span>Players show by their chosen name. Only the organizer sees emails and payments.</span>
             </p>
         </div>
 

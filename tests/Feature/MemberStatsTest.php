@@ -178,7 +178,7 @@ class MemberStatsTest extends TestCase
         Livewire::actingAs($lia)->test(Rankings::class)
             ->assertSee('All clubs · All time')->assertSee('Join an open play and its club gets its own table here.')
             ->assertSee("You're not ranked yet", false)->assertSee('Not ranked yet · 0 games all time')
-            ->assertSee('Your first game at any PickleX open play puts you on the table.')
+            ->assertSee('Play one game at any open play to get on the table.')
             ->assertSee('Up to 15 pts')->assertSee('Top 10 · all clubs')->assertSee('fewer than 10 players are ranked')->assertSee('You, not ranked yet')
             ->assertDontSee("That's you", false);
         // Nothing logged: a guide replaces the empty tiles, tabs and table.
@@ -203,7 +203,7 @@ class MemberStatsTest extends TestCase
         // Played at a club before, just not this month.
         $this->game([$lia, $ben], [$mika, $rico], true, '2 months');
         Livewire::actingAs($lia)->test(Rankings::class)->assertSee('Club · This month')
-            ->assertSee('No games at Club open plays this month yet. Your next game there puts you on this table.')
+            ->assertSee('No games at Club open plays this month. Play one to get on the table.')
             ->set('period', 'all')->assertSee("That's you", false);
     }
 }

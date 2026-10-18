@@ -21,7 +21,7 @@
                 <div class="flex flex-col items-start gap-3.5 rounded-[28px] border-[1.5px] border-dashed border-line2 bg-surface p-8">
                     <span aria-hidden="true" class="flex size-13 items-center justify-center rounded-2xl bg-hot-soft text-hot"><x-icon name="link-off" :size="24" /></span>
                     <h1 class="m-0 font-display text-[30px] leading-[1.1] font-extrabold tracking-[-0.03em]">This link doesn't work anymore</h1>
-                    <p class="m-0 text-[15px] leading-normal text-ink2">The organizer may have reset it or deleted the open play. Ask them for a new link.</p>
+                    <p class="m-0 text-[15px] leading-normal text-ink2">It was reset or the open play was deleted. Ask the organizer for a new one.</p>
                     <a href="{{ $home }}" wire:navigate class="inline-flex h-13 items-center justify-center rounded-full bg-ink px-5.5 text-[15px] font-extrabold text-bg transition hover:brightness-96 active:scale-97">{{ $homeLabel }}</a>
                 </div>
             </main>
@@ -106,7 +106,7 @@
                             </div>
                             @if (! $play->link_guests || $play->isLive())
                                 <p class="m-0 flex items-start gap-2 text-[13px] leading-[1.45] text-ink2"><x-icon name="alert" :size="16" class="mt-px shrink-0" />
-                                    <span>{{ ! $play->link_guests ? 'The organizer asks everyone to join with a PickleX account.' : "It's on now. Without an account, tell the organizer at the courts and they'll add you as a walk-in." }}</span>
+                                    <span>{{ ! $play->link_guests ? 'The organizer asks everyone to join with a PickleX account.' : "It's on now. No account? Ask the organizer at the courts to add you as a walk-in." }}</span>
                                 </p>
                             @endif
                             @break
@@ -116,7 +116,7 @@
                             <form wire:submit="joinGuest" novalidate class="flex flex-col gap-4">
                                 <div class="flex flex-col gap-1.5">
                                     <h2 class="m-0 font-display text-[28px] leading-[1.05] font-extrabold tracking-[-0.03em]">Join as a guest</h2>
-                                    <p class="m-0 text-[15px] leading-normal text-ink2">The organizer sees your name on their player list. That's all you need at check-in.</p>
+                                    <p class="m-0 text-[15px] leading-normal text-ink2">You're on the player list. Just give your name at check-in.</p>
                                 </div>
                                 <div class="flex flex-col gap-2">
                                     <label for="jn-name" class="text-[13px] font-bold text-ink2">Your name</label>
@@ -131,7 +131,7 @@
                                     <p id="jn-err" role="alert" class="m-0 text-sm font-semibold text-hot">{{ $error }}</p>
                                 @endif
                                 <button type="submit" class="inline-flex h-13 cursor-pointer items-center justify-center rounded-full border-2 border-cta-border bg-lime px-5.5 text-[15px] font-extrabold text-on-lime shadow-cta transition hover:brightness-96 active:scale-97">Join as a guest</button>
-                                <p class="m-0 text-[13px] leading-[1.45] text-ink3">Games you play as a guest don't count toward rankings. You can create an account any time and keep your spot.</p>
+                                <p class="m-0 text-[13px] leading-[1.45] text-ink3">Guest games don't count toward rankings. Create an account any time and keep your spot.</p>
                             </form>
                             @break
 
@@ -162,7 +162,7 @@
                             @if ($state === 'guestIn')
                                 <div class="flex flex-col gap-2.5 rounded-[20px] border border-line bg-surface p-4">
                                     <strong class="text-base">Keep your games</strong>
-                                    <span class="text-sm leading-[1.45] text-ink2">Create a free account and this spot moves to it. Your games, partners and rankings start counting.</span>
+                                    <span class="text-sm leading-[1.45] text-ink2">Create a free account to keep this spot and start counting your games.</span>
                                     <button type="button" wire:click="signup" class="inline-flex h-11.5 cursor-pointer items-center gap-2 self-start rounded-full border-[1.5px] border-line2 px-4.5 text-sm font-bold text-ink transition hover:brightness-96 active:scale-97"><x-icon name="user-plus" :size="17" />Create my account</button>
                                 </div>
                             @endif

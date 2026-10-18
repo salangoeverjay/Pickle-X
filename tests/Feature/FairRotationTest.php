@@ -165,7 +165,7 @@ class FairRotationTest extends TestCase
         $this->assertSame([4], array_column($play->boardCourts(), 'n'));
 
         // The last court stays.
-        $c->call('askRemoveCourt', 4)->assertDispatched('toast', message: 'At least one court has to stay. To stop for the night, end the session instead.');
+        $c->call('askRemoveCourt', 4)->assertDispatched('toast', message: 'One court has to stay. To stop, end the session.');
         $this->assertCount(1, $play->fresh()->boardCourts());
     }
 

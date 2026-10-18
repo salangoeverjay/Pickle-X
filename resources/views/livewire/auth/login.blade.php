@@ -55,10 +55,10 @@
                                     <span x-bind:class="error || 'px-pk-wait'" aria-hidden="true" class="flex size-18 items-center justify-center rounded-full bg-lime-soft text-lime-text"><x-icon name="passkey" :size="34" :stroke="1.8" /></span>
                                     <div class="flex flex-col gap-1.5">
                                         <h2 id="pk-title" class="m-0 font-display text-[26px] leading-[1.1] font-extrabold tracking-[-0.03em]" x-text="error ? 'Log in with a passkey' : 'Confirm it\'s you'">Confirm it's you</h2>
-                                        <p id="pk-desc" role="status" class="m-0 text-[15px] leading-normal text-ink2" x-show="! error">Pick your account if your device asks, then use your fingerprint, face or screen lock. No password needed.</p>
+                                        <p id="pk-desc" role="status" class="m-0 text-[15px] leading-normal text-ink2" x-show="! error">Use your fingerprint, face or screen lock. No password needed.</p>
                                     </div>
                                     <template x-if="error"><div role="alert" class="w-full rounded-[14px] border border-hot-line bg-hot-soft px-3.5 py-3 text-left text-sm leading-[1.45] font-semibold text-hot" x-text="error"></div></template>
-                                    <p class="m-0 text-[13px] leading-[1.45] text-ink3">No passkey here yet? Log in with your password, then add one in Account settings › Passkeys.</p>
+                                    <p class="m-0 text-[13px] leading-[1.45] text-ink3">No passkey yet? Log in with your password and add one in Account settings.</p>
                                 </div>
                                 <div class="flex gap-2 border-t border-line px-5 py-4">
                                     <template x-if="error"><button type="button" x-on:click="start()" class="h-12 flex-1 cursor-pointer rounded-full bg-ink text-[15px] font-bold text-bg transition hover:brightness-96 active:scale-97">Try again</button></template>

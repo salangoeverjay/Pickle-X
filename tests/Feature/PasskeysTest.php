@@ -90,7 +90,7 @@ class PasskeysTest extends TestCase
 
         Livewire::actingAs($user)
             ->test(Settings::class)->call('passkeyOptions')->call('storePasskey', '{}')
-            ->assertSee('Passkey saved')->assertSee('Next time, tap Log in with a passkey.');
+            ->assertSee('Passkey saved')->assertSee('Name it so you can tell your devices apart.');
         Mail::assertSent(PickleXMail::class, fn ($m) => $m->template === 'passkey-added' && $m->hasTo($user->email) && $m->security
             && str_contains($m->render(), 'A new passkey can log in to your account') && str_contains($m->render(), '1 on your account'));
     }
@@ -99,7 +99,7 @@ class PasskeysTest extends TestCase
     {
         $user = User::factory()->create();
         Livewire::actingAs($user)->test(Settings::class)
-            ->assertSee('No passkeys yet. Add one on this device, then tap Log in with a passkey next time.');
+            ->assertSee('No passkeys yet. Add one to log in without a password.');
 
         $id = $this->passkey($user, 'MacBook · Chrome');
         $other = $this->passkey(User::factory()->create(), 'Not mine');

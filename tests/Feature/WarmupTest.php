@@ -77,6 +77,6 @@ class WarmupTest extends TestCase
         $org = User::factory()->create(['organizer_status' => 'approved']);
 
         Livewire::actingAs($org)->test(OpenPlays::class)->set('create', true)
-            ->assertSee('Warmup')->assertSee('5 min')->assertSee('Each new foursome gets a 3-minute countdown')->assertDontSee('all()', false);
+            ->assertSee('Warmup')->assertSee('5 min')->assertSee('Each new foursome gets a 3-minute warmup')->assertDontSee('all()', false);
     }
 }

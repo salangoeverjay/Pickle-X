@@ -14,7 +14,7 @@
             <div class="flex flex-col items-start gap-3.5 rounded-[28px] border-[1.5px] border-dashed border-line2 bg-surface p-8">
                 <span class="flex size-14 items-center justify-center rounded-[18px] bg-surface2"><x-icon name="court" :size="26" :stroke="1.9" /></span>
                 <h1 class="m-0 font-display text-[32px] leading-none font-extrabold tracking-[-0.04em] md:text-[38px] xl:text-[44px]">No live session</h1>
-                <p class="m-0 text-ink2">{{ ! auth()->user()->isOrganizer() || session('mode') === 'member' ? 'The court board opens here when an open play you co-host is live.' : (auth()->user()->openPlays()->exists() ? 'Start one from your open plays when players arrive, and the court board opens here.' : 'Your first live session opens here. Create an open play, then start it on the day when players arrive.') }}</p>
+                <p class="m-0 text-ink2">{{ ! auth()->user()->isOrganizer() || session('mode') === 'member' ? 'The court board opens here when an open play you co-host is live.' : (auth()->user()->openPlays()->exists() ? 'Start an open play when players arrive and the court board opens here.' : 'Create an open play, then start it on the day.') }}</p>
                 <a href="{{ route(auth()->user()->mode() === 'organizer' ? 'organizer.plays' : 'member.plays') }}" wire:navigate class="inline-flex h-12 items-center rounded-full bg-ink px-5 font-bold text-bg transition hover:brightness-96 active:scale-97">Go to open plays</a>
             </div>
         @else
@@ -272,7 +272,7 @@
                     </div>
                     <div id="rotm" x-show="rotm" x-cloak x-on:click.outside="if (! $event.target.closest('#rotm-btn')) rotm = false" role="radiogroup" aria-label="Game mode" class="flex animate-fade flex-col gap-2 rounded-[18px] border border-line bg-surface2 p-3">
                         <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">Game mode · changes from the next game</span>
-                        @foreach (['rotate' => ['Everyone rotates', 'Fewest games tonight play first, and partners mix so everyone plays with someone new each game.'], 'winners' => ['Winners stay (2 max)', 'Winners stay on for up to 2 games in a row; challengers come from the front of the line.']] as $key => [$label, $desc])
+                        @foreach (['rotate' => ['Everyone rotates', 'Fewest games play first, and partners mix every game.'], 'winners' => ['Winners stay (2 max)', 'Winners stay on for up to 2 games; challengers come from the front of the line.']] as $key => [$label, $desc])
                             @php($on = ($play->rotation === 'winners' ? 'winners' : 'rotate') === $key)
                             <button type="button" role="radio" aria-checked="{{ $on ? 'true' : 'false' }}" wire:click="setRotation('{{ $key }}')" x-on:click="rotm = false"
                                     @class(['flex cursor-pointer items-start gap-3 rounded-[14px] border-[1.5px] p-3 text-left transition hover:brightness-96 active:scale-99', 'border-ink bg-surface' => $on, 'border-line bg-transparent' => ! $on])>
@@ -280,7 +280,7 @@
                                 <span class="flex min-w-0 flex-col gap-0.5"><span class="text-sm font-bold">{{ $label }}</span><span class="text-xs leading-[1.4] text-ink2">{{ $desc }}</span></span>
                             </button>
                         @endforeach
-                        <span class="text-xs text-ink3">Games on court finish as they are. Players see the change on the live view.</span>
+                        <span class="text-xs text-ink3">Games on court finish as they are.</span>
                     </div>
 
                     @if ($group)
@@ -401,7 +401,7 @@
                                     <x-icon name="user-plus" :size="16" :stroke="1.9" />Add
                                 </button>
                             </div>
-                            <span id="walkin-hint" class="text-xs leading-[1.45] text-ink3">Type a name to look for their PickleX account. Nothing is linked until you confirm it's them.</span>
+                            <span id="walkin-hint" class="text-xs leading-[1.45] text-ink3">Type a name to find their PickleX account. Nothing links until you confirm.</span>
                             @error('walkin')
                                 <p class="m-0 text-[13px] font-semibold text-hot">{{ $message }}</p>
                             @enderror
@@ -419,7 +419,7 @@
                                             <span class="text-xs text-ink3">{{ $walkinUser->club ? $walkinUser->club.' · ' : '' }}{{ $wg }} {{ Str::plural('game', $wg) }} on PickleX</span>
                                         </span>
                                     </div>
-                                    <span class="text-xs leading-[1.45] text-ink2">Check with them first. Their games tonight count toward this account's stats and rankings, and they're checked in right away.</span>
+                                    <span class="text-xs leading-[1.45] text-ink2">Check with them first. Tonight's games count toward this account, and they're checked in now.</span>
                                     <div class="flex gap-2">
                                         <button type="button" wire:click="$set('walkinPick', null)" class="h-10.5 cursor-pointer rounded-full border-[1.5px] border-line2 px-3.5 text-[13px] font-bold text-ink transition hover:brightness-96 active:scale-97">Not them</button>
                                         <button type="button" wire:click="addAccountWalkin" class="h-10.5 flex-1 cursor-pointer rounded-full bg-lime px-3.5 text-[13px] font-extrabold text-on-lime transition hover:brightness-96 active:scale-97">Yes, add {{ $wf }}</button>
@@ -735,7 +735,7 @@
                                 <button type="button" wire:click="stepCourtNumber(1)" @disabled(! $cd['next']) aria-label="{{ $cd['next'] ? "Court {$cd['next']} instead" : 'No higher court number free' }}"
                                         class="flex size-12 shrink-0 cursor-pointer items-center justify-center rounded-full border-[1.5px] border-line2 bg-surface text-ink transition hover:brightness-96 active:scale-97 disabled:cursor-not-allowed disabled:opacity-40"><x-icon name="plus" :size="18" :stroke="2.4" /></button>
                             </div>
-                            <p class="m-0 text-[13px] text-ink3">Use the number on the court so players know where to go. Numbers already in use are skipped.</p>
+                            <p class="m-0 text-[13px] text-ink3">Use the number on the court. Numbers in use are skipped.</p>
                             <p @class(['m-0 flex items-start gap-2 rounded-[14px] border px-3.5 py-3 text-[13px] leading-[1.45] font-semibold', 'border-lime bg-lime-soft text-ink' => $cd['ready'], 'border-line bg-surface text-ink2' => ! $cd['ready']])>
                                 <x-icon name="arrow-right" :size="16" class="mt-px shrink-0" /><span>{{ $cd['hint'] }}</span>
                             </p>
@@ -780,9 +780,9 @@
                                 @endforeach
                             </ul>
                             @if ($cd['lastOne'])
-                                <p id="crt-last" class="m-0 flex items-start gap-2 text-[13px] text-ink2"><x-icon name="alert" :size="15" class="mt-px shrink-0" /><span>At least one court has to stay. To stop for the night, end the session instead.</span></p>
+                                <p id="crt-last" class="m-0 flex items-start gap-2 text-[13px] text-ink2"><x-icon name="alert" :size="15" class="mt-px shrink-0" /><span>One court has to stay. To stop, end the session.</span></p>
                             @endif
-                            <p class="m-0 text-[13px] leading-[1.45] text-ink3">Removing an open court is instant. If a game is on, you choose whether it finishes first. Players see the change on the live view.</p>
+                            <p class="m-0 text-[13px] leading-[1.45] text-ink3">Open courts close right away. If a game is on, you choose whether it finishes first.</p>
                         </section>
                     @else
                         @php($four = $play->names([...$rc['a']['ids'], ...$rc['b']['ids']]))
@@ -795,7 +795,7 @@
                             <h3 id="crt-how" class="m-0 text-[15px] font-extrabold">What happens to this game?</h3>
                             <div role="radiogroup" aria-labelledby="crt-how" class="flex flex-col gap-2">
                                 @foreach ([
-                                    'finish' => ['Let this game finish', "Court {$rc['n']} closes when you enter the score. The result counts, and nobody new goes on it.", true],
+                                    'finish' => ['Let this game finish', "Court {$rc['n']} closes after the score is entered. The result counts.", true],
                                     'now' => ['Stop the game now', "The game doesn't count. {$four} go back to the front of the line".($locks->isNotEmpty() ? ', with '.$locks->map(fn ($t) => $play->names($t['ids']))->join(' and ').' still locked together' : '').'.', false],
                                 ] as $key => [$label, $desc, $rec])
                                     @php($on = ($this->crt['how'] ?? 'finish') === $key)
@@ -893,7 +893,7 @@
                     <section aria-labelledby="cs-on" class="flex flex-col gap-2.5">
                         <h3 id="cs-on" class="m-0 text-[15px] font-extrabold">2 · Who's going on?</h3>
                         @if (! $outs)
-                            <p class="m-0 text-sm text-ink2">Pick who's coming off first. Checked-in players from the queue show up here, next in line first.</p>
+                            <p class="m-0 text-sm text-ink2">Pick who's coming off. Checked-in players are listed, next in line first.</p>
                         @elseif ($subDialog['cands']->isNotEmpty())
                             <div role="radiogroup" aria-labelledby="cs-on" class="grid grid-cols-1 gap-2 lg:grid-cols-2">
                                 @foreach ($subDialog['cands'] as $cd)
@@ -937,7 +937,7 @@
                         </section>
                     @endif
 
-                    <p class="m-0 flex items-start gap-2 text-[13px] leading-[1.45] text-ink3"><x-icon name="clock" :size="16" class="mt-px shrink-0" /><span>The game keeps going and the timer doesn't reset. When you enter the score, the win or loss counts for the players who finish the game.</span></p>
+                    <p class="m-0 flex items-start gap-2 text-[13px] leading-[1.45] text-ink3"><x-icon name="clock" :size="16" class="mt-px shrink-0" /><span>The game and timer keep going. The result counts for the players who finish.</span></p>
                 </div>
 
                 <div class="flex shrink-0 gap-2.5 border-t border-line bg-bg px-6 pt-3.5 pb-5.5">
@@ -980,7 +980,7 @@
                             </div>
                             {{-- Poster PNG for Download / Send (resources/js/share-poster.js). --}}
                             <div x-data="sharePoster(@js($poster))" x-effect="share && prep()" wire:ignore class="flex w-full min-w-0 flex-1 flex-col gap-5.5">
-                                <p class="m-0 text-base leading-[1.55] text-ink2">Members scan this to follow the courts, who's up next and the queue live. No login needed.</p>
+                                <p class="m-0 text-base leading-[1.55] text-ink2">Scan to follow the courts and queue live. No login needed.</p>
                                 <div class="flex flex-col gap-2.5">
                                     <a x-show="img" x-cloak x-bind:href="img" download="{{ $poster['file'] }}" x-on:click="saved()"
                                        class="flex h-13 items-center justify-center gap-2 rounded-full border-2 border-cta-border bg-lime px-4.5 text-[15px] font-extrabold text-on-lime shadow-cta transition hover:brightness-96 active:scale-97">
@@ -1019,7 +1019,7 @@
                     <span class="flex size-13 items-center justify-center rounded-2xl border border-hot-line bg-hot-soft text-hot"><x-icon name="stop" :size="22" :stroke="2.2" /></span>
                     <div class="flex flex-col gap-1.5">
                         <h2 id="end-title" class="m-0 font-display text-[26px] leading-[1.1] font-extrabold tracking-[-0.03em]">End {{ $play->title }}?</h2>
-                        <p id="end-desc" class="m-0 text-[15px] leading-normal text-ink2">This closes the court board and the players' live view. Every logged game and stat stays saved.</p>
+                        <p id="end-desc" class="m-0 text-[15px] leading-normal text-ink2">Closes the court board and live view. Logged games and stats stay saved.</p>
                     </div>
                     <div class="grid grid-cols-3 gap-2">
                         @foreach (['Games' => $games, 'Checked in' => $here, 'Running' => $running] as $label => $value)

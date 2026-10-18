@@ -27,7 +27,7 @@
         <div class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 pt-5 pb-6 [&>*]:shrink-0">
             @unless ($owner)
                 <p class="m-0 flex items-start gap-2.5 rounded-[16px] border border-line bg-surface px-3.5 py-3 text-sm leading-[1.45] text-ink2"><x-icon name="users" :size="18" class="mt-px shrink-0" />
-                    <span>{{ $roster['free'] ? "You can see who joined. {$hostFirst} handles any changes to the list." : "You can see who joined and who has paid. Only {$hostFirst} marks payments, since players pay {$hostFirst}'s ".($play->hasPaymentQr() ? $play->payMethodLabel().' QR' : 'account').'.' }}</span>
+                    <span>{{ $roster['free'] ? "You can see who joined. {$hostFirst} handles any changes to the list." : "You can see who joined and paid. Only {$hostFirst} marks payments." }}</span>
                 </p>
             @endunless
             <div class="grid grid-cols-3 gap-2.5">
@@ -142,7 +142,7 @@
                         {{ $roster['q'] !== '' ? 'No one here matches “'.$roster['q'].'”.' : match ($roster['f']) { 'unpaid' => 'Everyone has paid.', 'guests' => 'No guests on this open play.', default => 'No players in this group.' } }}
                     </p>
                 @else
-                    <p class="m-0 border-t border-line {{ $pad }} py-5.5 text-sm text-ink2">No one has joined yet. Players show up here as soon as they join, or when you add them to the paid list.</p>
+                    <p class="m-0 border-t border-line {{ $pad }} py-5.5 text-sm text-ink2">No one has joined yet. Players show up here when they join or you add them to the paid list.</p>
                 @endif
             </div>
         </div>

@@ -51,7 +51,7 @@ class WhosInTest extends TestCase
             ->assertSee("Upcoming open play · who's in")
             ->assertSeeInOrder(['Mik', 'Tagum Picklers', 'Ben Tan', 'Grace Ong'])->assertSee('Guest · added by the organizer')
             ->assertDontSee('Mika Lim')->assertDontSee('mika@example.com')->assertDontSee('Unpaid')
-            ->assertSee('Emails and payments stay with the organizer.')
+            ->assertSee('Only the organizer sees emails and payments.')
             ->assertSee('Guests')->assertSee('Join open play');
 
         // Names only: a full name someone keeps private doesn't find them.

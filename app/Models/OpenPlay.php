@@ -180,7 +180,7 @@ class OpenPlay extends Model
                 throw new InvalidArgumentException('The organizer asks everyone to join with a PickleX account.');
             }
             if ($play->status !== 'upcoming') {
-                throw new InvalidArgumentException("It's on now. Without an account, tell the organizer at the courts and they'll add you as a walk-in.");
+                throw new InvalidArgumentException("It's on now. No account? Ask the organizer at the courts to add you as a walk-in.");
             }
             if ($play->activeParticipants()->whereNull('user_id')->whereRaw('lower(name) = ?', [mb_strtolower($name)])->exists()) {
                 throw new InvalidArgumentException("Someone named {$name} already joined as a guest. Add your last name or an initial.");
@@ -1001,7 +1001,7 @@ class OpenPlay extends Model
         $this->mutate(function (array &$board, self $play) use ($n, $how) {
             $i = collect($board['courts'])->search(fn ($c) => $c['n'] === $n);
             if ($i === false || ! self::openCourtCount($board, $n)) {
-                throw new InvalidArgumentException('At least one court has to stay. To stop for the night, end the session instead.');
+                throw new InvalidArgumentException('One court has to stay. To stop, end the session.');
             }
             $court = $board['courts'][$i];
             if ($court['a'] && $how === 'finish') {

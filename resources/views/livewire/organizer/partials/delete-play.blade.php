@@ -22,7 +22,7 @@
                 @endforeach
             </div>
             <p id="del-desc" class="m-0 text-[15px] leading-normal text-ink2">
-                {{ $told ? $told.' '.($told === 1 ? 'player who joined gets' : 'players who joined get')." an email that it's cancelled, and it comes off everyone's Open plays." : ($joined ? "It comes off everyone's Open plays. The players on it don't have PickleX accounts, so let them know yourself." : 'No one has joined yet, so nobody needs to be told.') }}
+                {{ $told ? $told.' '.($told === 1 ? 'player who joined gets' : 'players who joined get')." an email that it's cancelled, and it comes off everyone's Open plays." : ($joined ? "It comes off Open plays. Its players have no PickleX accounts, so tell them yourself." : 'No one has joined yet, so nobody needs to be told.') }}
             </p>
             @if ($paid && $play->fee)
                 <x-alert>{{ $paid }} {{ $paid === 1 ? 'player has' : 'players have' }} already paid {{ $play->fee }}. PickleX doesn't hold the money, so refund them from your {{ $play->hasPaymentQr() ? $play->payMethodLabel() : 'payment' }} account.</x-alert>

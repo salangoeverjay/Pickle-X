@@ -172,7 +172,7 @@ class OpenPlays extends Component
                 $notes[] = $unpaid->map(fn ($p) => $p->fullName())->join(', ', ' and ').' joined in the app, so they stay in and are marked as not paid.';
             }
             if (collect($rows)->contains(fn ($r) => $r['key'] === 'fee' && $r['changed']) && $form['rows']) {
-                $notes[] = 'Players already marked as paid keep their Paid status. Settle any difference in the fee with them directly.';
+                $notes[] = 'Paid players stay paid. Settle any fee difference with them directly.';
             }
         } else {
             $notes[] = $this->visibility === 'invite' ? 'Only people you invite can see and join it after you publish.' : 'Members can see it and join as soon as you publish.';

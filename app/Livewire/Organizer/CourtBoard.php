@@ -288,7 +288,7 @@ class CourtBoard extends Component
         $courts = collect($this->play()->boardCourts());
         $court = $courts->firstWhere('n', $n);
         if ($court && ! $courts->contains(fn ($c) => $c['n'] !== $n && empty($c['closing']))) {
-            $this->dispatch('toast', message: 'At least one court has to stay. To stop for the night, end the session instead.');
+            $this->dispatch('toast', message: 'One court has to stay. To stop, end the session.');
         } elseif ($court && $court['a']) {
             $this->crt = ['step' => 'remove', 'court' => $n, 'how' => 'finish'] + ($this->crt ?? ['num' => 1]);
         } elseif ($court) {
