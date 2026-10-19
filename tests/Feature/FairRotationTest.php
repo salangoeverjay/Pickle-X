@@ -92,9 +92,9 @@ class FairRotationTest extends TestCase
         $play->recordScore(1, 11, 5);
 
         Livewire::actingAs($this->org)->test(CourtBoard::class)
-            ->assertSee('Fewest games first')->assertSee('Game mode · changes from the next game')
+            ->assertSee('Fewest games first')->assertSee('Game mode: changes from the next game')
             ->call('setRotation', 'winners')
-            ->assertDispatched('toast', message: 'Winners stay (2 max) from the next game · games on court finish as they are')
+            ->assertDispatched('toast', message: 'Winners stay (2 max) from the next game, games on court finish as they are')
             ->assertDontSee('Fewest games first');
         $this->assertSame('winners', $play->fresh()->rotation);
         $this->assertNull($play->fresh()->nextUpTeams()['fair'] ?? null, 'winners stay calls players in line order');
@@ -147,7 +147,7 @@ class FairRotationTest extends TestCase
 
         // A court with a game on: let it finish, then it closes.
         $c->call('askRemoveCourt', 1)->assertSee('Remove Court 1?')->assertSee('Recommended')
-            ->call('removeCourt')->assertDispatched('toast', message: 'Court 1 closes after this game · nobody new goes on it')
+            ->call('removeCourt')->assertDispatched('toast', message: 'Court 1 closes after this game, nobody new goes on it')
             ->assertSee('Last game')->assertSee('Keep court');
         $c->call('keepCourt', 1);
         $this->assertArrayNotHasKey('closing', $play->fresh()->boardCourts()[0]);

@@ -13,9 +13,9 @@
          class="relative flex max-h-[92%] w-full animate-rise flex-col overflow-clip rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:max-h-full md:w-215 md:max-w-full md:rounded-[28px]">
         <div class="flex shrink-0 items-center justify-between gap-3 border-b border-line pt-5 pr-5 pb-4 pl-6">
             <div class="flex min-w-0 flex-1 flex-col gap-0.5">
-                <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">{{ $live ? "Live now · who's here" : "Upcoming open play · who's in" }}</span>
+                <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">{{ $live ? "Live now, who's here" : "Upcoming open play, who's in" }}</span>
                 <h2 id="who-title" class="m-0 font-display text-[26px] leading-[1.1] font-extrabold tracking-[-0.03em]">{{ $play->title }}</h2>
-                <span class="truncate text-[13px] text-ink3">{{ $play->whenLabel() }} · {{ $play->timeRange() }} · {{ $play->venue }}</span>
+                <span class="truncate text-[13px] text-ink3">{{ $play->whenLabel() }}, {{ $play->timeRange() }}, {{ $play->venue }}</span>
             </div>
             <button type="button" wire:click="closeWho" aria-label="Close" class="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-line bg-surface text-ink transition hover:brightness-96 active:scale-97">
                 <x-icon name="x" :size="18" />
@@ -79,7 +79,7 @@
                     <div role="list" aria-label="Players">
                         @foreach ($who['page'] as $r)
                             @php($p = $r['p'])
-                            @php($pill = match ($r['st']) { 'court' => 'Court '.$r['court'], 'line' => 'In line · #'.$r['pos'], 'out' => 'Stepped out', 'away' => 'Not checked in', default => null })
+                            @php($pill = match ($r['st']) { 'court' => 'Court '.$r['court'], 'line' => 'In line, #'.$r['pos'], 'out' => 'Stepped out', 'away' => 'Not checked in', default => null })
                             <div role="listitem" wire:key="wr-{{ $p->id }}" class="flex items-center gap-2.5 border-t border-line {{ $pad }} py-3 lg:gap-3.5">
                                 <span class="w-5 shrink-0 font-mono text-xs text-ink3">{{ $who['page']->firstItem() + $loop->index }}</span>
                                 <x-avatar :src="$p->avatarUrl()" :frame="$p->frameClass()" :name="$p->name" :color="$p->user ? $p->color() : '#E6E3D6'" class="size-10 text-[13px]" />

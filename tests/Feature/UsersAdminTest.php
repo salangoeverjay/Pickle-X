@@ -74,9 +74,9 @@ class UsersAdminTest extends TestCase
 
         Livewire::actingAs($this->super)->test(Users::class)
             ->call('open', $kai->id)->assertSee('Also hosts open plays and runs the court board for Panabo.')
-            ->call('pickRole', 'organizer')->call('saveRole')->assertDispatched('toast', message: 'Kai Santos is now an Organizer · we emailed Kai')
+            ->call('pickRole', 'organizer')->call('saveRole')->assertDispatched('toast', message: 'Kai Santos is now an Organizer, we emailed Kai')
             ->call('pickRole', 'admin')->assertSee('Reviews organizer requests and manages users, developers and sponsors.')
-            ->call('saveRole')->assertDispatched('toast', message: 'Kai Santos is now an Admin · we emailed Kai');
+            ->call('saveRole')->assertDispatched('toast', message: 'Kai Santos is now an Admin, we emailed Kai');
         $this->assertSame('admin', $kai->fresh()->accountRole());
         Mail::assertSent(PickleXMail::class, fn ($m) => $m->template === 'role-changed' && $m->hasTo($kai->email)
             && $m->heading === 'Your PickleX role changed to Organizer' && str_contains($m->render(), 'You&#039;re now an Organizer, Kai')
@@ -113,8 +113,8 @@ class UsersAdminTest extends TestCase
 
         Livewire::actingAs($this->super)->test(Users::class)->call('open', $kai->id)
             ->call('startSuspend')->set('susReason', 'noshow')->set('susNote', 'You missed 3 open plays.')->call('suspend')
-            ->assertDispatched('toast', message: 'Kai Santos is suspended until Mon, Oct 5 · we emailed Kai')
-            ->assertSee('Lifts on its own Mon, Oct 5 · 7 days left')->assertSee('You missed 3 open plays.')->assertSee('No-shows · until Oct 5');
+            ->assertDispatched('toast', message: 'Kai Santos is suspended until Mon, Oct 5, we emailed Kai')
+            ->assertSee('Lifts on its own Mon, Oct 5, 7 days left')->assertSee('You missed 3 open plays.')->assertSee('No-shows, until Oct 5');
         $kai->refresh();
         $this->assertTrue($kai->isSuspended());
         $this->assertSame(0, $next->activeParticipants()->count());
@@ -122,7 +122,7 @@ class UsersAdminTest extends TestCase
         $this->assertNotSame('old-token', $kai->remember_token);
         Mail::assertSent(PickleXMail::class, fn ($m) => $m->template === 'account-suspended' && $m->hasTo('kai@example.com')
             && $m->heading === 'Your PickleX account is suspended until Oct 5' && str_contains($m->render(), 'Repeated no-shows at open plays you joined')
-            && str_contains($m->render(), 'You missed 3 open plays.') && str_contains($m->render(), 'Pat Admin · PickleX admin'));
+            && str_contains($m->render(), 'You missed 3 open plays.') && str_contains($m->render(), 'Pat Admin, PickleX admin'));
 
         Auth::logout();
         Livewire::test(Login::class)->set('email', 'kai@example.com')->set('password', 'password')->call('login')
@@ -145,7 +145,7 @@ class UsersAdminTest extends TestCase
 
         Livewire::actingAs($this->super)->test(Users::class)->call('open', $kai->id)
             ->call('startSuspend')->set('susReason', 'conduct')->set('susLength', 'open')->call('suspend')
-            ->assertDispatched('toast', message: 'Kai Santos is suspended until you restore it · we emailed Kai')
+            ->assertDispatched('toast', message: 'Kai Santos is suspended until you restore it, we emailed Kai')
             ->assertSee('Until an admin restores it');
         Mail::assertSent(PickleXMail::class, fn ($m) => $m->template === 'account-suspended' && $m->heading === 'Your PickleX account is suspended'
             && str_contains($m->render(), 'How to ask for another look') && str_contains($m->render(), 'the organizer&#039;s report'));
@@ -153,7 +153,7 @@ class UsersAdminTest extends TestCase
             $kai->fresh()->suspensionMessage());
 
         Livewire::actingAs($this->super)->test(Users::class)->call('open', $kai->id)->call('restore')
-            ->assertDispatched('toast', message: 'Kai Santos can log in again · we emailed Kai');
+            ->assertDispatched('toast', message: 'Kai Santos can log in again, we emailed Kai');
         $this->assertFalse($kai->fresh()->isSuspended());
         $this->assertNull($kai->fresh()->suspension_reason);
         Mail::assertSent(PickleXMail::class, fn ($m) => $m->template === 'account-restored' && $m->data['early']
@@ -177,7 +177,7 @@ class UsersAdminTest extends TestCase
 
         Livewire::actingAs($this->super)->test(Users::class)->call('open', $kai->id)
             ->call('sendReset')->assertDispatched('toast', message: "Password reset email sent to {$kai->email}")
-            ->call('signOut')->assertDispatched('toast', message: 'Signed Kai out on every device · Remember me cleared');
+            ->call('signOut')->assertDispatched('toast', message: 'Signed Kai out on every device, Remember me cleared');
 
         $this->assertTrue(DB::table('password_reset_tokens')->where('email', $kai->email)->exists());
         $this->assertSame(0, DB::table('sessions')->where('user_id', $kai->id)->count());
@@ -194,7 +194,7 @@ class UsersAdminTest extends TestCase
 
         Livewire::actingAs($this->super)->test(Users::class)->call('open', $kai->id)
             ->set('confirmDelete', true)->assertSee("Delete Kai Santos's account?", false)
-            ->call('delete')->assertDispatched('toast', message: "Deleted Kai Santos's account · we emailed Kai");
+            ->call('delete')->assertDispatched('toast', message: "Deleted Kai Santos's account, we emailed Kai");
         Mail::assertSent(PickleXMail::class, fn ($m) => $m->template === 'account-deleted' && $m->hasTo($kai->email) && $m->data['byAdmin']
             && str_contains($m->render(), 'Your account was deleted'));
 

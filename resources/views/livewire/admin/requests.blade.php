@@ -62,7 +62,7 @@
                         <span class="inline-flex items-center gap-1.5"><x-icon name="pin" :size="16" :stroke="1.9" />{{ $request->city }}</span>
                         <span class="inline-flex items-center gap-1.5"><x-icon name="court" :size="16" :stroke="1.9" />{{ $request->courts ?? 0 }} {{ Str::plural('court', (int) $request->courts) }}</span>
                         @if ($request->has_played || $request->has_games)
-                            <span class="inline-flex h-6 items-center gap-1.5 rounded-full border border-line bg-surface2 px-2.25 text-xs font-bold text-ink"><x-icon name="user" :size="14" :stroke="2" />Already a player · same account</span>
+                            <span class="inline-flex h-6 items-center gap-1.5 rounded-full border border-line bg-surface2 px-2.25 text-xs font-bold text-ink"><x-icon name="user" :size="14" :stroke="2" />Already a player, same account</span>
                         @endif
                     </div>
 

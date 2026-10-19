@@ -25,10 +25,10 @@
 
     <p class="em-ink" style="margin: 0 0 10px; font-weight: 700; color: #12170F;">Updated details</p>
     @include('emails.partials.details', ['rows' => [
-        ['When', $play->starts_at->format('D, M j').' · '.$play->timeRange()],
+        ['When', $play->starts_at->format('D, M j').', '.$play->timeRange()],
         ['Where', $play->venue],
-        ['Format', $play->courts.' '.Str::plural('court', $play->courts).' · race to '.$play->race_to.' · '.($play->rotation === 'winners' ? 'winners stay on' : 'everyone rotates')],
-        ['Your spot', "In · {$count} of {$play->cap} joined"],
+        ['Format', $play->courts.' '.Str::plural('court', $play->courts).', race to '.$play->race_to.', '.($play->rotation === 'winners' ? 'winners stay on' : 'everyone rotates')],
+        ['Your spot', "In, {$count} of {$play->cap} joined"],
     ]])
 
     @if ($paid && $play->fee)

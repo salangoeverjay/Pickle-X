@@ -9,7 +9,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         {{-- yieldContent() is already escaped; decode so the <title> isn't escaped twice. --}}
-        @include('partials.head', ['title' => html_entity_decode(trim($__env->yieldContent('title')), ENT_QUOTES).' · PickleX'])
+        @include('partials.head', ['title' => html_entity_decode(trim($__env->yieldContent('title')), ENT_QUOTES).' | PickleX'])
     </head>
     <body>
         <div class="relative flex min-h-dvh flex-col overflow-hidden">

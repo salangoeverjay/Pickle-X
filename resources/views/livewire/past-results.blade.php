@@ -9,9 +9,9 @@
                  class="relative flex max-h-[92%] w-full animate-rise flex-col overflow-clip rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:max-h-full md:w-215 md:max-w-full md:rounded-[28px]">
                 <div class="flex shrink-0 items-center justify-between gap-3 border-b border-line pt-5 pr-5 pb-4 pl-6">
                     <div class="flex min-w-0 flex-1 flex-col gap-0.5">
-                        <span class="truncate font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">{{ $play->club }} · Concluded</span>
+                        <span class="truncate font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">{{ $play->club }}, Concluded</span>
                         <h2 id="results-title" class="m-0 font-display text-[26px] leading-[1.1] font-extrabold tracking-[-0.03em]">{{ $play->title }}</h2>
-                        <span class="truncate text-[13px] text-ink3">{{ $play->starts_at->format('D, M j') }} · {{ $play->timeRange() }} · {{ $play->venue }}</span>
+                        <span class="truncate text-[13px] text-ink3">{{ $play->starts_at->format('D, M j') }}, {{ $play->timeRange() }}, {{ $play->venue }}</span>
                     </div>
                     <button type="button" wire:click="close" aria-label="Close" class="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-line bg-surface text-ink transition hover:brightness-96 active:scale-97">
                         <x-icon name="x" :size="18" />
@@ -39,8 +39,8 @@
                                 @endif
                                 <div class="flex min-w-45 flex-1 flex-col gap-0.5">
                                     <span class="font-mono text-[11px] tracking-widest uppercase opacity-75">Your night</span>
-                                    <span class="font-display text-[22px] font-extrabold tracking-[-0.02em]">{{ $top ? $results::MEDALS[$mine['rank'] - 1][1].' · ' : '' }}#{{ $mine['rank'] }} of {{ $mine['of'] }}</span>
-                                    <span class="text-sm opacity-80">{{ $mine['w'] }}-{{ $mine['l'] }} · {{ $results::signed($mine['diff']) }} points · {{ round($mine['w'] * 100 / $mine['g']) }}% win rate</span>
+                                    <span class="font-display text-[22px] font-extrabold tracking-[-0.02em]">{{ $top ? $results::MEDALS[$mine['rank'] - 1][1].', ' : '' }}#{{ $mine['rank'] }} of {{ $mine['of'] }}</span>
+                                    <span class="text-sm opacity-80">{{ $mine['w'] }}-{{ $mine['l'] }}, {{ $results::signed($mine['diff']) }} points, {{ round($mine['w'] * 100 / $mine['g']) }}% win rate</span>
                                 </div>
                             </div>
                             <div class="flex flex-col overflow-hidden rounded-2xl bg-white/6">

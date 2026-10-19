@@ -5,7 +5,7 @@
 const KINDS = {
     login: { ms: 1600, title: 'Logging you in', sub: (f) => (f ? `Welcome back, ${f}.` : 'Welcome back.'), steps: ['Checking your details', 'Loading your open plays', 'Getting your queue spot ready'], kicker: 'Open play, organized' },
     logout: { ms: 1200, title: 'Logging you out', sub: (f) => (f ? `See you on the court, ${f}.` : 'See you on the court.'), steps: ['Saving your changes', 'Signing you out safely'], kicker: 'You can log back in any time' },
-    signup: { ms: 2000, title: 'Creating your account', sub: (f) => (f ? `Hi ${f}, setting things up.` : 'Setting things up.'), steps: ['Creating your player profile', 'Finding open plays near you', 'Getting your rankings ready'], kicker: 'Free for players · No DUPR' },
+    signup: { ms: 2000, title: 'Creating your account', sub: (f) => (f ? `Hi ${f}, setting things up.` : 'Setting things up.'), steps: ['Creating your player profile', 'Finding open plays near you', 'Getting your rankings ready'], kicker: 'Free for players, No DUPR' },
     'signup-org': { ms: 2000, title: 'Creating your account', sub: (f) => (f ? `Hi ${f}, one moment.` : 'One moment.'), steps: ['Creating your account', 'Sending your club to the PickleX admin'], kicker: 'You can play while you wait for approval' },
 };
 const KEY = 'px-loader';

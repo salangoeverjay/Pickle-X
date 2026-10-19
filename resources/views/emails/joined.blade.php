@@ -9,10 +9,10 @@
     <p class="em-ink2" style="margin: 10px 0 22px; font-size: 16px; color: #464D42;">Your spot at <strong class="em-ink" style="color: #12170F;">{{ $play->title }}</strong> is saved. You're player {{ $position }} of {{ $play->cap }}.</p>
 
     @include('emails.partials.details', ['rows' => [
-        ['When', $play->starts_at->format('D, M j').' · '.$play->timeRange()],
+        ['When', $play->starts_at->format('D, M j').', '.$play->timeRange()],
         ['Where', $play->venue],
-        ['Format', $play->courts.' '.Str::plural('court', $play->courts).' · race to '.$play->race_to.' · '.($play->rotation === 'winners' ? 'winners stay on' : 'everyone rotates')],
-        ['Organizer', collect([$play->organizer?->name, $play->club])->filter()->join(' · ')],
+        ['Format', $play->courts.' '.Str::plural('court', $play->courts).', race to '.$play->race_to.', '.($play->rotation === 'winners' ? 'winners stay on' : 'everyone rotates')],
+        ['Organizer', collect([$play->organizer?->name, $play->club])->filter()->join(', ')],
     ]])
 
     @if ($owes)

@@ -39,7 +39,7 @@
                 <div role="radiogroup" aria-label="Account type" class="grid grid-cols-2 gap-2.5">
                     @foreach ([
                         ['member', 'Member', 'Join open plays, track stats and rankings', 'users', 'bg-lime text-on-lime'],
-                        ['organizer', 'Organizer', 'Play and host open plays · hosting needs approval', 'court', 'bg-court text-white'],
+                        ['organizer', 'Organizer', 'Play and host open plays, hosting needs approval', 'court', 'bg-court text-white'],
                     ] as [$value, $label, $hint, $icon, $iconClass])
                         <label class="group relative flex cursor-pointer flex-col items-start gap-2 rounded-[18px] border-2 border-line p-4 text-ink transition active:scale-97 has-checked:border-ink has-checked:bg-surface has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-focus">
                             <input type="radio" name="role" value="{{ $value }}" wire:model.live="role" class="sr-only">

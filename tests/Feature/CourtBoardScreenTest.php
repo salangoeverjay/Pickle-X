@@ -60,7 +60,7 @@ class CourtBoardScreenTest extends TestCase
         $this->assertSame(0, $play->games()->count());
 
         $board->set('scoreB', 5)->call('saveScore')
-            ->assertDispatched('toast', fn ($name, $params) => str_starts_with($params['message'], "Court 1: {$names} won 11-5 · ")
+            ->assertDispatched('toast', fn ($name, $params) => str_starts_with($params['message'], "Court 1: {$names} won 11-5, ")
                 && str_ends_with($params['message'], 'onto the podium'))
             ->assertSet('scoreCourt', null)
             ->assertSee('Latest results')
@@ -97,8 +97,8 @@ class CourtBoardScreenTest extends TestCase
         $loser = $play->participant($court['b']['ids'][0])->user;
         $rank = collect($play->fresh()->standings())->firstWhere('participant_id', $court['b']['ids'][0])['rank'];
 
-        $this->actingAs($winner)->get(route('member.dashboard'))->assertSee('Podium · #')->assertSee(' tonight · 1-0');
-        $this->actingAs($loser)->get(route('member.dashboard'))->assertSee("#{$rank} tonight · 0-1");
+        $this->actingAs($winner)->get(route('member.dashboard'))->assertSee('Podium, #')->assertSee(' tonight, 1-0');
+        $this->actingAs($loser)->get(route('member.dashboard'))->assertSee("#{$rank} tonight, 0-1");
         $this->get(route('live', $play->fresh()->share_code))->assertSee('Every player', false)->assertSee('YOU');
     }
 
@@ -108,7 +108,7 @@ class CourtBoardScreenTest extends TestCase
 
         Livewire::actingAs($this->org)->test(CourtBoard::class)
             ->call('openScore', 1)->set('scoreA', 3)->set('scoreB', 11)->call('saveScore')
-            ->assertDispatched('toast', fn ($name, $params) => str_contains($params['message'], 'won 11-3 · ') && str_ends_with($params['message'], ' · winners stay on'));
+            ->assertDispatched('toast', fn ($name, $params) => str_contains($params['message'], 'won 11-3, ') && str_ends_with($params['message'], ', winners stay on'));
     }
 
     public function test_fill_court_and_auto_fill_switch(): void
@@ -161,7 +161,7 @@ class CourtBoardScreenTest extends TestCase
             ->set('walkin', str_repeat('x', 61))->call('addWalkin')->assertHasErrors('walkin')
             ->set('walkin', ' Tito Boy ')->call('addWalkin')
             ->assertHasNoErrors()
-            ->assertDispatched('toast', message: 'Tito Boy joined the queue as a guest · checked in')
+            ->assertDispatched('toast', message: 'Tito Boy joined the queue as a guest, checked in')
             ->assertSet('walkin', '')
             ->assertSee('Tito Boy');
 
@@ -184,7 +184,7 @@ class CourtBoardScreenTest extends TestCase
         $board->call('pickWalkin', $mika->id)
             ->assertSee('Add this account to the queue?')->assertSee('Yes, add Mika')
             ->call('addAccountWalkin')
-            ->assertDispatched('toast', message: 'Mika Lim joined the queue · linked to their account')
+            ->assertDispatched('toast', message: 'Mika Lim joined the queue, linked to their account')
             ->assertSet('walkin', '');
         $p = $play->participants()->where('user_id', $mika->id)->first();
         $this->assertNotNull($p->checked_in_at);
@@ -195,7 +195,7 @@ class CourtBoardScreenTest extends TestCase
 
         // Or add them as a guest instead.
         $board->set('walkin', 'Mika Santos')->call('addGuestWalkin')
-            ->assertDispatched('toast', message: 'Mika Santos joined the queue as a guest · checked in');
+            ->assertDispatched('toast', message: 'Mika Santos joined the queue as a guest, checked in');
         $this->assertTrue($play->participants()->where('name', 'Mika Santos')->whereNull('user_id')->exists());
     }
 
@@ -210,7 +210,7 @@ class CourtBoardScreenTest extends TestCase
         Livewire::actingAs($this->org)->test(CourtBoard::class)
             ->assertSee('Up next')->assertSee('Larry')
             ->assertSee('Needs 3 more checked-in players to start a game')
-            ->assertSee('Courts full · Court')
+            ->assertSee('Courts full, Court')
             ->assertSee('Skipping '.$play->fresh()->names($front['ids']).' until they are back.');
     }
 
@@ -231,7 +231,7 @@ class CourtBoardScreenTest extends TestCase
             ->assertRedirect(route('organizer.plays'));
 
         $this->assertSame('done', $play->fresh()->status);
-        $this->assertSame('Session ended · 1 game logged', session('toast'));
+        $this->assertSame('Session ended, 1 game logged', session('toast'));
     }
 
     public function test_stats_and_check_in_button(): void
@@ -270,8 +270,8 @@ class CourtBoardScreenTest extends TestCase
             ->assertSee('Next in line')
             ->call('subIn', $out, $in)
             ->assertSet('subFor', null)
-            ->assertDispatched('toast', message: "{$inNames} subs in for {$outNames} · {$outFirst} keeps their spot")
-            ->assertSee('Stepped out · keeps spot');
+            ->assertDispatched('toast', message: "{$inNames} subs in for {$outNames}, {$outFirst} keeps their spot")
+            ->assertSee('Stepped out, keeps spot');
 
         $queue = collect($play->fresh()->queue());
         $this->assertTrue($queue->firstWhere('id', $out)['paused']);
@@ -290,7 +290,7 @@ class CourtBoardScreenTest extends TestCase
             ->assertSee("Just mark {$names} as stepped out")
             ->call('setPaused', $out, true)
             ->assertSet('subFor', null)
-            ->assertDispatched('toast', message: "{$names} stepped out · keeps their spot")
+            ->assertDispatched('toast', message: "{$names} stepped out, keeps their spot")
             ->assertSee('Back in');
         $this->assertTrue(collect($play->fresh()->queue())->firstWhere('id', $out)['paused']);
 

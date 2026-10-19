@@ -15,7 +15,7 @@ use Livewire\Attributes\Url;
 use Livewire\Component;
 
 /** Admin › Users (admins): every account, with roles, password resets, sign-outs, suspension and deletion. */
-#[Title('Users · PickleX')]
+#[Title('Users | PickleX')]
 class Users extends Component
 {
     use Pages;
@@ -96,7 +96,7 @@ class Users extends Component
         Emails::send($user, Emails::roleChanged($user, $was, $this->role));
         $label = self::ROLES[$this->role];
         $this->role = null;
-        $this->dispatch('toast', message: "{$user->name} is now ".(in_array($label, ['Admin', 'Organizer']) ? 'an ' : 'a ').$label." · we emailed {$user->firstName()}");
+        $this->dispatch('toast', message: "{$user->name} is now ".(in_array($label, ['Admin', 'Organizer']) ? 'an ' : 'a ').$label.", we emailed {$user->firstName()}");
     }
 
     public function sendReset(): void
@@ -110,7 +110,7 @@ class Users extends Component
     {
         $user = $this->other();
         $user->signOutEverywhere();
-        $this->dispatch('toast', message: "Signed {$user->firstName()} out on every device · Remember me cleared");
+        $this->dispatch('toast', message: "Signed {$user->firstName()} out on every device, Remember me cleared");
     }
 
     public function suspend(): void
@@ -129,7 +129,7 @@ class Users extends Component
         Emails::send($user, Emails::accountSuspended($user->fresh()));
         $this->suspending = false;
         $until = $user->suspended_until ? 'until '.$user->suspended_until->format('D, M j') : 'until you restore it';
-        $this->dispatch('toast', message: "{$user->name} is suspended {$until} · we emailed {$user->firstName()}");
+        $this->dispatch('toast', message: "{$user->name} is suspended {$until}, we emailed {$user->firstName()}");
     }
 
     /** Lifts it now, before any end date. */
@@ -139,7 +139,7 @@ class Users extends Component
         $mail = Emails::accountRestored($user, early: true);
         $user->liftSuspension();
         Emails::send($user, $mail);
-        $this->dispatch('toast', message: "{$user->name} can log in again · we emailed {$user->firstName()}");
+        $this->dispatch('toast', message: "{$user->name} can log in again, we emailed {$user->firstName()}");
     }
 
     /** Their logged games stay in other players' history as Former player. */
@@ -150,7 +150,7 @@ class Users extends Component
         $user->deleteAccount();
         Emails::send($user->email, $mail);
         $this->close();
-        $this->dispatch('toast', message: "Deleted {$user->name}'s account · we emailed {$user->firstName()}");
+        $this->dispatch('toast', message: "Deleted {$user->name}'s account, we emailed {$user->firstName()}");
     }
 
     /** A new tab or search starts on page 1. */

@@ -27,7 +27,7 @@
             ['Suspended', $at->format('D, M j').' to '.$end->format('D, M j').' ('.$days.' '.Str::plural('day', $days).')'],
         ];
         if ($kind === 'open') {
-            $details[] = ['Lifted by', $by && ! Str::startsWith($by, 'PickleX') ? $by.' · PickleX admin' : 'A PickleX admin'];
+            $details[] = ['Lifted by', $by && ! Str::startsWith($by, 'PickleX') ? $by.', PickleX admin' : 'A PickleX admin'];
         }
         $details[] = ['Account', $user->email];
     @endphp

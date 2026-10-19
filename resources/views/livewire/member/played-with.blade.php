@@ -6,7 +6,7 @@
             @php
                 $joined = $guide['joined'];
                 $steps = [
-                    ['Join an open play', $joined ? "You're in · {$joined->title}, {$joined->whenLabel()}" : 'Pick one on Open plays and tap Join.'],
+                    ['Join an open play', $joined ? "You're in: {$joined->title}, {$joined->whenLabel()}" : 'Pick one on Open plays and tap Join.'],
                     ['Get queued on a court', 'The rotation mixes you with new players.'],
                     ['Scores get logged', 'Your partner and opponents land here, with your record.'],
                 ];
@@ -15,7 +15,7 @@
             @endphp
             <section aria-labelledby="pwn-h" class="grid animate-rise items-center gap-x-9 gap-y-5.5 rounded-[26px] bg-ink p-4.5 text-bg lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:p-6">
                 <div class="flex min-w-0 flex-col items-start gap-2.5">
-                    <span class="font-mono text-xs tracking-[.12em] text-lime-on-ink uppercase">{{ $joined ? "You're in · first game coming up" : 'No logged games yet' }}</span>
+                    <span class="font-mono text-xs tracking-[.12em] text-lime-on-ink uppercase">{{ $joined ? "You're in, first game coming up" : 'No logged games yet' }}</span>
                     <h2 id="pwn-h" class="m-0 font-display text-[30px] leading-[1.05] font-extrabold tracking-[-0.035em]">Your people show up here</h2>
                     <p class="m-0 max-w-118 text-[15px] leading-normal opacity-82">
                         {{ $joined ? "Your first game at {$joined->title} adds a partner and two opponents. Records and win rates build from there." : 'Each logged game adds a partner and two opponents. Records and win rates build from there.' }}
@@ -43,7 +43,7 @@
                             </span>
                         @endforeach
                     </div>
-                    <figcaption class="font-mono text-xs tracking-widest uppercase opacity-72">One logged game · 1 partner + 2 opponents</figcaption>
+                    <figcaption class="font-mono text-xs tracking-widest uppercase opacity-72">One logged game, 1 partner + 2 opponents</figcaption>
                 </figure>
             </section>
 
@@ -108,7 +108,7 @@
                     <div class="flex flex-col">
                         <span class="font-mono text-[11px] tracking-widest uppercase">Best partner</span>
                         <span class="font-display text-[22px] font-extrabold tracking-[-0.03em]">{{ $best?->user->shownName() ?? 'Not yet' }}</span>
-                        <span class="text-[13px] font-semibold">{{ $best ? "{$best->wins}-{$best->losses} together · {$best->pct}% wins" : 'Play 5 games with someone to unlock' }}</span>
+                        <span class="text-[13px] font-semibold">{{ $best ? "{$best->wins}-{$best->losses} together, {$best->pct}% wins" : 'Play 5 games with someone to unlock' }}</span>
                     </div>
                 </div>
                 <div class="flex items-center gap-3.5 rounded-[22px] border border-line bg-surface p-4 lg:p-5">
@@ -127,7 +127,7 @@
                     <span class="flex size-13 shrink-0 items-center justify-center rounded-2xl bg-surface2 text-ink"><x-icon name="users" :size="22" :stroke="1.9" /></span>
                     <div class="flex flex-col">
                         <span class="font-mono text-[11px] tracking-widest text-ink3 uppercase">Different players</span>
-                        <span class="font-display text-[22px] font-extrabold tracking-[-0.03em]">{{ $stats->partners->count() }} {{ Str::plural('partner', $stats->partners->count()) }} · {{ $stats->opponents->count() }} {{ Str::plural('opponent', $stats->opponents->count()) }}</span>
+                        <span class="font-display text-[22px] font-extrabold tracking-[-0.03em]">{{ $stats->partners->count() }} {{ Str::plural('partner', $stats->partners->count()) }}, {{ $stats->opponents->count() }} {{ Str::plural('opponent', $stats->opponents->count()) }}</span>
                     </div>
                 </div>
             </div>
@@ -188,7 +188,7 @@
                                 <div class="flex justify-between gap-2"><span class="font-bold">{{ $r->user->shownName() }}</span><span class="font-mono font-semibold">{{ $r->wins }}-{{ $r->losses }}</span></div>
                                 <div class="flex items-center gap-2.5">
                                     <div class="h-1.5 flex-1 overflow-hidden rounded-[3px] bg-surface2"><div class="h-full rounded-[3px] {{ $barColor($r->pct) }}" style="width: {{ $r->pct }}%"></div></div>
-                                    <span class="text-xs text-ink3">{{ $r->games }} games · {{ \App\Support\MemberStats::when($r->last) }}</span>
+                                    <span class="text-xs text-ink3">{{ $r->games }} games, {{ \App\Support\MemberStats::when($r->last) }}</span>
                                 </div>
                             </div>
                         </div>

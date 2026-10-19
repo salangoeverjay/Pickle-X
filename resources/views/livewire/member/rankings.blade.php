@@ -59,7 +59,7 @@
             <div class="flex items-center gap-3.5 rounded-[22px] bg-ink px-4.5 py-4 text-bg">
                 <span class="shrink-0 font-display text-[34px] font-extrabold tracking-[-0.04em] text-lime-on-ink">#{{ $me->rank }}</span>
                 <div class="flex flex-1 flex-col">
-                    <span class="text-base font-bold">That's you, {{ $user->firstName() }} · {{ $me->pts }} pts</span>
+                    <span class="text-base font-bold">That's you, {{ $user->firstName() }}. {{ $me->pts }} pts</span>
                     <span class="text-sm opacity-80">{{ $note }}</span>
                 </div>
             </div>
@@ -72,7 +72,7 @@
                         <span class="absolute -bottom-2.25 left-1/2 inline-flex h-5.5 -translate-x-1/2 items-center rounded-full border-2 border-ink bg-lime px-2.25 text-[11px] font-extrabold tracking-[.04em] whitespace-nowrap text-on-lime">NEW</span>
                     </span>
                     <div class="flex min-w-0 flex-col gap-1.5">
-                        <span class="font-mono text-xs tracking-[.12em] text-lime-on-ink uppercase">Not ranked yet · {{ $unranked['games'] }}</span>
+                        <span class="font-mono text-xs tracking-[.12em] text-lime-on-ink uppercase">Not ranked yet, {{ $unranked['games'] }}</span>
                         <h2 id="unr-h" class="m-0 font-display text-[28px] leading-[1.05] font-extrabold tracking-[-0.035em]">You're not ranked yet</h2>
                         <p class="m-0 max-w-135 text-[15px] leading-normal opacity-82">{{ $unranked['body'] }}</p>
                     </div>

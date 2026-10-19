@@ -14,7 +14,7 @@ use Livewire\Component;
  * Admin › What's new: write updates (new features, enhancements, bug fixes) for everyone, players only or organizers only.
  * Save a draft or publish; a published update pops up once for everyone in its audience who hasn't read it.
  */
-#[Title("What's new · PickleX")]
+#[Title("What's new | PickleX")]
 class WhatsNew extends Component
 {
     #[Url(except: 'live')]
@@ -90,8 +90,8 @@ class WhatsNew extends Component
         $this->tab = $goLive || $wasLive ? 'live' : 'draft';
         $this->dispatch('toast', message: match (true) {
             $goLive => $this->reach($n->audience),
-            $wasLive => "Update saved · people who already read it won't see it again",
-            default => 'Draft saved · only admins can see it',
+            $wasLive => "Update saved, people who already read it won't see it again",
+            default => 'Draft saved, only admins can see it',
         });
     }
 
@@ -108,7 +108,7 @@ class WhatsNew extends Component
         $n = News::findOrFail($this->deleting);
         $n->delete();
         $this->deleting = null;
-        $this->dispatch('toast', message: ($n->isLive() ? "Update deleted · it's gone from everyone's What's new · " : 'Draft deleted · ').$n->title);
+        $this->dispatch('toast', message: ($n->isLive() ? "Update deleted, it's gone from everyone's What's new, " : 'Draft deleted, ').$n->title);
     }
 
     public function render()
@@ -146,11 +146,11 @@ class WhatsNew extends Component
         return $of ? (int) round($read / $of * 100) : 0;
     }
 
-    /** "Published · shows once to 23 people next time they open PickleX". */
+    /** "Published, shows once to 23 people next time they open PickleX". */
     private function reach(string $audience): string
     {
         $n = News::audience($audience)->count();
 
-        return 'Published · shows once to '.$n.' '.($n === 1 ? 'person' : 'people').' next time they open PickleX';
+        return 'Published, shows once to '.$n.' '.($n === 1 ? 'person' : 'people').' next time they open PickleX';
     }
 }

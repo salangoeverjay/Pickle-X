@@ -35,8 +35,8 @@ class LiveViewTest extends TestCase
 
         $this->get(route('live', $play->share_code))
             ->assertOk()
-            ->assertSee('Friday Rally · Live · PickleX')
-            ->assertSee('LIVE · UPDATES AUTOMATICALLY')
+            ->assertSee('Friday Rally | Live | PickleX')
+            ->assertSee('LIVE, UPDATES AUTOMATICALLY')
             ->assertSee($play->share_code)
             ->assertSee('1 of 1 courts in play')
             ->assertSee('4 of 5 checked in')

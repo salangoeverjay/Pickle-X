@@ -5,7 +5,7 @@ namespace App\Livewire;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-#[Title('PickleX · Open play, organized')]
+#[Title('PickleX | Open play, organized')]
 class Home extends Component
 {
     public function render()

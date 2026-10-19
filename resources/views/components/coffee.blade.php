@@ -20,11 +20,11 @@
                     <div class="flex flex-col items-center gap-5.5 lg:flex-row">
                         <div class="flex shrink-0 flex-col items-center gap-2 rounded-3xl border border-[#DEDCD0] bg-white px-3.5 pt-3.5 pb-3 shadow-[0_16px_36px_-18px_rgba(0,0,0,.35)]">
                             <img src="/images/coffee-qr.svg" alt="QR Ph code (InstaPay) for sending a tip to Jayvee Salango at BPI" class="block size-55 object-contain">
-                            <span class="font-mono text-[11px] font-semibold tracking-[.14em] text-on-lime uppercase">QR Ph · InstaPay</span>
+                            <span class="font-mono text-[11px] font-semibold tracking-[.14em] text-on-lime uppercase">QR Ph, InstaPay</span>
                         </div>
                         <div class="flex w-full min-w-0 flex-1 flex-col gap-3.5">
                             <dl class="m-0 flex flex-col overflow-hidden rounded-2xl border border-line bg-surface">
-                                @foreach (['Send to' => 'Jayvee', 'Account' => 'BPI ••••&nbsp;427', 'Works with' => 'GCash, Maya, any bank app', 'Amount' => 'Any amount you like'] as $dt => $dd)
+                                @foreach (['Send to' => 'Jayvee', 'Account' => 'BPI ****&nbsp;427', 'Works with' => 'GCash, Maya, any bank app', 'Amount' => 'Any amount you like'] as $dt => $dd)
                                     <div class="flex items-center justify-between gap-3 border-b border-line px-3.5 py-2.75 last:border-b-0"><dt class="text-[13px] text-ink3">{{ $dt }}</dt><dd class="m-0 text-right text-sm font-bold">{!! $dd !!}</dd></div>
                                 @endforeach
                             </dl>
@@ -32,7 +32,7 @@
                                 @foreach ([
                                     'Open GCash, Maya or your bank app and scan the QR. On your phone, save the image and upload it from your gallery.',
                                     'Type any amount. The price of a coffee is plenty. Your app may charge a small InstaPay fee.',
-                                    'Check the name reads <strong>Jayvee</strong> (some apps show <strong>JA•••E GO••••A SA••••O</strong>) before you send.',
+                                    'Check the name reads <strong>Jayvee</strong> (some apps show <strong>JA***E GO****A SA****O</strong>) before you send.',
                                 ] as $step)
                                     <li class="flex items-start gap-3 text-sm leading-[1.45]">
                                         <span aria-hidden="true" class="flex size-6 shrink-0 items-center justify-center rounded-full bg-lime text-xs font-extrabold text-on-lime">{{ $loop->iteration }}</span>
@@ -46,7 +46,7 @@
                 </div>
 
                 <div class="flex shrink-0 flex-wrap gap-2.5 border-t border-line bg-bg px-6 pt-3.5 pb-5.5">
-                    <a href="/images/jayvee-salango-qr-ph.png" download="jayvee-salango-qr-ph.png" x-on:click="$dispatch('toast', { message: 'QR saved · upload it in GCash, Maya or your bank app' })"
+                    <a href="/images/jayvee-salango-qr-ph.png" download="jayvee-salango-qr-ph.png" x-on:click="$dispatch('toast', { message: 'QR saved, upload it in GCash, Maya or your bank app' })"
                        class="inline-flex h-13 items-center justify-center gap-2 rounded-full border-[1.5px] border-line2 px-4.5 text-[15px] font-bold text-ink transition hover:brightness-96 active:scale-97"><x-icon name="download" :size="17" />Save QR</a>
                     <button type="button" x-on:click="open = false" class="h-13 min-w-45 flex-1 cursor-pointer rounded-full bg-ink text-[15px] font-extrabold text-bg transition hover:brightness-96 active:scale-97">Done</button>
                 </div>

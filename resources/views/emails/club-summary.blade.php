@@ -16,7 +16,7 @@
 
     <x-mail.h2>Busiest {{ Str::plural('night', $busiest->count()) }}</x-mail.h2>
     @foreach ($busiest as $p)
-        @include('emails.partials.play-row', ['play' => $p, 'right' => ($counts[$p->id] ?? 0).' '.Str::plural('player', $counts[$p->id] ?? 0).' · '.$p->games_count.' '.Str::plural('game', $p->games_count)])
+        @include('emails.partials.play-row', ['play' => $p, 'right' => ($counts[$p->id] ?? 0).' '.Str::plural('player', $counts[$p->id] ?? 0).', '.$p->games_count.' '.Str::plural('game', $p->games_count)])
     @endforeach
 
     <p style="margin: 22px 0 0;"><x-mail.button :href="route('organizer.plays')">Create the next open play</x-mail.button></p>

@@ -17,7 +17,7 @@ use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 
-#[Title('Open plays · PickleX')]
+#[Title('Open plays | PickleX')]
 class OpenPlays extends Component
 {
     use Pages, ShowsRoster, StartsSessions;
@@ -168,10 +168,10 @@ class OpenPlays extends Component
             $p = $r['p'];
             $uid = $p->user_id;
             [$pa, $op] = [$uid === $me ? 0 : (int) $partner->get($uid), $uid === $me ? 0 : (int) $opponent->get($uid)];
-            $with = $pa && $op ? "Partner {$pa}× · opponent {$op}×" : ($pa ? 'Your partner '.$pa.' '.Str::plural('time', $pa) : ($op ? 'Played against you '.$op.' '.Str::plural('time', $op) : ''));
+            $with = $pa && $op ? "Partner {$pa}×, opponent {$op}×" : ($pa ? 'Your partner '.$pa.' '.Str::plural('time', $pa) : ($op ? 'Played against you '.$op.' '.Str::plural('time', $op) : ''));
             $rec = $record->get($p->id);
-            $sub = ! $uid ? ($p->via_link ? 'Guest · joined through the link' : ($live ? 'Walk-in guest' : 'Guest · added by the organizer'))
-                : collect([$rec ? "{$rec['w']}-{$rec['l']} tonight" : $p->user?->club, $with])->filter()->join(' · ');
+            $sub = ! $uid ? ($p->via_link ? 'Guest, joined through the link' : ($live ? 'Walk-in guest' : 'Guest, added by the organizer'))
+                : collect([$rec ? "{$rec['w']}-{$rec['l']} tonight" : $p->user?->club, $with])->filter()->join(', ');
 
             return $r + ['guest' => ! $uid, 'me' => $uid && $uid === $me, 'host' => $uid && $uid === $play->organizer_id, 'played' => (bool) ($pa || $op), 'sub' => $sub];
         });

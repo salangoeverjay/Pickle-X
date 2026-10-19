@@ -23,7 +23,7 @@
 
     <p class="em-ink2" style="margin: 0 0 10px; font-size: 13px; font-weight: 700; color: #464D42;">Request details</p>
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 0 0 22px; font-size: 14px;">
-        <tr><td class="em-ink3" style="padding: 3px 16px 3px 0; color: #5B6257; width: 90px;">When</td><td class="em-ink">{{ now()->format('D, M j, Y · g:i A') }}</td></tr>
+        <tr><td class="em-ink3" style="padding: 3px 16px 3px 0; color: #5B6257; width: 90px;">When</td><td class="em-ink">{{ now()->format('D, M j, Y, g:i A') }}</td></tr>
         <tr><td class="em-ink3" style="padding: 3px 16px 3px 0; color: #5B6257;">Device</td><td class="em-ink">{{ $device }}</td></tr>
     </table>
 

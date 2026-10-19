@@ -59,9 +59,9 @@
                                 <span class="leading-[1.25] font-bold lg:truncate">{{ $p->title }}</span>
                                 @if ($isTest($p))<span class="{{ $testPill }}">Looks like a test</span>@endif
                             </span>
-                            <span class="hidden truncate text-[13px] text-ink3 lg:block">{{ $p->timeRange() }} · {{ $p->venue }}</span>
-                            <span class="text-[12.5px] leading-[1.35] text-ink3 lg:hidden">{{ $p->club }}{{ $host ? ' · '.$host : '' }}</span>
-                            <span class="font-mono text-xs text-ink2 lg:hidden">{{ $p->games_count }} {{ Str::plural('game', $p->games_count) }} · {{ $p->players_count }} {{ Str::plural('player', $p->players_count) }}</span>
+                            <span class="hidden truncate text-[13px] text-ink3 lg:block">{{ $p->timeRange() }}, {{ $p->venue }}</span>
+                            <span class="text-[12.5px] leading-[1.35] text-ink3 lg:hidden">{{ $p->club }}{{ $host ? ', '.$host : '' }}</span>
+                            <span class="font-mono text-xs text-ink2 lg:hidden">{{ $p->games_count }} {{ Str::plural('game', $p->games_count) }}, {{ $p->players_count }} {{ Str::plural('player', $p->players_count) }}</span>
                             <span class="mt-1 flex lg:hidden">
                                 <button type="button" wire:click="askDelete({{ $p->id }})" aria-label="Delete {{ $p->title }}" class="inline-flex h-10 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full border-[1.5px] border-hot-line px-3.5 text-sm font-bold text-hot transition hover:bg-hot-soft active:scale-97"><x-icon name="trash" :size="16" />Delete</button>
                             </span>
@@ -90,8 +90,8 @@
                         <span aria-hidden="true" class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-surface2 text-ink3"><x-icon name="trash" :size="16" /></span>
                         <div class="flex min-w-0 flex-1 flex-col gap-0.75">
                             <span class="font-bold text-ink2 line-through decoration-hot decoration-2">{{ $d->title }}</span>
-                            <span class="text-[13px] leading-[1.4] text-ink3">{{ $d->club }}{{ $d->host ? ' · hosted by '.$d->host : '' }} · reason: {{ $reasons[$d->reason][2] ?? 'something else' }}</span>
-                            <span class="text-[13px] font-semibold text-ink">{{ $statOff($d->games, $d->players) }}{{ $d->host ? ' · '.Str::before($d->host, ' ').' was emailed' : '' }}</span>
+                            <span class="text-[13px] leading-[1.4] text-ink3">{{ $d->club }}{{ $d->host ? ', hosted by '.$d->host : '' }}, reason: {{ $reasons[$d->reason][2] ?? 'something else' }}</span>
+                            <span class="text-[13px] font-semibold text-ink">{{ $statOff($d->games, $d->players) }}{{ $d->host ? ', '.Str::before($d->host, ' ').' was emailed' : '' }}</span>
                         </div>
                     </div>
                 @endforeach
@@ -114,9 +114,9 @@
                     <div class="flex flex-col gap-1.5">
                         <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">Delete a concluded open play</span>
                         <h2 id="apd-title" class="m-0 font-display text-[26px] leading-[1.1] font-extrabold tracking-[-0.03em]">Delete {{ $play->title }}?</h2>
-                        <p class="m-0 text-sm text-ink3">{{ $play->starts_at->format('D, M j') }} · {{ $play->timeRange() }} · {{ $play->club }}</p>
+                        <p class="m-0 text-sm text-ink3">{{ $play->starts_at->format('D, M j') }}, {{ $play->timeRange() }}, {{ $play->club }}</p>
                         <span class="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
-                            @if ($host)<span class="text-sm text-ink2">Hosted by {{ $host->name }} · {{ $host->email }}</span>@endif
+                            @if ($host)<span class="text-sm text-ink2">Hosted by {{ $host->name }}, {{ $host->email }}</span>@endif
                             @if ($isTest($play))<span class="{{ $testPill }}">Looks like a test</span>@endif
                         </span>
                     </div>

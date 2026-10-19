@@ -3,7 +3,7 @@
 @php($user = auth()->user())
 @section('code', '404')
 @section('title', 'That one landed out.')
-@section('kicker', 'Error 404 · Page not found')
+@section('kicker', 'Error 404: Page not found')
 @section('pill', 'BALL OUT')
 @section('scene', 'A ball flying past the court lines and landing out')
 @section('foot', '404 Not Found')

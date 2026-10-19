@@ -17,7 +17,7 @@ use Livewire\Component;
  * Deleting takes its games (and so everyone's rankings, played-with lists and stats from it) with it;
  * the host is emailed the reason, players aren't.
  */
-#[Title('Open plays · PickleX')]
+#[Title('Open plays | PickleX')]
 class OpenPlays extends Component
 {
     use Pages;
@@ -88,7 +88,7 @@ class OpenPlays extends Component
         }
 
         $this->cancelDelete();
-        $this->dispatch('toast', message: "{$play->title} deleted · {$play->games_count} ".Str::plural('game', $play->games_count)." came off {$players} ".($players === 1 ? "player's" : "players'").' stats'.($host ? " · we emailed {$host->firstName()}" : ''));
+        $this->dispatch('toast', message: "{$play->title} deleted, {$play->games_count} ".Str::plural('game', $play->games_count)." came off {$players} ".($players === 1 ? "player's" : "players'").' stats'.($host ? ", we emailed {$host->firstName()}" : ''));
     }
 
     public function updated(string $property): void

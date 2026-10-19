@@ -48,9 +48,9 @@ class RosterTest extends TestCase
         $c = Livewire::actingAs($this->org)->test(OrganizerPlays::class)
             ->assertSee("See who's in")
             ->call('openRoster', $play->id)
-            ->assertSee('Upcoming open play · players')
+            ->assertSee('Upcoming open play: players')
             ->assertSeeInOrder(['Mika Lim', 'Ben Tan', 'Grace Ong'])
-            ->assertSee('mika@example.com')->assertSee('Joined in the app')->assertSee('Guest · no PickleX account · from your paid list')
+            ->assertSee('mika@example.com')->assertSee('Joined in the app')->assertSee('Guest, no PickleX account, from your paid list')
             ->assertSee('Says they sent ₱120')
             ->assertSee('₱120')->assertSee('of ₱360');
 

@@ -9,7 +9,7 @@
     <div class="relative mx-4 mt-1 h-37.5 shrink-0 md:mx-auto md:mt-3 md:aspect-[37/20] md:h-auto md:w-[calc(100%-4rem)] md:max-w-140 lg:hidden">
         <x-court class="absolute inset-0 rounded-[22px]" player-class="size-7.5 text-[10px]" :players="$players" />
         <span class="absolute top-2.5 left-2.5 inline-flex h-6 items-center gap-1.5 rounded-full bg-black/35 px-2.25 font-mono text-[10px] tracking-widest text-white">
-            <span class="size-1.5 animate-live rounded-full bg-lime"></span>COURT 3 · <x-live-timer />
+            <span class="size-1.5 animate-live rounded-full bg-lime"></span>COURT 3, <x-live-timer />
         </span>
     </div>
 @else
@@ -23,7 +23,7 @@
 
     <div class="relative flex flex-col gap-3.5">
         <span class="inline-flex h-7.5 items-center gap-2 self-start rounded-full bg-black/22 px-3 font-mono text-[11px] tracking-widest">
-            <span class="size-1.75 animate-live rounded-full bg-lime"></span>COURT 3 · <x-live-timer />
+            <span class="size-1.75 animate-live rounded-full bg-lime"></span>COURT 3, <x-live-timer />
         </span>
         <h2 class="m-0 font-display text-[46px] leading-[.98] font-extrabold tracking-[-0.04em] text-balance">{{ $title }}</h2>
         <p class="m-0 max-w-110 text-base leading-[1.55] text-white/90">{{ $text }}</p>

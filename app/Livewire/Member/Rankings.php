@@ -9,7 +9,7 @@ use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 
-#[Title('Rankings · PickleX')]
+#[Title('Rankings | PickleX')]
 class Rankings extends Component
 {
     use Pages;
@@ -58,7 +58,7 @@ class Rankings extends Component
             'scopes' => $clubs->map(fn ($c) => ['id' => $c->name, 'name' => $c->name, 'sub' => $c->name === $user->club ? 'Home club' : $c->plays.' '.Str::plural('open play', $c->plays)])
                 ->push(['id' => 'all', 'name' => 'All clubs', 'sub' => 'All time'])
                 ->map(fn ($x) => $x + ['on' => $x['id'] === $scope]),
-            'kicker' => $name.' · '.Str::ucfirst($per),
+            'kicker' => $name.', '.Str::ucfirst($per),
             'scopeNote' => ($all ? 'Every PickleX player, all clubs added up, all time.' : "Players at {$scope} open plays, {$per}.")
                 .($clubs->isEmpty() ? ' Join an open play and its club gets its own table here.' : ''),
             'empty' => 'No games logged '.($period === 'month' ? 'this month yet' : 'yet').($all ? '' : " at {$scope}").'. Rankings fill in after the first scores.',
@@ -75,7 +75,7 @@ class Rankings extends Component
                 },
                 'tips' => [
                     ['Your first game', 'Up to 15 pts', '+3 for playing, +10 for a win, +2 for a new partner'],
-                    ['Top 10 · '.($all ? 'all clubs' : $per), $rows->count() >= 10 ? $rows[9]->pts.' pts' : 'Open', $rows->count() >= 10 ? 'what #10 has right now' : 'fewer than 10 players are ranked'],
+                    ['Top 10, '.($all ? 'all clubs' : $per), $rows->count() >= 10 ? $rows[9]->pts.' pts' : 'Open', $rows->count() >= 10 ? 'what #10 has right now' : 'fewer than 10 players are ranked'],
                     ['Fair by design', 'No DUPR', 'rankings only count games logged at open plays'],
                 ],
             ],

@@ -36,7 +36,7 @@ class OpenPlaysTest extends TestCase
         $this->play();
 
         $this->actingAs($member)->get(route('member.plays'))->assertOk()->assertSee('Find your next game')->assertSee('Friday Rally')
-            ->assertSee('1 court · Race to')->assertDontSee('1 courts');
+            ->assertSee('1 court, Race to')->assertDontSee('1 courts');
         $this->actingAs($member)->get(route('organizer.plays'))->assertForbidden();
         $this->actingAs($this->org)->get(route('organizer.plays'))->assertOk()->assertSee('Your open plays')->assertSee('Friday Rally');
         $this->actingAs($this->org)->get(route('member.plays'))->assertOk(); // player mode, same account
@@ -47,9 +47,9 @@ class OpenPlaysTest extends TestCase
         $this->seed();
 
         $this->actingAs(User::where('email', 'kai@picklex.app')->first())->get(route('member.plays'))->assertOk()->assertSee('Check in to get on court')->assertSee('Leave open play')
-            ->assertSee('Hosted by')->assertSee('Ely Ramos')->assertSee('Approved organizer · ');
+            ->assertSee('Hosted by')->assertSee('Ely Ramos')->assertSee('Approved organizer, ');
         // An organizer in player mode sees their own sessions as hosted by them.
-        $this->actingAs(User::where('email', 'ely@panabodink.ph')->first())->get(route('member.plays'))->assertOk()->assertSee("You're the organizer · ")->assertSee('Hosted by');
+        $this->actingAs(User::where('email', 'ely@panabodink.ph')->first())->get(route('member.plays'))->assertOk()->assertSee("You're the organizer, ")->assertSee('Hosted by');
         $this->actingAs(User::where('email', 'ely@panabodink.ph')->first())->get(route('organizer.plays'))->assertOk()->assertSee('LIVE NOW')->assertSee('Concluded open plays');
     }
 
@@ -61,7 +61,7 @@ class OpenPlaysTest extends TestCase
         Livewire::actingAs($member)->test(MemberPlays::class)
             ->call('joinPlay', $play->id)
             ->assertDispatched('toast', message: "You're in. See you {$play->whenLabel()}.")
-            ->assertSee("You're in · Leave", false)
+            ->assertSee("You're in, Leave", false)
             ->call('leavePlay', $play->id)
             ->assertDispatched('toast', message: 'You left Friday Rally');
 

@@ -74,7 +74,7 @@ class PaymentQrTest extends TestCase
             ->call('claimPayment', $play->id)
             ->assertDispatched('toast', message: 'Thanks. The organizer will mark you as paid once they see it.')
             ->assertSet('payFor', null)
-            ->assertSee('Payment sent · view QR');
+            ->assertSee('Payment sent, view QR');
         $this->assertDatabaseHas('pay_claims', ['open_play_id' => $play->id, 'user_id' => $member->id]);
 
         // On the organizer's paid list: shows Paid instead of the Pay button.

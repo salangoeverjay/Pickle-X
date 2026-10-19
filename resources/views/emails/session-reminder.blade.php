@@ -6,7 +6,7 @@
 @section('content')
     <p style="margin: 0 0 22px;"><span class="em-soft" style="display: inline-block; padding: 5px 12px; border-radius: 999px; background: #F6F5EE; border: 1px solid #C8C6B8; color: #12170F; font-size: 13px; font-weight: 800;">&#9201;&nbsp;Starts in about an hour</span></p>
     <x-mail.h1>{{ $play->title }} starts at {{ $play->starts_at->format('g:i A') }}</x-mail.h1>
-    <p class="em-ink2" style="margin: 10px 0 22px; font-size: 16px; color: #464D42;">{{ $play->starts_at->format('D, M j') }} · {{ $play->timeRange() }} · {{ $play->venue }}</p>
+    <p class="em-ink2" style="margin: 10px 0 22px; font-size: 16px; color: #464D42;">{{ $play->starts_at->format('D, M j') }}, {{ $play->timeRange() }}, {{ $play->venue }}</p>
 
     <div class="em-soft" style="margin: 0 0 22px; padding: 18px; border-radius: 18px; background: #F6F5EE;">
         @include('emails.partials.progress', ['count' => $count, 'cap' => $play->cap])

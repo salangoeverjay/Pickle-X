@@ -5,9 +5,9 @@
     $badge = 'inline-flex h-6 shrink-0 items-center rounded-full border px-2.25 text-xs font-extrabold whitespace-nowrap';
     $you = 'inline-flex h-5 shrink-0 items-center rounded-full bg-lime px-1.75 text-[10.5px] font-extrabold text-on-lime';
     $btn = 'h-11 shrink-0 cursor-pointer rounded-full border-[1.5px] px-4 text-sm font-bold transition active:scale-97';
-    // "No-shows · until Oct 26" for a suspended account.
+    // "No-shows, until Oct 26" for a suspended account.
     $until = fn ($u) => $u->suspended_until ? 'until '.$u->suspended_until->format('M j') : 'until restored';
-    $why = fn ($u) => $u->suspensionReason()[0].' · '.$until($u);
+    $why = fn ($u) => $u->suspensionReason()[0].', '.$until($u);
 @endphp
 
 <x-app-shell>
@@ -101,7 +101,7 @@
                         <div class="flex min-w-0 flex-1 flex-col gap-1">
                             <h2 id="um-title" class="m-0 font-display text-[26px] leading-[1.1] font-extrabold tracking-[-0.03em]">{{ $managed->name }}</h2>
                             <span class="text-sm break-all text-ink2">{{ $managed->email }}</span>
-                            <span class="text-[13px] text-ink3">{{ collect([$managed->club, ($n = $games[$managed->id] ?? 0).' '.Str::plural('game', $n), 'Joined '.$managed->created_at->format('M Y'), 'Active '.Str::lcfirst($lastActive($managed))])->filter()->join(' · ') }}</span>
+                            <span class="text-[13px] text-ink3">{{ collect([$managed->club, ($n = $games[$managed->id] ?? 0).' '.Str::plural('game', $n), 'Joined '.$managed->created_at->format('M Y'), 'Active '.Str::lcfirst($lastActive($managed))])->filter()->join(', ') }}</span>
                             <span class="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
                                 <span class="{{ $badge }} {{ $pill[$r] }}">{{ $roles[$r] }}</span>
                                 @if ($managed->isSuspended())
@@ -157,9 +157,9 @@
                                     @php($first = $managed->firstName())
                                     <div id="um-susinfo" class="flex flex-col gap-3 bg-hot-soft p-4">
                                         <div class="flex flex-col gap-1">
-                                            <span class="font-mono text-[11px] tracking-[.12em] text-hot uppercase">Suspended · {{ $managed->suspensionReason()[0] }}</span>
-                                            <span class="text-base leading-[1.3] font-extrabold">{{ $managed->suspended_until ? 'Lifts on its own '.$managed->suspended_until->format('D, M j').' · '.($left = max(1, (int) ceil(now()->diffInDays($managed->suspended_until)))).' '.Str::plural('day', $left).' left' : 'Until an admin restores it' }}</span>
-                                            <span class="text-[13px] leading-[1.45] text-ink2">Since {{ $managed->suspended_at->format('D, M j') }} · by {{ $managed->suspended_by === auth()->id() ? 'you' : ($managed->suspender?->name ?? 'an admin') }} · {{ $first }} was emailed the reason</span>
+                                            <span class="font-mono text-[11px] tracking-[.12em] text-hot uppercase">Suspended, {{ $managed->suspensionReason()[0] }}</span>
+                                            <span class="text-base leading-[1.3] font-extrabold">{{ $managed->suspended_until ? 'Lifts on its own '.$managed->suspended_until->format('D, M j').', '.($left = max(1, (int) ceil(now()->diffInDays($managed->suspended_until)))).' '.Str::plural('day', $left).' left' : 'Until an admin restores it' }}</span>
+                                            <span class="text-[13px] leading-[1.45] text-ink2">Since {{ $managed->suspended_at->format('D, M j') }}, by {{ $managed->suspended_by === auth()->id() ? 'you' : ($managed->suspender?->name ?? 'an admin') }}, {{ $first }} was emailed the reason</span>
                                         </div>
                                         @if ($managed->suspension_note)
                                             <div class="flex flex-col gap-1 rounded-r-xl border-l-3 border-hot bg-bg px-3.5 py-2.5">

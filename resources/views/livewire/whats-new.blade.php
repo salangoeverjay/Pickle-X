@@ -5,7 +5,7 @@
             <h1 class="m-0 font-display text-[32px] leading-none font-extrabold tracking-[-0.04em] md:text-[38px] xl:text-[44px]">What's new</h1>
             <p class="mt-1 mb-0 max-w-155 text-ink2">New features, improvements and fixes.</p>
             <span class="mt-1.5 inline-flex h-7.5 items-center gap-1.5 self-start rounded-full border border-line bg-surface px-3 text-[13px] font-bold">
-                <x-icon name="check" :size="14" :stroke="2.4" />{{ $fresh ? count($fresh).' new '.Str::plural('update', count($fresh)).' · marked as read' : "You're all caught up" }}
+                <x-icon name="check" :size="14" :stroke="2.4" />{{ $fresh ? count($fresh).' new '.Str::plural('update', count($fresh)).', marked as read' : "You're all caught up" }}
             </span>
         </div>
 

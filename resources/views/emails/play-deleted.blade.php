@@ -19,8 +19,8 @@
             </td>
             <td style="padding: 14px 16px;">
                 <p class="em-ink2" style="margin: 0; font-weight: 800; font-size: 17px; color: #464D42; text-decoration: line-through; text-decoration-color: #B23A0A;">{{ $play->title }}</p>
-                <p class="em-ink3" style="margin: 2px 0 0; font-size: 13px; color: #5B6257;">{{ $play->timeRange() }} · {{ $play->venue }} · {{ $play->club }}</p>
-                <p class="em-ink2" style="margin: 2px 0 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-size-adjust: 0.58; font-variant-numeric: tabular-nums; font-size: 12px; color: #464D42;">{{ $games }} {{ Str::plural('game', $games) }} · {{ $players }} {{ Str::plural('player', $players) }} · no longer counted</p>
+                <p class="em-ink3" style="margin: 2px 0 0; font-size: 13px; color: #5B6257;">{{ $play->timeRange() }}, {{ $play->venue }}, {{ $play->club }}</p>
+                <p class="em-ink2" style="margin: 2px 0 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-size-adjust: 0.58; font-variant-numeric: tabular-nums; font-size: 12px; color: #464D42;">{{ $games }} {{ Str::plural('game', $games) }}, {{ $players }} {{ Str::plural('player', $players) }}, no longer counted</p>
             </td>
         </tr>
     </table>

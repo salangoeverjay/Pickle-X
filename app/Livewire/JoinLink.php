@@ -131,7 +131,7 @@ class JoinLink extends Component
 
         session()->put("join_guests.{$play->id}", $guest->id);
         $this->error = '';
-        $this->dispatch('toast', message: "You're in as a guest · see you {$play->whenLabel()}");
+        $this->dispatch('toast', message: "You're in as a guest, see you {$play->whenLabel()}");
         if ($email) {
             Emails::send($email, Emails::joined($play, new User(['name' => $name, 'email' => $email])));
         }
@@ -174,7 +174,7 @@ class JoinLink extends Component
         $play = $this->play();
         $user = auth()->user();
         if (! $play) {
-            return view('livewire.join-link', ['play' => null])->title("This link doesn't work anymore · PickleX");
+            return view('livewire.join-link', ['play' => null])->title("This link doesn't work anymore | PickleX");
         }
 
         $joined = $user && $play->activeParticipants()->where('user_id', $user->id)->exists();
@@ -202,6 +202,6 @@ class JoinLink extends Component
             'faces' => $play->whoIsIn()->take(6),
             'seesNames' => $joined || $guest,
             'owes' => in_array($state, ['in', 'guestIn']) && $play->fee && $play->hasPaymentQr() && ! $me?->paid,
-        ])->title("{$play->title} · Join · PickleX");
+        ])->title("{$play->title} | Join | PickleX");
     }
 }

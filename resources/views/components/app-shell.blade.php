@@ -106,7 +106,7 @@
         </a>
         @if ($other)
             <div class="mx-1 flex flex-col gap-1.5">
-                <span id="mode-label" class="px-1 font-mono text-[10px] tracking-[.12em] text-ink3 uppercase">One account · two modes</span>
+                <span id="mode-label" class="px-1 font-mono text-[10px] tracking-[.12em] text-ink3 uppercase">One account, two modes</span>
                 <div role="radiogroup" aria-labelledby="mode-label" class="grid grid-cols-2 rounded-[14px] border border-line bg-surface2 p-1">
                     @foreach (['organizer' => ['organizer.plays', 'Organizer'], 'member' => ['member.dashboard', 'Player']] as $m => [$route, $label])
                         <a href="{{ route($route) }}" wire:navigate role="radio" aria-checked="{{ $mode === $m ? 'true' : 'false' }}" @class([

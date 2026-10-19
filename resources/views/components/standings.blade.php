@@ -24,7 +24,7 @@
             <h2 id="{{ $heading }}" @class(['m-0 font-display font-extrabold tracking-[-0.03em]', 'text-[22px]' => ! $plain, 'text-xl' => $plain])>{{ $title }}</h2>
             <span class="text-[13px] leading-[1.4] text-ink3">Top 3 by wins, then fewest losses, then point difference.</span>
         </div>
-        <span class="font-mono text-xs text-ink3">{{ count($rows) }} {{ Str::plural('player', count($rows)) }} · {{ $games }} {{ Str::plural('game', $games) }}</span>
+        <span class="font-mono text-xs text-ink3">{{ count($rows) }} {{ Str::plural('player', count($rows)) }}, {{ $games }} {{ Str::plural('game', $games) }}</span>
     </div>
 
     @if (! $rows)
@@ -44,7 +44,7 @@
                         </div>
                         <div class="flex max-w-full flex-col items-center gap-0.5 text-center">
                             <span class="max-w-full truncate text-sm font-extrabold lg:text-base">{{ $p?->firstName() }}</span>
-                            <span class="font-mono text-[13px] whitespace-nowrap text-ink2">{{ $r['w'] }}-{{ $r['l'] }} · <span class="font-semibold {{ $diffClass($r['diff']) }}">{{ $diff($r['diff']) }}</span></span>
+                            <span class="font-mono text-[13px] whitespace-nowrap text-ink2">{{ $r['w'] }}-{{ $r['l'] }}, <span class="font-semibold {{ $diffClass($r['diff']) }}">{{ $diff($r['diff']) }}</span></span>
                         </div>
                     @else
                         <span class="{{ $size }} rounded-full border-2 border-dashed border-line2"></span>

@@ -23,7 +23,7 @@
                 <div class="flex flex-col gap-2">
                     <div class="flex flex-wrap items-center gap-2.5">
                         <span class="inline-flex h-7 items-center gap-1.75 rounded-full bg-ink px-2.75 font-mono text-[11px] tracking-widest text-bg"><span class="size-1.75 animate-live rounded-full bg-lime"></span>LIVE</span>
-                        <span class="text-[13px] text-ink3">{{ $started }} · {{ $play->rotationLabel() }} · Race to {{ $play->race_to }} · {{ $play->warmupLabel() }}</span>
+                        <span class="text-[13px] text-ink3">{{ $started }}, {{ $play->rotationLabel() }}, Race to {{ $play->race_to }}, {{ $play->warmupLabel() }}</span>
                     </div>
                     <h1 class="m-0 font-display text-[32px] leading-none font-extrabold tracking-[-0.04em] md:text-[38px] xl:text-[44px]">{{ $play->title }}</h1>
                     @unless ($autoEnd['soon'])
@@ -62,7 +62,7 @@
             <div id="wum" x-show="wum" x-cloak x-on:click.outside="if (! $event.target.closest('#wum-btn')) wum = false" role="radiogroup" aria-label="Warmup before each game"
                  class="flex animate-fade flex-wrap items-center gap-x-3.5 gap-y-2.5 rounded-[18px] border border-line bg-surface2 px-4 py-3.5">
                 <div class="flex min-w-0 flex-[1_1_280px] flex-col gap-1">
-                    <span class="font-mono text-[11px] font-semibold tracking-[.12em] text-ink3 uppercase">Warmup · changes from the next game</span>
+                    <span class="font-mono text-[11px] font-semibold tracking-[.12em] text-ink3 uppercase">Warmup: changes from the next game</span>
                     <span class="text-[13px] leading-[1.45] text-ink2">{{ $play->warmup ? "Each new foursome gets {$play->warmup} minutes to warm up before the game clock starts. " : 'Games start the moment a foursome goes on court. ' }}Winners who stay on skip it. Changes apply to the next game.</span>
                 </div>
                 <div class="flex flex-wrap gap-1.5">
@@ -99,7 +99,7 @@
 
             {{-- Mobile column switch --}}
             <div role="tablist" aria-label="Court board view" class="grid grid-cols-3 rounded-full border border-line bg-surface p-1 md:hidden">
-                @foreach (['courts' => 'Courts · '.$busy.'/'.count($courts), 'queue' => 'Queue · '.$inQueue, 'stand' => 'Standings'] as $key => $label)
+                @foreach (['courts' => 'Courts '.$busy.'/'.count($courts), 'queue' => 'Queue '.$inQueue, 'stand' => 'Standings'] as $key => $label)
                     <button type="button" role="tab" aria-selected="{{ $tab === $key ? 'true' : 'false' }}" wire:click="$set('tab', '{{ $key }}')"
                             @class(['h-11 cursor-pointer rounded-full text-sm font-bold transition-colors', 'bg-ink text-bg' => $tab === $key, 'text-ink2' => $tab !== $key])>{{ $label }}</button>
                 @endforeach
@@ -231,7 +231,7 @@
                             </div>
                             @foreach ($results as $r)
                                 <div wire:key="result-{{ $r['id'] }}" @class(['flex flex-col gap-1.5 border-t border-line py-3', 'animate-snap' => $r['id'] === $freshGame])>
-                                    <span class="font-mono text-[11px] tracking-[.08em] text-ink3 uppercase">Court {{ $r['court'] }} · {{ $r['ago'] }} · played {{ $r['played'] }}{{ $r['warmup'] ? ' · warmup '.$r['warmup'] : '' }}</span>
+                                    <span class="font-mono text-[11px] tracking-[.08em] text-ink3 uppercase">Court {{ $r['court'] }}, {{ $r['ago'] }}, played {{ $r['played'] }}{{ $r['warmup'] ? ', warmup '.$r['warmup'] : '' }}</span>
                                     <div class="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
                                         <span @class(['flex min-w-0 items-center justify-end gap-1.5 text-[15px]', 'font-extrabold text-ink' => $r['aWon'], 'font-medium text-ink2' => ! $r['aWon']])>
                                             @if ($r['aWon'])<x-icon name="trophy" :size="14" :stroke="2.2" />@endif
@@ -271,7 +271,7 @@
                         </button>
                     </div>
                     <div id="rotm" x-show="rotm" x-cloak x-on:click.outside="if (! $event.target.closest('#rotm-btn')) rotm = false" role="radiogroup" aria-label="Game mode" class="flex animate-fade flex-col gap-2 rounded-[18px] border border-line bg-surface2 p-3">
-                        <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">Game mode · changes from the next game</span>
+                        <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">Game mode: changes from the next game</span>
                         @foreach (['rotate' => ['Everyone rotates', 'Fewest games play first, and partners mix every game.'], 'winners' => ['Winners stay (2 max)', 'Winners stay on for up to 2 games; challengers come from the front of the line.']] as $key => [$label, $desc])
                             @php($on = ($play->rotation === 'winners' ? 'winners' : 'rotate') === $key)
                             <button type="button" role="radio" aria-checked="{{ $on ? 'true' : 'false' }}" wire:click="setRotation('{{ $key }}')" x-on:click="rotm = false"
@@ -416,7 +416,7 @@
                                         <span class="flex min-w-0 flex-1 flex-col gap-px">
                                             <span class="text-base font-extrabold">{{ $walkinUser->name }}</span>
                                             <span class="text-xs wrap-anywhere text-ink2">{{ $walkinUser->email }}</span>
-                                            <span class="text-xs text-ink3">{{ $walkinUser->club ? $walkinUser->club.' · ' : '' }}{{ $wg }} {{ Str::plural('game', $wg) }} on PickleX</span>
+                                            <span class="text-xs text-ink3">{{ $walkinUser->club ? $walkinUser->club.', ' : '' }}{{ $wg }} {{ Str::plural('game', $wg) }} on PickleX</span>
                                         </span>
                                     </div>
                                     <span class="text-xs leading-[1.45] text-ink2">Check with them first. Tonight's games count toward this account, and they're checked in now.</span>
@@ -439,7 +439,7 @@
                                             <span class="flex min-w-0 flex-1 flex-col gap-px">
                                                 <span class="truncate text-sm font-bold">{{ $mu->name }}</span>
                                                 <span class="text-[11px] font-bold text-ink2">{{ $m['why'] }}</span>
-                                                <span class="truncate text-xs text-ink3">{{ $mu->email }}{{ $mu->club ? ' · '.$mu->club : '' }}</span>
+                                                <span class="truncate text-xs text-ink3">{{ $mu->email }}{{ $mu->club ? ', '.$mu->club : '' }}</span>
                                                 @if ($m['spot'])
                                                     <span class="text-xs font-bold text-hot">{{ $m['spot'] }}</span>
                                                 @endif
@@ -513,7 +513,7 @@
                             @php($rowBg = collect($entry['ids'])->map(fn ($id) => $play->participant($id)?->queueBgClass())->first(fn ($c) => $c))
                             @php($g = (int) ($gamesTonight[$entry['ids'][0]] ?? 0))
                             @php($gamesTxt = $g.($g === 1 ? ' game' : ' games').' tonight')
-                            @php($meta = $notHere ? 'Not checked in yet' : ($paused ? 'Stepped out · keeps spot' : ($pair ? 'Locked pair · '.$gamesTxt : $gamesTxt.($p1?->paid ? ' · Paid' : ''))))
+                            @php($meta = $notHere ? 'Not checked in yet' : ($paused ? 'Stepped out, keeps spot' : ($pair ? 'Locked pair, '.$gamesTxt : $gamesTxt.($p1?->paid ? ', Paid' : ''))))
                             @php($metaClass = $avail ? ($pair ? 'font-bold text-lime-text' : 'font-medium text-ink3') : 'font-bold text-hot')
                             <div wire:key="entry-{{ $entry['id'] }}" @class([
                                 'flex items-center gap-2 rounded-2xl border-[1.5px] py-1 pr-1 pl-2.5 transition-colors',
@@ -623,7 +623,7 @@
                   class="relative flex max-h-full w-full animate-rise flex-col overflow-clip rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:w-160 md:max-w-full md:rounded-[28px]">
                 <div class="flex shrink-0 items-center justify-between gap-3 border-b border-line pt-5 pr-5 pb-4 pl-6">
                     <div class="flex flex-col gap-0.5">
-                        <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">Court {{ $scoring['n'] }} · Race to {{ $to }} · <x-live-timer :start="now()->timestamp - $scoring['started_at']" /></span>
+                        <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">Court {{ $scoring['n'] }}, Race to {{ $to }}, <x-live-timer :start="now()->timestamp - $scoring['started_at']" /></span>
                         <h2 id="score-title" class="m-0 font-display text-[26px] font-extrabold tracking-[-0.03em]">Enter the score</h2>
                     </div>
                     <button type="button" wire:click="closeScore" aria-label="Close" class="flex size-11 cursor-pointer items-center justify-center rounded-full border border-line bg-surface text-ink transition hover:brightness-96 active:scale-97">
@@ -706,13 +706,13 @@
                  class="relative flex max-h-[92%] w-full animate-rise flex-col overflow-clip rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:max-h-full md:w-170 md:max-w-full md:rounded-[28px]">
                 <div class="flex shrink-0 items-center justify-between gap-3 border-b border-line pt-5 pr-5 pb-4 pl-6">
                     <div class="flex min-w-0 flex-col gap-0.5">
-                        <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">{{ $rc ? 'Live session · remove a court' : 'Live session · courts' }}</span>
+                        <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">{{ $rc ? 'Live session: remove a court' : 'Live session: courts' }}</span>
                         <h2 id="crt-title" class="m-0 font-display text-[26px] font-extrabold tracking-[-0.03em]">{{ $rc ? "Remove Court {$rc['n']}?" : 'Add or remove courts' }}</h2>
                         <span class="truncate text-[13px] text-ink3">
                             @if ($rc)
-                                A game is on · {{ count($courts) - 1 }} {{ Str::plural('court', count($courts) - 1) }} left after this
+                                A game is on, {{ count($courts) - 1 }} {{ Str::plural('court', count($courts) - 1) }} left after this
                             @else
-                                {{ count($courts) }} {{ Str::plural('court', count($courts)) }} · {{ $cd['busy'] }} in play{{ $cd['closing'] ? ' · '.$cd['closing'].' closing' : '' }}
+                                {{ count($courts) }} {{ Str::plural('court', count($courts)) }}, {{ $cd['busy'] }} in play{{ $cd['closing'] ? ', '.$cd['closing'].' closing' : '' }}
                             @endif
                         </span>
                     </div>
@@ -760,13 +760,13 @@
                                                 <strong class="text-[15px]">Court {{ $c['n'] }}</strong>
                                                 <span @class(['inline-flex h-5.5 items-center rounded-full px-2 text-[11px] font-bold', 'bg-ink text-bg' => $closing, 'bg-lime-soft text-lime-text' => $c['a'] && ! $closing, 'bg-hot-soft text-hot' => ! $c['a']])>
                                                     @if ($c['a'])
-                                                        {{ $closing ? 'Last game · ' : (App\Models\OpenPlay::isWarming($c) ? '' : 'In play · ') }}<x-live-timer :start="now()->timestamp - $c['started_at']" before="Warmup " />
+                                                        {{ $closing ? 'Last game, ' : (App\Models\OpenPlay::isWarming($c) ? '' : 'In play, ') }}<x-live-timer :start="now()->timestamp - $c['started_at']" before="Warmup " />
                                                     @else
                                                         Open
                                                     @endif
                                                 </span>
                                             </span>
-                                            <span class="truncate text-xs text-ink3">{{ $closing ? 'Closes after ' : '' }}{{ $c['a'] ? $play->names($c['a']['ids']).' vs '.$play->names($c['b']['ids']) : 'Nobody on it · removing it is instant' }}</span>
+                                            <span class="truncate text-xs text-ink3">{{ $closing ? 'Closes after ' : '' }}{{ $c['a'] ? $play->names($c['a']['ids']).' vs '.$play->names($c['b']['ids']) : 'Nobody on it, removing it is instant' }}</span>
                                         </span>
                                         @if ($closing)
                                             <button type="button" wire:click="keepCourt({{ $c['n'] }})" aria-label="Keep Court {{ $c['n'] }} open after this game"
@@ -788,7 +788,7 @@
                         @php($four = $play->names([...$rc['a']['ids'], ...$rc['b']['ids']]))
                         @php($locks = collect([$rc['a'], $rc['b']])->filter(fn ($t) => $t['locked'] && count($t['ids']) === 2))
                         <div class="flex flex-col gap-2 rounded-[18px] border border-line bg-surface p-3.5">
-                            <span class="flex items-center gap-2 font-mono text-[11px] tracking-[.1em] text-ink3 uppercase"><span class="rounded-full bg-lime-soft px-2 py-0.5 font-sans text-[11px] font-bold tracking-normal text-lime-text normal-case">In play</span>Game on Court {{ $rc['n'] }} · <x-live-timer before="Warmup " :start="now()->timestamp - $rc['started_at']" /></span>
+                            <span class="flex items-center gap-2 font-mono text-[11px] tracking-[.1em] text-ink3 uppercase"><span class="rounded-full bg-lime-soft px-2 py-0.5 font-sans text-[11px] font-bold tracking-normal text-lime-text normal-case">In play</span>Game on Court {{ $rc['n'] }}, <x-live-timer before="Warmup " :start="now()->timestamp - $rc['started_at']" /></span>
                             <span class="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[15px] font-bold"><span>{{ $play->names($rc['a']['ids']) }}</span><span class="font-mono text-[11px] text-ink3">VS</span><span>{{ $play->names($rc['b']['ids']) }}</span></span>
                         </div>
                         <section aria-labelledby="crt-how" class="flex flex-col gap-2.5">
@@ -845,9 +845,9 @@
                  class="relative flex max-h-[92%] w-full animate-rise flex-col overflow-clip rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:max-h-full md:w-190 md:max-w-full md:rounded-[28px]">
                 <div class="flex shrink-0 items-center justify-between gap-3 border-b border-line pt-5 pr-5 pb-4 pl-6">
                     <div class="flex min-w-0 flex-col gap-0.5">
-                        <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">Live court · substitution</span>
+                        <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">Live court: substitution</span>
                         <h2 id="cs-title" class="m-0 font-display text-[26px] font-extrabold tracking-[-0.03em]">Sub on Court {{ $ct['n'] }}</h2>
-                        <span class="truncate text-[13px] text-ink3">{{ $play->names($ct['a']['ids']) }} vs {{ $play->names($ct['b']['ids']) }} · <x-live-timer :start="now()->timestamp - $ct['started_at']" before="warming up, " after=" left" />{{ App\Models\OpenPlay::isWarming($ct) ? '' : ' played' }}</span>
+                        <span class="truncate text-[13px] text-ink3">{{ $play->names($ct['a']['ids']) }} vs {{ $play->names($ct['b']['ids']) }}, <x-live-timer :start="now()->timestamp - $ct['started_at']" before="warming up, " after=" left" />{{ App\Models\OpenPlay::isWarming($ct) ? '' : ' played' }}</span>
                     </div>
                     <button type="button" wire:click="$set('csub', null)" aria-label="Close" class="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-line bg-surface text-ink transition hover:brightness-96 active:scale-97">
                         <x-icon name="x" :size="18" />
@@ -856,7 +856,7 @@
 
                 <div class="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 py-5">
                     <section aria-labelledby="cs-off" class="flex flex-col gap-2.5">
-                        <h3 id="cs-off" class="m-0 text-[15px] font-extrabold">1 · Who's coming off?</h3>
+                        <h3 id="cs-off" class="m-0 text-[15px] font-extrabold">1. Who's coming off?</h3>
                         <div role="radiogroup" aria-labelledby="cs-off" class="grid grid-cols-1 gap-2.5 lg:grid-cols-2">
                             @foreach (['a' => 'Team A', 'b' => 'Team B'] as $side => $label)
                                 @php($t = $ct[$side])
@@ -879,7 +879,7 @@
                                         @php($on = count($outs) === 2 && ! array_diff($t['ids'], $outs))
                                         <button type="button" role="radio" aria-checked="{{ $on ? 'true' : 'false' }}" aria-label="{{ $play->names($t['ids']) }} both come off" wire:click="pickCourtSub('out', @js($t['ids']))"
                                                 class="flex h-11 cursor-pointer items-center gap-2.5 rounded-[14px] border-[1.5px] px-3 text-left transition hover:brightness-96 active:scale-99 {{ $opt($on) }}">
-                                            <span class="min-w-0 truncate text-[13px] font-bold">Both · {{ $play->names($t['ids']) }}</span>{!! $dot($on) !!}
+                                            <span class="min-w-0 truncate text-[13px] font-bold">Both: {{ $play->names($t['ids']) }}</span>{!! $dot($on) !!}
                                         </button>
                                     @endif
                                 </div>
@@ -891,7 +891,7 @@
                     </section>
 
                     <section aria-labelledby="cs-on" class="flex flex-col gap-2.5">
-                        <h3 id="cs-on" class="m-0 text-[15px] font-extrabold">2 · Who's going on?</h3>
+                        <h3 id="cs-on" class="m-0 text-[15px] font-extrabold">2. Who's going on?</h3>
                         @if (! $outs)
                             <p class="m-0 text-sm text-ink2">Pick who's coming off. Checked-in players are listed, next in line first.</p>
                         @elseif ($subDialog['cands']->isNotEmpty())
@@ -924,7 +924,7 @@
 
                     @if ($outs)
                         <section aria-labelledby="cs-after" class="flex flex-col gap-2.5">
-                            <h3 id="cs-after" class="m-0 text-[15px] font-extrabold">3 · What about {{ $subDialog['off'] }}?</h3>
+                            <h3 id="cs-after" class="m-0 text-[15px] font-extrabold">3. What about {{ $subDialog['off'] }}?</h3>
                             <div role="radiogroup" aria-labelledby="cs-after" class="grid grid-cols-1 gap-2 lg:grid-cols-3">
                                 @foreach (['out' => ['Taking a break', "Stepped out at the back of the line. Tap I'm back when they're ready."], 'back' => ['Back in line now', 'Joins the back of the line, ready to play.'], 'leave' => ['Done for the night', "Leaves the queue. Tonight's games stay on the record."]] as $key => [$label, $desc])
                                     @php($on = $this->csub['after'] === $key)

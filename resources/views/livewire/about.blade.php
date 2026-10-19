@@ -24,7 +24,7 @@
         ['M20 14.6A8 8 0 0 1 9.4 4 8 8 0 1 0 20 14.6Z', 'Every screen, both themes', 'Desktop and mobile, in light and dark mode.'],
     ];
     $xp = [
-        ['Apr 2026 – now', 'Team Lead', 'CreativeX Techlabs Inc. · Remote, Davao', []],
+        ['Apr 2026 – now', 'Team Lead', 'CreativeX Techlabs Inc. (Remote, Davao)', []],
         ['Nov 2025 – Apr 2026', 'Senior Full Stack Developer', 'CreativeX Techlabs Inc.', []],
         ['From Aug 2018', 'Full stack web developer, remote', 'For companies in the US, Australia and the UK', ['Naxum', 'Courses.com.au', 'Strongwill', 'iTravel Australia', 'IdeaHub', 'Pitched Coders']],
     ];
@@ -73,7 +73,7 @@
                     <div aria-hidden="true" class="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,14,11,0)_55%,rgba(10,14,11,.78)_100%)]"></div>
                     <figcaption class="absolute inset-x-4.5 bottom-4.5 flex flex-col gap-0.5 text-white lg:inset-x-6 lg:bottom-6">
                         <span class="font-display text-[22px] leading-[1.05] font-extrabold tracking-[-0.03em] lg:text-[30px]">Jayvee Salango</span>
-                        <span class="text-sm font-semibold opacity-88">Full stack developer · Panabo City</span>
+                        <span class="text-sm font-semibold opacity-88">Full stack developer, Panabo City</span>
                     </figcaption>
                 </figure>
                 <span class="absolute top-[56%] -left-1 inline-flex h-11.5 -rotate-6 animate-snap items-center gap-2 rounded-full border-2 border-[#12170F] bg-lime pr-4.5 pl-3.5 text-[15px] font-extrabold whitespace-nowrap text-[#12170F] shadow-[4px_4px_0_#12170F] lg:top-[58%] lg:-left-4.5">

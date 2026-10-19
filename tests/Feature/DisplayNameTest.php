@@ -25,7 +25,7 @@ class DisplayNameTest extends TestCase
             ->set('displayName', '  ')->call('saveProfile')
             ->assertSee('Add a display name, or choose to show your full name.')
             ->set('displayName', '  Kaiser ')->call('saveProfile')
-            ->assertDispatched('toast', message: 'Profile saved · others see you as Kaiser');
+            ->assertDispatched('toast', message: 'Profile saved, others see you as Kaiser');
 
         $kai->refresh();
         $this->assertSame(['Kaiser', true, 'Kaiser', 'Kaiser', 'Kai Santos'], [$kai->display_name, $kai->show_display_name, $kai->shownName(), $kai->shownFirst(), $kai->name]);
@@ -48,8 +48,8 @@ class DisplayNameTest extends TestCase
         $this->assertSame(['Kaiser', 'Kaiser', 'K', 'Kai Santos'], [$p->fresh()->name, $p->fresh()->firstName(), $p->fresh()->initials(), $p->fresh()->fullName()]);
 
         Livewire::actingAs($org)->test(OrganizerPlays::class)->call('openRoster', $play->id)
-            ->assertSee('Kaiser')->assertSee('Kai Santos · Joined in the app')
-            ->set('rosterQ', 'santos')->assertSee('Kai Santos · Joined in the app')
+            ->assertSee('Kaiser')->assertSee('Kai Santos, Joined in the app')
+            ->set('rosterQ', 'santos')->assertSee('Kai Santos, Joined in the app')
             ->set('rosterQ', 'zzz')->assertSee('No one here matches');
     }
 }

@@ -72,7 +72,7 @@ function draw(info) {
     x.fillText('● LIVE VIEW', W - 120, 137);
     spacing('0px');
 
-    // Title, club · venue, when
+    // Title, club, venue, when
     x.textAlign = 'center';
     x.textBaseline = 'alphabetic';
     x.fillStyle = '#12170F';

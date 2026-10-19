@@ -9,7 +9,7 @@
             <td valign="middle" style="width: 64px; padding-right: 16px;"><x-mail.avatar :name="$applicant->name" :color="$applicant->color()" :src="$applicant->avatarUrl()" :size="58" /></td>
             <td valign="middle">
                 <x-mail.h1 :size="28">{{ $applicant->name }} wants to host</x-mail.h1>
-                <p class="em-ink3" style="margin: 4px 0 0; font-size: 14px; color: #5B6257;">Just now{{ $stats->count() ? ' · '.$stats->count().' '.Str::plural('game', $stats->count()).' on PickleX' : ' · new to PickleX' }}</p>
+                <p class="em-ink3" style="margin: 4px 0 0; font-size: 14px; color: #5B6257;">Just now{{ $stats->count() ? ', '.$stats->count().' '.Str::plural('game', $stats->count()).' on PickleX' : ', new to PickleX' }}</p>
             </td>
         </tr>
     </table>

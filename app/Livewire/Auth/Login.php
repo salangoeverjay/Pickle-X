@@ -11,7 +11,7 @@ use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-#[Title('Log in · PickleX')]
+#[Title('Log in | PickleX')]
 class Login extends Component
 {
     public const REMEMBERED = 'px_remembered_until';

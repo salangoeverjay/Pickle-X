@@ -19,8 +19,8 @@
             </td>
             <td style="padding: 14px 16px;">
                 <p class="em-ink2" style="margin: 0; font-weight: 800; font-size: 17px; color: #464D42; text-decoration: line-through; text-decoration-color: #B23A0A;">{{ $play->title }}</p>
-                <p class="em-ink3" style="margin: 2px 0 0; font-size: 13px; color: #5B6257;">{{ $play->timeRange() }} · {{ $play->venue }}</p>
-                <p class="em-ink3" style="margin: 0; font-size: 13px; color: #5B6257;">{{ $play->club }} · hosted by {{ $host }}</p>
+                <p class="em-ink3" style="margin: 2px 0 0; font-size: 13px; color: #5B6257;">{{ $play->timeRange() }}, {{ $play->venue }}</p>
+                <p class="em-ink3" style="margin: 0; font-size: 13px; color: #5B6257;">{{ $play->club }}, hosted by {{ $host }}</p>
             </td>
         </tr>
     </table>

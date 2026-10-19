@@ -58,7 +58,7 @@
                                         <span class="inline-flex h-5 shrink-0 items-center gap-1 rounded-full border px-1.75 text-[10.5px] font-extrabold tracking-[.05em]" style="{{ $chip($t) }}"><x-icon name="heart" :size="11" :stroke="2.4" /><span>{{ $tl }}</span></span>
                                     </span>
                                     <span class="truncate text-[13px] text-ink3">{{ $s->email }}</span>
-                                    <span class="text-[12.5px] text-ink2">{{ $wf && $wq ? "Wearing the {$tl} border and queue background" : ($wf || $wq ? "Wearing part of the {$tl} look" : 'Unlocked · not worn yet') }}</span>
+                                    <span class="text-[12.5px] text-ink2">{{ $wf && $wq ? "Wearing the {$tl} border and queue background" : ($wf || $wq ? "Wearing part of the {$tl} look" : 'Unlocked, not worn yet') }}</span>
                                 </div>
                                 <div class="ml-14 flex w-[calc(100%-56px)] flex-wrap items-center gap-2 lg:ml-0 lg:w-auto">
                                     <div role="radiogroup" aria-label="Tier" class="inline-flex rounded-full border border-line bg-surface2 p-0.75">
@@ -114,7 +114,7 @@
                                 <div class="flex min-w-0 flex-1 flex-col gap-px">
                                     <span class="truncate text-[15px] font-bold">{{ $r->name }}</span>
                                     <span class="truncate text-[13px] text-ink2">{{ $r->email }}</span>
-                                    <span class="truncate text-xs text-ink3">{{ $r->club ? $r->club.' · ' : '' }}{{ $g }} {{ Str::plural('game', $g) }}</span>
+                                    <span class="truncate text-xs text-ink3">{{ $r->club ? $r->club.', ' : '' }}{{ $g }} {{ Str::plural('game', $g) }}</span>
                                 </div>
                                 <button type="button" wire:click="addSponsor({{ $r->id }})" aria-label="Add {{ $r->name }} as a {{ $al }} sponsor"
                                         class="ml-14 inline-flex h-10.5 w-[calc(100%-56px)] shrink-0 cursor-pointer items-center justify-center gap-1.75 rounded-full bg-lime px-4 text-sm font-extrabold whitespace-nowrap text-on-lime transition hover:brightness-96 active:scale-97 lg:ml-0 lg:w-auto">

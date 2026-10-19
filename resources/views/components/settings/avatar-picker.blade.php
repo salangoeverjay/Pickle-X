@@ -16,7 +16,7 @@
     <div class="flex min-w-55 flex-1 flex-col gap-3">
         <div class="flex flex-col gap-0.5">
             <span class="text-[15px] font-bold">Profile picture</span>
-            <span class="text-[13px] leading-[1.4] text-ink3">{{ $user->avatarLabel() ? $user->avatarLabel().' · shown in queues, on courts and in rankings.' : 'Showing your initials. Upload a photo or pick a PickleX avatar.' }}</span>
+            <span class="text-[13px] leading-[1.4] text-ink3">{{ $user->avatarLabel() ? $user->avatarLabel().', shown in queues, on courts and in rankings.' : 'Showing your initials. Upload a photo or pick a PickleX avatar.' }}</span>
         </div>
         <div class="flex flex-wrap gap-2">
             <label class="{{ $upl }} inline-flex h-11 items-center gap-2 rounded-full bg-ink px-4 text-sm font-bold text-bg {{ $btn }}">

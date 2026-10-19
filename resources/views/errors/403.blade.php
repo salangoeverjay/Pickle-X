@@ -2,7 +2,7 @@
 @php($home = auth()->check() ? route(auth()->user()->homeRoute()) : route('home'))
 @section('code', '403')
 @section('title', 'This court is reserved.')
-@section('kicker', 'Error 403 · No access')
+@section('kicker', 'Error 403: No access')
 @section('pill', 'COURT RESERVED')
 @section('scene', 'A court roped off with a lock on the net and a Reserved sign')
 @section('foot', '403 Forbidden')

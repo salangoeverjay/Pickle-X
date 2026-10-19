@@ -304,13 +304,13 @@ class User extends Authenticatable implements HasPasskeys
         };
     }
 
-    /** "Your photo", "PickleX avatar · Dink shot", or null for initials. */
+    /** "Your photo", "PickleX avatar, Dink shot", or null for initials. */
     public function avatarLabel(): ?string
     {
         [$kind, $value] = explode(':', (string) $this->avatar, 2) + [null, null];
 
         return match ($kind) {
-            'preset' => 'PickleX avatar · '.(self::AVATAR_PRESETS[$value] ?? 'Avatar'),
+            'preset' => 'PickleX avatar, '.(self::AVATAR_PRESETS[$value] ?? 'Avatar'),
             'photo' => 'Your photo',
             default => null,
         };

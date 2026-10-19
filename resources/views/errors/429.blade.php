@@ -4,7 +4,7 @@
 @section('hot', 1)
 @section('dot', '#F59A3E')
 @section('title', 'Easy there. One ball at a time.')
-@section('kicker', 'Error 429 · Too many requests')
+@section('kicker', 'Error 429: Too many requests')
 @section('pill', 'SLOW DOWN')
 @section('scene', 'A rush of balls flying toward the net at once')
 @section('foot', '429 Too Many Requests')

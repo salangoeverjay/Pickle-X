@@ -33,7 +33,7 @@
 @section('why', "This is an email about your PickleX account, so we send it even if you've turned off notifications.")
 
 @section('content')
-    <p style="margin: 0 0 22px;"><span class="em-hot-soft em-hot" style="display: inline-block; padding: 5px 12px 5px 10px; border-radius: 999px; background: #FDE9DA; border: 1px solid #F2B791; color: #B23A0A; font-size: 13px; font-weight: 800;">&#9208;&nbsp;Suspended · {{ $until ? $days.' days' : 'until restored' }}</span></p>
+    <p style="margin: 0 0 22px;"><span class="em-hot-soft em-hot" style="display: inline-block; padding: 5px 12px 5px 10px; border-radius: 999px; background: #FDE9DA; border: 1px solid #F2B791; color: #B23A0A; font-size: 13px; font-weight: 800;">&#9208;&nbsp;Suspended, {{ $until ? $days.' days' : 'until restored' }}</span></p>
     <x-mail.h1>{{ $fake ? 'This' : 'Your' }} account is suspended{{ $until ? ' until '.$until->format('M j') : '' }}</x-mail.h1>
     <p class="em-ink2" style="margin: 10px 0 22px; font-size: 16px; color: #464D42;">{{ $fake ? 'A' : 'Hi '.$user->firstName().', a' }} PickleX admin suspended <strong class="em-ink" style="color: #12170F;">{{ $user->email }}</strong>
         @if ($until)

@@ -193,7 +193,7 @@ class Emails
         $timeOnly = count($changes) === 1 && $changes[0]['key'] === 'when';
         $start = $play->starts_at->format('g:i A');
         $subject = $timeOnly ? "New time: {$play->title} now starts at {$start}" : "Updated: {$play->title} on {$play->starts_at->format('D, M j')}";
-        $pre = "{$play->starts_at->format('D, M j')} · {$play->timeRange()} at {$play->venue}. You're still in".($paid && $play->fee ? ' and your payment still counts.' : '.');
+        $pre = "{$play->starts_at->format('D, M j')}, {$play->timeRange()} at {$play->venue}. You're still in".($paid && $play->fee ? ' and your payment still counts.' : '.');
 
         return new PickleXMail('play-updated', $subject, $pre, [
             'play' => $play, 'user' => $user, 'changes' => $changes, 'paid' => $paid, 'timeOnly' => $timeOnly, 'start' => $start,
@@ -343,7 +343,7 @@ class Emails
         $claims = DB::table('pay_claims')->where('open_play_id', $play->id)->count();
 
         return new PickleXMail('session-reminder', "{$play->title} starts at {$play->starts_at->format('g:i A')}",
-            "{$count} of {$play->cap} players joined".($play->fee ? " · {$paid} paid" : '').($claims ? " · {$claims} to confirm" : '').'. Start the session when you get to the courts.',
+            "{$count} of {$play->cap} players joined".($play->fee ? ", {$paid} paid" : '').($claims ? ", {$claims} to confirm" : '').'. Start the session when you get to the courts.',
             ['play' => $play, 'count' => $count, 'paid' => $paid, 'claims' => $claims]);
     }
 

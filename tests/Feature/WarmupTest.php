@@ -43,14 +43,14 @@ class WarmupTest extends TestCase
         $this->travel(2)->minutes();
         Livewire::actingAs($this->org)->test(CourtBoard::class)
             ->assertSee('Warming up')->assertSee('Start game now')
-            ->call('startNow', 1)->assertDispatched('toast', message: 'Court 1: game on · warmed up for 02:00')
+            ->call('startNow', 1)->assertDispatched('toast', message: 'Court 1: game on, warmed up for 02:00')
             ->assertSee('Enter score')->assertDontSee('Start game now');
 
         $this->travel(10)->minutes();
         $game = $play->fresh()->recordScore(1, 11, 5);
         $this->assertSame(120, $game->warmup_seconds);
         $this->assertSame(600, $game->played_at->timestamp - $game->started_at->timestamp);
-        Livewire::actingAs($this->org)->test(CourtBoard::class)->assertSee('played 10:00 · warmup 02:00');
+        Livewire::actingAs($this->org)->test(CourtBoard::class)->assertSee('played 10:00, warmup 02:00');
     }
 
     public function test_winners_who_stay_on_skip_it_and_changes_apply_from_the_next_game(): void
@@ -63,7 +63,7 @@ class WarmupTest extends TestCase
         $this->assertNull($court['w0']);
 
         Livewire::actingAs($this->org)->test(CourtBoard::class)
-            ->call('setWarmup', 0)->assertDispatched('toast', message: 'No warmup from the next game · courts on now keep their clock')
+            ->call('setWarmup', 0)->assertDispatched('toast', message: 'No warmup from the next game, courts on now keep their clock')
             ->assertSee('No warmup');
         $this->assertSame(0, $play->fresh()->warmup);
 

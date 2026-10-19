@@ -30,12 +30,12 @@
             <div class="flex flex-col gap-2">
                 <div class="flex flex-wrap items-center gap-2">
                     <span class="inline-flex h-7 items-center gap-1.75 rounded-full bg-ink px-2.75 font-mono text-[11px] tracking-widest text-bg">
-                        <span class="size-1.75 animate-live rounded-full bg-lime"></span>LIVE · UPDATES AUTOMATICALLY
+                        <span class="size-1.75 animate-live rounded-full bg-lime"></span>LIVE, UPDATES AUTOMATICALLY
                     </span>
                     <span class="font-mono text-xs text-ink3">{{ $play->share_code }}</span>
                 </div>
                 <h1 class="m-0 font-display text-[28px] leading-[1.02] font-extrabold tracking-[-0.04em] lg:text-[40px]">{{ $play->title }}</h1>
-                <span class="text-sm text-ink2">{{ $play->club }} · {{ $play->venue }} · Race to {{ $play->race_to }} · {{ $play->rotationLabel() }} · {{ $play->warmupLabel() }}</span>
+                <span class="text-sm text-ink2">{{ $play->club }}, {{ $play->venue }}, Race to {{ $play->race_to }}, {{ $play->rotationLabel() }}, {{ $play->warmupLabel() }}</span>
                 <div class="mt-0.5 flex flex-wrap gap-2">
                     @foreach ([$busy, $here, $started] as $chip)
                         <span class="inline-flex h-7.5 items-center rounded-full border border-line bg-surface px-3 text-[13px] font-bold">{{ $chip }}</span>
@@ -87,7 +87,7 @@
                             <h2 class="m-0 mb-2 font-display text-[19px] font-extrabold tracking-[-0.03em]">Latest results</h2>
                             @foreach ($results as $r)
                                 <div class="flex flex-col gap-1.5 border-t border-line py-2.5">
-                                    <span class="font-mono text-[11px] tracking-[.08em] text-ink3 uppercase">Court {{ $r['court'] }} · {{ $r['ago'] }}</span>
+                                    <span class="font-mono text-[11px] tracking-[.08em] text-ink3 uppercase">Court {{ $r['court'] }}, {{ $r['ago'] }}</span>
                                     <div class="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
                                         <span @class(['truncate text-right text-sm', 'font-extrabold text-ink' => $r['aWon'], 'font-medium text-ink2' => ! $r['aWon']])>{{ $r['a'] }}</span>
                                         <span class="inline-flex items-center gap-1.5 rounded-[10px] bg-surface2 px-2.5 py-1 font-mono text-[15px] font-semibold whitespace-nowrap">

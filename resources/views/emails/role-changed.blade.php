@@ -65,7 +65,7 @@
 
     @include('emails.partials.facts', ['rows' => [
         ['Changed by', $role === 'admin' && $by ? $by : 'A PickleX admin'],
-        ['When', now()->format('D, M j, Y · g:i A')],
+        ['When', now()->format('D, M j, Y, g:i A')],
         ['Account', $user->email],
     ]])
 

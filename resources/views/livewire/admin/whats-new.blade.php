@@ -59,7 +59,7 @@
                             </div>
                             <span class="text-base leading-[1.3] font-bold">{{ $n->title }}</span>
                             <span class="line-clamp-2 text-sm leading-[1.45] text-ink2">{{ $n->body }}</span>
-                            <span class="text-[12.5px] text-ink3">{{ $auds[$n->audience] }} · {{ $n->isLive() ? 'Published '.$n->dateLabel().' by '.($n->publisher?->name ?? 'an admin') : 'Draft · saved '.($n->updated_at->isToday() ? 'Today' : $n->updated_at->format('M j')) }}</span>
+                            <span class="text-[12.5px] text-ink3">{{ $auds[$n->audience] }}, {{ $n->isLive() ? 'Published '.$n->dateLabel().' by '.($n->publisher?->name ?? 'an admin') : 'Draft, saved '.($n->updated_at->isToday() ? 'Today' : $n->updated_at->format('M j')) }}</span>
                         </div>
                     </div>
                     @if ($n->isLive())
@@ -92,7 +92,7 @@
             <div role="dialog" aria-modal="true" aria-labelledby="an-title" x-trap.noscroll="true" class="relative flex max-h-full w-full animate-rise flex-col overflow-clip rounded-t-[28px] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] md:w-135 md:max-w-full md:rounded-[28px]">
                 <div class="flex shrink-0 items-start justify-between gap-3 border-b border-line pt-5 pr-5 pb-4 pl-6">
                     <div class="flex min-w-0 flex-col gap-1">
-                        <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">{{ ! $editing ? "Admin · What's new" : ($editingLive ? 'Edit a published update' : 'Edit a draft') }}</span>
+                        <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">{{ ! $editing ? "Admin: What's new" : ($editingLive ? 'Edit a published update' : 'Edit a draft') }}</span>
                         <h2 id="an-title" class="m-0 font-display text-[26px] leading-[1.1] font-extrabold tracking-[-0.03em]">{{ $editing ? 'Edit update' : 'New update' }}</h2>
                     </div>
                     <button type="button" wire:click="closeEditor" aria-label="Close" class="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-line bg-surface text-ink"><x-icon name="x" :size="18" /></button>
@@ -129,7 +129,7 @@
                         <p role="alert" class="m-0 rounded-[14px] border border-hot-line bg-hot-soft px-3.5 py-3 text-sm font-semibold text-hot">{{ $error }}</p>
                     @endif
                     <div class="flex flex-col gap-2">
-                        <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">Preview · how people see it</span>
+                        <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">Preview: how people see it</span>
                         <x-news-card :news="$preview" :fresh="true" />
                     </div>
                     @if ($editingLive)

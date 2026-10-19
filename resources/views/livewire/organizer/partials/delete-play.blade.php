@@ -11,7 +11,7 @@
             <span class="flex size-13 items-center justify-center rounded-2xl border border-hot-line bg-hot-soft text-hot"><x-icon name="trash" :size="22" /></span>
             <div class="flex flex-col gap-1.5">
                 <h2 id="del-title" class="m-0 font-display text-[26px] leading-[1.1] font-extrabold tracking-[-0.03em]">Delete {{ $play->title }}?</h2>
-                <p class="m-0 text-sm text-ink3">{{ $play->whenLabel() }} · {{ $play->timeRange() }} · {{ $play->venue }}</p>
+                <p class="m-0 text-sm text-ink3">{{ $play->whenLabel() }}, {{ $play->timeRange() }}, {{ $play->venue }}</p>
             </div>
             <div class="grid grid-cols-3 gap-2">
                 @foreach (['Joined' => $joined, 'Paid' => $paid, 'Fee' => $play->feeLabel()] as $label => $value)

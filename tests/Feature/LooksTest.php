@@ -42,10 +42,10 @@ class LooksTest extends TestCase
         Livewire::actingAs($kai)->test(Settings::class)
             ->assertDontSee('Shown still here')->assertDontSee('Shinobi flame')
             ->set('lookCat.border', 'col')->assertSee('Shinobi flame')->assertSee('Paused here. Pick one to see it move.')
-            ->set('lookCol', 'pr')->assertSee('Pirate · Jolly Rogers')->assertSee('Kraken')
+            ->set('lookCol', 'pr')->assertSee('Pirate, Jolly Rogers')->assertSee('Kraken')
             ->call('setLook', 'frame', 'pr-kraken')->assertDispatched('toast', message: 'Avatar border: Kraken')
-            ->set('lookCol', '')->assertSee('Pirate collection, has your pick')->assertSee('Kraken · Pirate')
-            ->set('lookCol', 'so')->assertSee('Sorcerer · Azure vortexes')->call('setLook', 'frame', 'so-azure')->assertDispatched('toast', message: 'Avatar border: Azure vortex')
+            ->set('lookCol', '')->assertSee('Pirate collection, has your pick')->assertSee('Kraken, Pirate')
+            ->set('lookCol', 'so')->assertSee('Sorcerer, Azure vortexes')->call('setLook', 'frame', 'so-azure')->assertDispatched('toast', message: 'Avatar border: Azure vortex')
             ->set('lookCol', '')->set('lookCat', [])->assertSee('Collections, you are wearing one of these')->assertSee('Azure vortex')
             ->set('lookTab', 'queue')->call('setLook', 'queue', 'sb-dragon')->assertDispatched('toast', message: 'Queue background: Jade dragon');
 
@@ -92,15 +92,15 @@ class LooksTest extends TestCase
 
         Livewire::actingAs($kai)->test(Settings::class)->set('lookCat.border', 'ex')
             ->assertSee('For PickleX developers and sponsors. An admin unlocks them.')
-            ->call('setLook', 'frame', 'dev')->assertDispatched('toast', message: 'Developer accounts only · an admin unlocks this');
+            ->call('setLook', 'frame', 'dev')->assertDispatched('toast', message: 'Developer accounts only, an admin unlocks this');
         $this->assertNull($kai->fresh()->frame);
         $this->actingAs($kai)->get(route('admin.developers'))->assertForbidden();
 
         Livewire::actingAs($admin)->test(Developers::class)
             ->assertSee('No developer accounts yet')
             ->set('q', 'kai s')->assertSee('Make developer')
-            ->call('makeDeveloper', $kai->id)->assertDispatched('toast', message: 'Kai Santos is a developer · Developer look unlocked')
-            ->assertSee('Unlocked · not worn yet');
+            ->call('makeDeveloper', $kai->id)->assertDispatched('toast', message: 'Kai Santos is a developer, Developer look unlocked')
+            ->assertSee('Unlocked, not worn yet');
 
         Livewire::actingAs($kai->fresh())->test(Settings::class)->set('lookCat.border', 'ex')
             ->assertSee('Unlocked: developer.')
@@ -109,7 +109,7 @@ class LooksTest extends TestCase
 
         Livewire::actingAs($admin)->test(Developers::class)
             ->assertSee('Wearing the border and queue background')
-            ->call('removeDeveloper', $kai->id)->assertDispatched('toast', message: 'Kai Santos is no longer a developer · look locked');
+            ->call('removeDeveloper', $kai->id)->assertDispatched('toast', message: 'Kai Santos is no longer a developer, look locked');
         $this->assertSame([null, null, false], [$kai->fresh()->frame, $kai->fresh()->queue_bg, $kai->fresh()->is_developer]);
     }
 
@@ -119,27 +119,27 @@ class LooksTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
 
         Livewire::actingAs($kai)->test(Settings::class)
-            ->call('setLook', 'frame', 'sp-gold')->assertDispatched('toast', message: 'Gold sponsors only · an admin unlocks this');
+            ->call('setLook', 'frame', 'sp-gold')->assertDispatched('toast', message: 'Gold sponsors only, an admin unlocks this');
         $this->actingAs($kai)->get(route('admin.sponsors'))->assertForbidden();
 
         Livewire::actingAs($admin)->test(Sponsors::class)
             ->assertSee('Gold sponsor')->assertSee('No sponsors yet')
             ->set('tier', 'silver')->set('q', 'kai')->assertSee('Add as Silver')
-            ->call('addSponsor', $kai->id)->assertDispatched('toast', message: 'Kai Santos is a Silver sponsor · Silver look unlocked');
+            ->call('addSponsor', $kai->id)->assertDispatched('toast', message: 'Kai Santos is a Silver sponsor, Silver look unlocked');
 
         Livewire::actingAs($kai->fresh())->test(Settings::class)->assertSee('1/4')->set('lookCat.border', 'ex')
             ->assertSee('Thanks for sponsoring. Your Silver look is unlocked.')
             ->call('setLook', 'frame', 'sp-silver')->call('setLook', 'queue', 'sp-silver')
-            ->call('setLook', 'frame', 'dev')->assertDispatched('toast', message: 'Developer accounts only · an admin unlocks this');
+            ->call('setLook', 'frame', 'dev')->assertDispatched('toast', message: 'Developer accounts only, an admin unlocks this');
         $this->assertSame('px-fr px-fr-sp-silver', $kai->fresh()->frameClass());
 
         Livewire::actingAs($admin)->test(Sponsors::class)
             ->assertSee('Wearing the Silver border and queue background')
-            ->call('setTier', $kai->id, 'gold')->assertDispatched('toast', message: 'Kai Santos moved to Gold · Gold sponsor look unlocked');
+            ->call('setTier', $kai->id, 'gold')->assertDispatched('toast', message: 'Kai Santos moved to Gold, Gold sponsor look unlocked');
         $this->assertSame(['sp-gold', 'sp-gold', 'px-qb px-qb-sp-gold'], [$kai->fresh()->frame, $kai->fresh()->queue_bg, $kai->fresh()->queueBgClass()]);
 
         Livewire::actingAs($admin)->test(Sponsors::class)
-            ->call('removeSponsor', $kai->id)->assertDispatched('toast', message: 'Kai Santos is no longer a sponsor · look locked');
+            ->call('removeSponsor', $kai->id)->assertDispatched('toast', message: 'Kai Santos is no longer a sponsor, look locked');
         $this->assertSame([null, null, null], [$kai->fresh()->frame, $kai->fresh()->queue_bg, $kai->fresh()->sponsor_tier]);
     }
 

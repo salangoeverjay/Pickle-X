@@ -18,7 +18,7 @@
                     <span class="px-fr px-fr-dev flex size-9.5 shrink-0 items-center justify-center rounded-full bg-lime text-on-lime"><x-icon name="code" :size="18" :stroke="2.4" /></span>
                     <span class="flex min-w-0 flex-1 flex-col gap-0.5">
                         <span class="truncate text-[15px] font-bold">Developer account</span>
-                        <span class="text-[12.5px] text-[#F3F2EA]/66">Up next · Court 2</span>
+                        <span class="text-[12.5px] text-[#F3F2EA]/66">Up next on Court 2</span>
                     </span>
                 </div>
             </div>
@@ -45,7 +45,7 @@
                                         <span class="inline-flex h-5 shrink-0 items-center gap-1 rounded-full bg-ink px-1.75 text-[10.5px] font-extrabold tracking-[.05em] text-bg"><x-icon name="code" :size="11" :stroke="2.6" />DEV</span>
                                     </span>
                                     <span class="truncate text-[13px] text-ink3">{{ $d->email }}</span>
-                                    <span class="text-[12.5px] text-ink2">{{ $wf && $wq ? 'Wearing the border and queue background' : ($wf ? 'Wearing the border' : ($wq ? 'Wearing the queue background' : 'Unlocked · not worn yet')) }}</span>
+                                    <span class="text-[12.5px] text-ink2">{{ $wf && $wq ? 'Wearing the border and queue background' : ($wf ? 'Wearing the border' : ($wq ? 'Wearing the queue background' : 'Unlocked, not worn yet')) }}</span>
                                 </div>
                                 <button type="button" wire:click="removeDeveloper({{ $d->id }})" aria-label="Remove developer from {{ $d->name }}"
                                         class="h-10 shrink-0 cursor-pointer rounded-full border-[1.5px] border-line2 bg-surface px-3.5 text-[13px] font-bold text-hot transition hover:brightness-96 active:scale-97">Remove</button>
@@ -83,7 +83,7 @@
                                 <div class="flex min-w-0 flex-1 flex-col gap-px">
                                     <span class="truncate text-[15px] font-bold">{{ $r->name }}</span>
                                     <span class="truncate text-[13px] text-ink2">{{ $r->email }}</span>
-                                    <span class="truncate text-xs text-ink3">{{ $r->club ? $r->club.' · ' : '' }}{{ $g }} {{ Str::plural('game', $g) }}</span>
+                                    <span class="truncate text-xs text-ink3">{{ $r->club ? $r->club.', ' : '' }}{{ $g }} {{ Str::plural('game', $g) }}</span>
                                 </div>
                                 <button type="button" wire:click="makeDeveloper({{ $r->id }})" aria-label="Make {{ $r->name }} a developer"
                                         class="ml-14 inline-flex h-10.5 w-[calc(100%-56px)] shrink-0 cursor-pointer items-center justify-center gap-1.75 rounded-full bg-lime px-4 text-sm font-extrabold whitespace-nowrap text-on-lime transition hover:brightness-96 active:scale-97 lg:ml-0 lg:w-auto">

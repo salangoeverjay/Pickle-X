@@ -10,7 +10,7 @@
         </td>
         <td style="padding: 12px 14px;">
             <p class="em-ink" style="margin: 0; font-weight: 700; color: #12170F;">{{ $play->title }}</p>
-            <p class="em-ink3" style="margin: 0; font-size: 13px; color: #5B6257;">{{ $play->club }} · {{ $play->timeRange() }} · {{ $play->feeLabel() }}</p>
+            <p class="em-ink3" style="margin: 0; font-size: 13px; color: #5B6257;">{{ $play->club }}, {{ $play->timeRange() }}, {{ $play->feeLabel() }}</p>
         </td>
         <td align="right" class="em-lime-text" style="padding: 12px 14px 12px 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-size-adjust: 0.58; font-variant-numeric: tabular-nums; font-size: 12px; font-weight: 600; color: #496800; white-space: nowrap;">{{ $right }}</td>
     </tr>

@@ -11,7 +11,7 @@
     @include('emails.partials.details', ['rows' => [
         ['Where', $play->venue],
         ['Until', $play->ends_at->format('g:i A')],
-        ['Format', $play->courts.' '.Str::plural('court', $play->courts).' · race to '.$play->race_to.' · '.($play->rotation === 'winners' ? 'winners stay on' : 'everyone rotates')],
+        ['Format', $play->courts.' '.Str::plural('court', $play->courts).', race to '.$play->race_to.', '.($play->rotation === 'winners' ? 'winners stay on' : 'everyone rotates')],
         ['Players', $count.' joined'],
     ]])
 

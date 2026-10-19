@@ -30,7 +30,7 @@
             <x-avatar :src="$host->avatarUrl()" :frame="$host->frameClass()" :name="$host->shownName()" :color="$host->color()" class="ml-0.5 size-9 text-xs" aria-hidden="true" />
             <div class="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span class="truncate text-sm text-ink2">Hosted by <strong class="font-bold text-ink">{{ $mine ? 'you' : $host->shownName() }}</strong></span>
-                <span class="flex min-w-0 items-center gap-1.25 text-xs text-ink3"><svg class="shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.8l2.3 1.7 2.9.1.9 2.7 2.3 1.8-.8 2.8.8 2.8-2.3 1.8-.9 2.7-2.9.1L12 21.2l-2.3-1.7-2.9-.1-.9-2.7-2.3-1.8.8-2.8-.8-2.8 2.3-1.8.9-2.7 2.9-.1Z" fill="var(--color-lime)" stroke="var(--color-cta-border)" stroke-width="1.6" /><path d="M8.4 12.2l2.4 2.4 4.8-4.9" stroke="#12170F" stroke-width="2.6" /></svg><span class="truncate">{{ $mine ? "You're the organizer · {$hosted}" : "Approved organizer · {$hosted}" }}</span></span>
+                <span class="flex min-w-0 items-center gap-1.25 text-xs text-ink3"><svg class="shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.8l2.3 1.7 2.9.1.9 2.7 2.3 1.8-.8 2.8.8 2.8-2.3 1.8-.9 2.7-2.9.1L12 21.2l-2.3-1.7-2.9-.1-.9-2.7-2.3-1.8.8-2.8-.8-2.8 2.3-1.8.9-2.7 2.9-.1Z" fill="var(--color-lime)" stroke="var(--color-cta-border)" stroke-width="1.6" /><path d="M8.4 12.2l2.4 2.4 4.8-4.9" stroke="#12170F" stroke-width="2.6" /></svg><span class="truncate">{{ $mine ? "You're the organizer, {$hosted}" : "Approved organizer, {$hosted}" }}</span></span>
             </div>
         </div>
     @endif
@@ -40,7 +40,7 @@
     @if ($cos->isNotEmpty() || $meCo)
         <div class="flex flex-wrap items-center gap-2">
             @if ($meCo)
-                <span class="inline-flex h-7 items-center gap-1.5 rounded-full bg-ink px-2.75 text-xs font-bold text-bg"><x-icon name="users" :size="14" />You're a co-host · hosted by {{ $host?->shownName() }}</span>
+                <span class="inline-flex h-7 items-center gap-1.5 rounded-full bg-ink px-2.75 text-xs font-bold text-bg"><x-icon name="users" :size="14" />You're a co-host, hosted by {{ $host?->shownName() }}</span>
             @endif
             @if ($cos->isNotEmpty())
                 <span class="text-[13px] text-ink3">With {{ Str::plural('co-host', $cos->count()) }} {{ $cos->map(fn ($c) => $c->is(auth()->user()) ? 'you' : $c->shownName())->join(', ') }}</span>
@@ -50,8 +50,8 @@
 
     <div class="flex flex-col gap-2 text-sm text-ink2">
         <span class="flex items-center gap-2"><x-icon name="pin" :size="17" :stroke="1.9" />{{ $play->venue }}</span>
-        <span class="flex items-center gap-2"><x-icon name="clock" :size="17" :stroke="1.9" />{{ $play->isLive() ? $play->whenLabel().' · ' : '' }}{{ $play->timeRange() }}</span>
-        <span class="flex items-center gap-2"><x-icon name="court" :size="17" :stroke="1.9" />{{ $play->courts }} {{ Str::plural('court', $play->courts) }} · Race to {{ $play->race_to }} · {{ $play->feeLabel() }}</span>
+        <span class="flex items-center gap-2"><x-icon name="clock" :size="17" :stroke="1.9" />{{ $play->isLive() ? $play->whenLabel().', ' : '' }}{{ $play->timeRange() }}</span>
+        <span class="flex items-center gap-2"><x-icon name="court" :size="17" :stroke="1.9" />{{ $play->courts }} {{ Str::plural('court', $play->courts) }}, Race to {{ $play->race_to }}, {{ $play->feeLabel() }}</span>
     </div>
 
     <div class="flex flex-col gap-2">
@@ -91,7 +91,7 @@
             <a href="{{ route('organizer.board') }}" wire:navigate class="inline-flex h-12 basis-full items-center justify-center gap-2 rounded-full bg-ink px-4.5 text-[15px] font-bold text-bg transition hover:brightness-96 active:scale-97"><x-icon name="court" :size="16" />Open court board</a>
         @endif
         @if ($joined)
-            <button type="button" wire:click="leavePlay({{ $play->id }})" aria-pressed="true" class="h-12 min-w-40 flex-1 cursor-pointer rounded-full border-[1.5px] border-line2 bg-transparent text-[15px] font-bold text-ink transition hover:brightness-96 active:scale-97">You're in · Leave</button>
+            <button type="button" wire:click="leavePlay({{ $play->id }})" aria-pressed="true" class="h-12 min-w-40 flex-1 cursor-pointer rounded-full border-[1.5px] border-line2 bg-transparent text-[15px] font-bold text-ink transition hover:brightness-96 active:scale-97">You're in, Leave</button>
         @else
             <button type="button" wire:click="joinPlay({{ $play->id }})" aria-pressed="false" @disabled($full) class="h-12 min-w-40 flex-1 cursor-pointer rounded-full border-[1.5px] border-lime bg-lime text-[15px] font-bold text-on-lime transition hover:brightness-96 active:scale-97 disabled:cursor-not-allowed disabled:opacity-60">
                 {{ $full ? 'Full' : ($play->isLive() ? 'Join and get in line' : 'Join open play') }}
@@ -104,7 +104,7 @@
                 'inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-full border-[1.5px] px-4.5 text-sm font-bold transition hover:brightness-96 active:scale-97',
                 'border-line2 bg-transparent text-ink' => $claimed,
                 'border-ink bg-ink text-bg' => ! $claimed,
-            ])><x-icon name="qr" :size="18" />{{ $claimed ? 'Payment sent · view QR' : 'Pay '.$play->feeLabel() }}</button>
+            ])><x-icon name="qr" :size="18" />{{ $claimed ? 'Payment sent, view QR' : 'Pay '.$play->feeLabel() }}</button>
         @endif
         @if ($play->status === 'upcoming' && ($play->visibility === 'public' || $meCo))
             <button type="button" wire:click="openShare({{ $play->id }})" aria-label="Share a link to {{ $play->title }}" aria-haspopup="dialog" title="Share link"

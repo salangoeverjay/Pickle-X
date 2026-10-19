@@ -41,10 +41,10 @@
             <div wire:key="live-{{ $play->id }}" class="relative grid animate-fade items-center gap-5.5 overflow-hidden rounded-[28px] bg-court p-5.5 text-white lg:grid-cols-2 lg:pt-7 lg:pr-7 lg:pb-7 lg:pl-8">
                 <div class="relative flex flex-col gap-3.5">
                     <span class="inline-flex h-7 items-center gap-2 self-start rounded-full bg-black/25 px-2.75 font-mono text-[11px] tracking-widest">
-                        <span class="size-1.75 animate-live rounded-full bg-lime"></span>LIVE NOW · {{ ago((int) $play->started_at?->diffInSeconds(now())) }}{{ $play->starter && ! $play->starter->is(auth()->user()) ? ' · started by '.$play->starter->firstName() : '' }}
+                        <span class="size-1.75 animate-live rounded-full bg-lime"></span>LIVE NOW, {{ ago((int) $play->started_at?->diffInSeconds(now())) }}{{ $play->starter && ! $play->starter->is(auth()->user()) ? ', started by '.$play->starter->firstName() : '' }}
                     </span>
                     <h2 class="m-0 font-display text-[32px] leading-none font-extrabold tracking-[-0.04em] md:text-[38px] xl:text-[44px]">{{ $play->title }}</h2>
-                    <span class="text-sm text-white/90">{{ $play->venue }} · {{ $play->timeRange() }}</span>
+                    <span class="text-sm text-white/90">{{ $play->venue }}, {{ $play->timeRange() }}</span>
                     <div class="mt-1 mb-0.5 grid max-w-120 grid-cols-2 gap-2 md:max-w-none md:grid-cols-4 lg:max-w-120">
                         @foreach ([[$play->busyCourtCount() * 4, 'on court'], [$play->queuedPlayerCount(), 'in queue'], [$play->games_count, 'games'], [$play->checkedInCount().'/'.count($play->sessionPlayerIds()), 'checked in']] as [$n, $label])
                             <div class="flex flex-col gap-0.5 rounded-[14px] bg-white/12 px-3 py-2.5">
@@ -82,7 +82,7 @@
                             </div>
                             <div class="flex min-w-0 flex-1 flex-col gap-1.5">
                                 <span class="font-display text-[21px] leading-[1.2] font-bold tracking-[-0.02em]">{{ $play->title }}</span>
-                                <span class="text-sm leading-[1.45] text-ink2">{{ $play->timeRange() }} · {{ $play->venue }} · {{ $play->courts }} {{ Str::plural('court', $play->courts) }}</span>
+                                <span class="text-sm leading-[1.45] text-ink2">{{ $play->timeRange() }}, {{ $play->venue }}, {{ $play->courts }} {{ Str::plural('court', $play->courts) }}</span>
                             </div>
                             <div class="hidden shrink-0 items-center gap-2 lg:flex">
                                 <button type="button" wire:click="openShare({{ $play->id }})" aria-label="Share a link to {{ $play->title }}" aria-haspopup="dialog"
@@ -109,21 +109,21 @@
                                 <div class="flex flex-wrap gap-2">
                                     @unless ($mine)
                                         <span class="inline-flex h-6.5 items-center gap-1.5 rounded-full border border-line bg-surface2 pr-2.5 pl-0.75 text-xs font-bold text-ink2">
-                                            <x-avatar :src="$play->organizer?->avatarUrl()" :name="$play->organizer?->name ?? '?'" :color="$play->organizer?->color() ?? '#E6E3D6'" class="size-5 text-[9px]" />Co-hosting · hosted by {{ $play->organizer?->shownName() }}
+                                            <x-avatar :src="$play->organizer?->avatarUrl()" :name="$play->organizer?->name ?? '?'" :color="$play->organizer?->color() ?? '#E6E3D6'" class="size-5 text-[9px]" />Co-hosting, hosted by {{ $play->organizer?->shownName() }}
                                         </span>
                                     @endunless
                                     @if ($play->visibility === 'invite')
-                                        <span class="inline-flex h-6.5 items-center gap-1.5 rounded-full bg-ink px-2.5 text-xs font-bold text-bg"><x-icon name="lock" :size="13" :stroke="2.2" />Invite only · link</span>
+                                        <span class="inline-flex h-6.5 items-center gap-1.5 rounded-full bg-ink px-2.5 text-xs font-bold text-bg"><x-icon name="lock" :size="13" :stroke="2.2" />Invite only, link</span>
                                     @endif
                                     @if ($play->paid_count)
                                         @php($guests = $play->paid_count - $play->paid_linked_count)
                                         <span class="inline-flex h-6.5 items-center gap-1.5 rounded-full bg-lime-soft px-2.5 text-xs font-bold text-lime-text">
-                                            <x-icon name="check" :size="14" :stroke="2.4" />{{ $play->paid_count }} paid · {{ $play->paid_linked_count }} linked · {{ $guests }} {{ Str::plural('guest', $guests) }}
+                                            <x-icon name="check" :size="14" :stroke="2.4" />{{ $play->paid_count }} paid, {{ $play->paid_linked_count }} linked, {{ $guests }} {{ Str::plural('guest', $guests) }}
                                         </span>
                                     @endif
                                     @if ($play->hasPaymentQr())
                                         <span class="inline-flex h-6.5 items-center gap-1.5 rounded-full border border-line bg-surface2 px-2.5 text-xs font-bold text-ink2">
-                                            <x-icon name="qr" :size="14" />{{ $play->payMethodLabel() }} QR · {{ $play->feeLabel() }}
+                                            <x-icon name="qr" :size="14" />{{ $play->payMethodLabel() }} QR, {{ $play->feeLabel() }}
                                         </span>
                                     @endif
                                 </div>
@@ -157,7 +157,7 @@
                                     @else
                                         <span aria-hidden="true" class="flex size-8.5 items-center justify-center rounded-full bg-surface2"><x-icon name="plus" :size="15" :stroke="2.4" /></span>
                                     @endif
-                                    <span class="ml-1.5 min-w-0 flex-1 truncate text-left text-sm font-bold">{{ $cos->isNotEmpty() ? Str::plural('Co-host', $cos->count()).' · '.$cos->pluck('name')->join(', ') : 'Add a co-host' }}</span>
+                                    <span class="ml-1.5 min-w-0 flex-1 truncate text-left text-sm font-bold">{{ $cos->isNotEmpty() ? Str::plural('Co-host', $cos->count()).', '.$cos->pluck('name')->join(', ') : 'Add a co-host' }}</span>
                                     <x-icon name="chevron-right" :size="16" :stroke="2.2" class="shrink-0" />
                                 </button>
                             @endif
@@ -202,7 +202,7 @@
                                 <x-date-tile :date="$play->starts_at" />
                                 <div class="flex min-w-0 flex-1 flex-col gap-1">
                                     <span class="font-display text-lg leading-[1.2] font-bold tracking-[-0.02em]">{{ $play->title }}</span>
-                                    <span class="text-[13px] leading-[1.4] text-ink3">{{ $play->timeRange() }} · {{ $players }} {{ Str::plural('player', $players) }} · {{ $play->games_count }} {{ Str::plural('game', $play->games_count) }} · {{ $play->courts }} {{ Str::plural('court', $play->courts) }}</span>
+                                    <span class="text-[13px] leading-[1.4] text-ink3">{{ $play->timeRange() }}, {{ $players }} {{ Str::plural('player', $players) }}, {{ $play->games_count }} {{ Str::plural('game', $play->games_count) }}, {{ $play->courts }} {{ Str::plural('court', $play->courts) }}</span>
                                     @if ($play->auto_ended)
                                         <span class="inline-flex min-h-6 items-center gap-1.25 self-start rounded-full border border-line bg-surface2 px-2.25 py-0.5 text-xs leading-[1.3] font-bold text-ink2"><x-icon name="clock" :size="13" />Ended automatically at {{ $play->ended_at->format('g:i A') }}, {{ App\Models\OpenPlay::AUTO_END_HOURS }} hours after its end time</span>
                                     @endif
@@ -420,7 +420,7 @@
                              }"
                              class="flex animate-fade flex-col overflow-hidden rounded-2xl border border-line bg-surface">
                             <div class="border-b border-line px-3.5 py-2.5 text-[13px] font-bold">
-                                {{ count($paidPreview) }} {{ Str::plural('name', count($paidPreview)) }} · {{ $linkedN }} linked · {{ $reviewN ? $reviewN.' to review · ' : '' }}{{ $guestN }} {{ Str::plural('guest', $guestN) }}
+                                {{ count($paidPreview) }} {{ Str::plural('name', count($paidPreview)) }}, {{ $linkedN }} linked, {{ $reviewN ? $reviewN.' to review, ' : '' }}{{ $guestN }} {{ Str::plural('guest', $guestN) }}
                             </div>
                             @if ($reviewN)
                                 <div class="flex items-start gap-2 border-b border-line bg-hot-soft px-3.5 py-2.5 text-xs leading-[1.45] font-semibold text-hot">
@@ -441,13 +441,13 @@
                                             <span class="truncate font-mono text-[13px] font-semibold">{{ $row['line'] }}</span>
                                             <span @class(['text-xs leading-[1.35] font-semibold', 'text-lime-text' => $u, 'text-hot' => $row['review'], 'text-ink3' => ! $u && ! $row['review']])>
                                                 @if ($u)
-                                                    Linked to {{ $u->name }} · {{ $u->email }}
+                                                    Linked to {{ $u->name }}, {{ $u->email }}
                                                 @elseif ($row['review'])
                                                     {{ count($row['cands']) === 1 ? '1 possible account. Link it only if it is them.' : count($row['cands']).' possible accounts. Link the right one, or keep as guest.' }}
                                                 @elseif ($row['guest'])
-                                                    Guest · you chose not to link an account
+                                                    Guest, you chose not to link an account
                                                 @else
-                                                    Guest · no matching account
+                                                    Guest, no matching account
                                                 @endif
                                             </span>
                                         </span>
@@ -466,13 +466,13 @@
                                                     <x-avatar :name="$c['user']->name" :color="$c['user']->color()" :src="$c['user']->avatarUrl()" :frame="$c['user']->frameClass()" class="size-6.5 text-[10px]" />
                                                     <span class="flex min-w-0 flex-1 flex-col">
                                                         <span class="truncate text-[13px] font-bold">{{ $c['user']->name }}</span>
-                                                        <span class="truncate text-[11px] text-ink3"><strong class="font-bold text-ink2">{{ $c['why'] }}</strong> · {{ $c['user']->email }}{{ $c['user']->club ? ' · '.$c['user']->club : '' }}</span>
+                                                        <span class="truncate text-[11px] text-ink3"><strong class="font-bold text-ink2">{{ $c['why'] }}</strong>, {{ $c['user']->email }}{{ $c['user']->club ? ', '.$c['user']->club : '' }}</span>
                                                     </span>
                                                     <button type="button" x-on:click="act(@js(md5($row['key'])), $wire.linkPaid(@js($row['key']), {{ $c['user']->id }}))" aria-label="Link {{ $row['line'] }} to {{ $c['user']->name }}, {{ $c['user']->email }}"
                                                             class="h-8 shrink-0 cursor-pointer rounded-full bg-ink px-3 text-xs font-bold text-bg transition hover:brightness-96 active:scale-97">Link</button>
                                                 </div>
                                             @endforeach
-                                            <button type="button" x-on:click="act(@js(md5($row['key'])), $wire.keepGuest(@js($row['key'])))" class="h-8 cursor-pointer self-start px-1 text-xs font-bold text-ink2 underline underline-offset-3">None of these · keep as guest</button>
+                                            <button type="button" x-on:click="act(@js(md5($row['key'])), $wire.keepGuest(@js($row['key'])))" class="h-8 cursor-pointer self-start px-1 text-xs font-bold text-ink2 underline underline-offset-3">None of these, keep as guest</button>
                                         </div>
                                     @endif
                                 </div>

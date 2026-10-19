@@ -4,17 +4,17 @@
 @section('hot', 1)
 @section('dot', '#FF9152')
 @section('title', 'We hit the net on that one.')
-@section('kicker', 'Error 500 · Server error')
+@section('kicker', 'Error 500: Server error')
 @section('pill', 'NET FAULT')
 @section('scene', 'A ball stuck in the net')
-@section('foot', '500 Internal Server Error · '.$id)
+@section('foot', '500 Internal Server Error ('.$id.')')
 @section('lead', 'Something broke on our side. Your queue spot and scores are safe. Try again in a moment.')
 @section('body')
     <div x-data="{ copied: false }" class="flex items-center gap-3 rounded-2xl border border-line bg-surface py-3 pr-3 pl-4">
         <div class="flex min-w-0 flex-1 flex-col gap-px">
             <span class="text-xs font-bold text-ink3">Error ID</span>
             <span class="truncate font-mono text-[15px] font-semibold">{{ $id }}</span>
-            <span class="text-xs text-ink3">{{ now()->format('D, M j · g:i A') }}</span>
+            <span class="text-xs text-ink3">{{ now()->format('D, M j, g:i A') }}</span>
         </div>
         <button type="button" aria-label="Copy error ID" x-on:click="navigator.clipboard?.writeText(@js($id)).catch(() => {}); copied = true; setTimeout(() => copied = false, 2000)"
                 class="inline-flex h-10 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border-[1.5px] border-line2 bg-transparent px-3.5 text-[13px] font-bold text-ink transition hover:brightness-96 active:scale-97">

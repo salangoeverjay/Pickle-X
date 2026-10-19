@@ -1,5 +1,5 @@
 {{--
-    One court from a live board. Shows "COURT n · mm:ss" when $badge, lock markers for locked teams,
+    One court from a live board. Shows "COURT n, mm:ss" when $badge, lock markers for locked teams,
     and an "open" overlay when the court is free. $me gets a lime ring.
 --}}
 @props(['play', 'court', 'me' => null, 'badge' => true, 'locks' => false, 'index' => 0, 'playerClass' => 'size-9 text-[11px]'])
@@ -37,7 +37,7 @@
 
     @if ($busy && $badge)
         <span class="absolute top-2.5 left-2.5 z-1 inline-flex h-6 items-center gap-1.5 rounded-full bg-black/38 px-2.25 font-mono text-[11px] tracking-[.08em] text-white">
-            COURT {{ $court['n'] }} · <x-live-timer :start="$elapsed" before="WARMUP " />
+            COURT {{ $court['n'] }}, <x-live-timer :start="$elapsed" before="WARMUP " />
         </span>
     @endif
 </x-court>

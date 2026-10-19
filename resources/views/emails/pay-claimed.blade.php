@@ -9,7 +9,7 @@
             <td valign="middle" style="width: 64px; padding-right: 16px;"><x-mail.avatar :name="$player->name" :color="$player->color()" :src="$player->avatarUrl()" :size="58" ring="#D3F347" /></td>
             <td valign="middle">
                 <x-mail.h1 :size="28">{{ $player->firstName() }} says they paid</x-mail.h1>
-                <p class="em-ink3" style="margin: 4px 0 0; font-size: 14px; color: #5B6257;">{{ $play->title }} · {{ $play->starts_at->format('D, M j') }} · {{ $play->timeRange() }}</p>
+                <p class="em-ink3" style="margin: 4px 0 0; font-size: 14px; color: #5B6257;">{{ $play->title }}, {{ $play->starts_at->format('D, M j') }}, {{ $play->timeRange() }}</p>
             </td>
         </tr>
     </table>
@@ -17,8 +17,8 @@
     @include('emails.partials.details', ['rows' => array_filter([
         ['Player', $player->name],
         ['Amount', $play->fee],
-        ['Paid to', collect([$play->pay_name, $play->payMethodLabel(), $play->pay_number])->filter()->join(' · ')],
-        ['Tapped', $at->format('D, M j · g:i A')],
+        ['Paid to', collect([$play->pay_name, $play->payMethodLabel(), $play->pay_number])->filter()->join(', ')],
+        ['Tapped', $at->format('D, M j, g:i A')],
     ], fn ($r) => filled($r[1]))])
 
     <div class="em-lime-soft" style="margin: 0 0 22px; padding: 16px 18px; border-radius: 18px; background: #F0FAC8; border-left: 4px solid #D3F347;">

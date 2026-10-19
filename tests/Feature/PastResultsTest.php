@@ -45,7 +45,7 @@ class PastResultsTest extends TestCase
 
         Livewire::actingAs($winner)->test(PastResults::class)
             ->call('show', $play->id)
-            ->assertSee('Dink Club · Concluded')->assertSee('Your night')->assertSee('Final standings')
+            ->assertSee('Dink Club, Concluded')->assertSee('Your night')->assertSee('Final standings')
             ->assertSee('Closest game')->assertSee('11-6')->assertSee('Biggest win')
             ->call('close')->assertSet('playId', null);
     }

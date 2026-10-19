@@ -9,7 +9,7 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 /** Admin › Developers: accounts marked as developer unlock the exclusive Developer look. */
-#[Title('Developers · PickleX')]
+#[Title('Developers | PickleX')]
 class Developers extends Component
 {
     use Pages;
@@ -21,7 +21,7 @@ class Developers extends Component
         $user = User::where('role', 'member')->where('is_developer', false)->findOrFail($id);
         $user->forceFill(['is_developer' => true])->save();
         $this->q = '';
-        $this->dispatch('toast', message: "{$user->name} is a developer · Developer look unlocked");
+        $this->dispatch('toast', message: "{$user->name} is a developer, Developer look unlocked");
     }
 
     /** Locks the look again; if they were wearing it, their border and queue background go back to none. */
@@ -33,7 +33,7 @@ class Developers extends Component
             'frame' => $user->frame === 'dev' ? null : $user->frame,
             'queue_bg' => $user->queue_bg === 'dev' ? null : $user->queue_bg,
         ])->save();
-        $this->dispatch('toast', message: "{$user->name} is no longer a developer · look locked");
+        $this->dispatch('toast', message: "{$user->name} is no longer a developer, look locked");
     }
 
     public function render()

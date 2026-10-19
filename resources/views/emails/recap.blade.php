@@ -17,7 +17,7 @@
                 @endif
             </td>
             <td valign="middle">
-                <p class="em-ink3" style="margin: 0 0 4px; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-size-adjust: 0.58; font-variant-numeric: tabular-nums; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: #5B6257;">{{ $top ? $medals[$mine['rank'] - 1][1].' · ' : '' }}{{ App\Support\Results::ordinal($mine['rank']) }} of {{ $mine['of'] }}</p>
+                <p class="em-ink3" style="margin: 0 0 4px; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-size-adjust: 0.58; font-variant-numeric: tabular-nums; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: #5B6257;">{{ $top ? $medals[$mine['rank'] - 1][1].', ' : '' }}{{ App\Support\Results::ordinal($mine['rank']) }} of {{ $mine['of'] }}</p>
                 <x-mail.h1>{{ $top ? 'Great night' : 'Good games' }}, {{ $user->firstName() }}.</x-mail.h1>
             </td>
         </tr>
@@ -43,8 +43,8 @@
                             <td style="padding: 0;"><x-mail.avatar :name="$p?->name ?? '?'" :color="$p?->color() ?? '#FFFFFF'" :src="$p?->avatarUrl()" :size="$i ? 48 : 56" :ring="$r['participant_id'] === $pid ? '#D3F347' : null" /></td>
                             <td valign="bottom" style="padding: 0 0 0 0;"><div style="margin-left: -12px; margin-bottom: -6px;"><x-mail.medal :rank="$i + 1" :size="22" ring="#FFFFFF" /></div></td>
                         </tr></table>
-                        <p class="em-ink" style="margin: 8px 0 0; font-weight: 800; font-size: 14px; color: #12170F;">{{ $p?->firstName() }}{{ $r['participant_id'] === $pid ? ' · you' : '' }}</p>
-                        <p class="em-ink2" style="margin: 0 0 8px; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-size-adjust: 0.58; font-variant-numeric: tabular-nums; font-size: 12px; color: #464D42;">{{ $r['w'] }}-{{ $r['l'] }} · {{ App\Support\Results::signed($r['diff']) }}</p>
+                        <p class="em-ink" style="margin: 8px 0 0; font-weight: 800; font-size: 14px; color: #12170F;">{{ $p?->firstName() }}{{ $r['participant_id'] === $pid ? ', you' : '' }}</p>
+                        <p class="em-ink2" style="margin: 0 0 8px; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-size-adjust: 0.58; font-variant-numeric: tabular-nums; font-size: 12px; color: #464D42;">{{ $r['w'] }}-{{ $r['l'] }}, {{ App\Support\Results::signed($r['diff']) }}</p>
                     @endif
                     <div style="height: {{ $height }}px; border-radius: 14px 14px 4px 4px; background: {{ $medals[$i][0] }}; color: #12170F; text-align: center; font-family: 'Bricolage Grotesque', 'Arial Black', Helvetica, Arial, sans-serif; font-weight: 800; font-size: {{ $i ? 26 : 30 }}px; line-height: 1.6;">{{ $i + 1 }}</div>
                 </td>

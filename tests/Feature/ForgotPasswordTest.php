@@ -40,7 +40,7 @@ class ForgotPasswordTest extends TestCase
             ->call('send')->assertSet('error', 'Enter the email you use for PickleX.')
             ->set('email', 'kai@')->call('send')->assertSet('error', "That email doesn't look right. Check it and try again.")
             ->set('email', 'kai@picklex.app')->call('send')
-            ->assertSet('step', 'code')->assertSee('k•••@picklex.app');
+            ->assertSet('step', 'code')->assertSee('k***@picklex.app');
 
         $code = $this->codeFor($kai);
         $this->assertMatchesRegularExpression('/^\d{6}$/', $code);

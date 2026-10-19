@@ -22,9 +22,9 @@
 
         <div class="em-soft" style="margin: 0 0 22px; padding: 18px; border-radius: 18px; background: #F6F5EE;">
             <p class="em-ink" style="margin: 0; font-weight: 700; font-size: 16px; color: #12170F;">{{ $play->title }}</p>
-            <p class="em-ink3" style="margin: 0 0 12px; font-size: 13px; color: #5B6257;">{{ $play->starts_at->format('D, M j') }} · {{ $play->timeRange() }} · {{ $play->venue }}</p>
+            <p class="em-ink3" style="margin: 0 0 12px; font-size: 13px; color: #5B6257;">{{ $play->starts_at->format('D, M j') }}, {{ $play->timeRange() }}, {{ $play->venue }}</p>
             @include('emails.partials.progress', ['count' => $play->playerCount(), 'cap' => $play->cap])
-            <p class="em-ink3" style="margin: 12px 0 0; font-size: 13px; color: #5B6257;">{{ $play->courts }} {{ Str::plural('court', $play->courts) }} · {{ $play->rotation === 'winners' ? 'winners stay' : 'everyone rotates' }}{{ $play->fee ? ' · '.$play->feeLabel().' per player, paid to '.$hostFirst.($play->hasPaymentQr() ? ' by '.$play->payMethodLabel() : '') : ' · free' }}</p>
+            <p class="em-ink3" style="margin: 12px 0 0; font-size: 13px; color: #5B6257;">{{ $play->courts }} {{ Str::plural('court', $play->courts) }}, {{ $play->rotation === 'winners' ? 'winners stay' : 'everyone rotates' }}{{ $play->fee ? ', '.$play->feeLabel().' per player, paid to '.$hostFirst.($play->hasPaymentQr() ? ' by '.$play->payMethodLabel() : '') : ', free' }}</p>
         </div>
 
         @include('emails.partials.checklist', ['title' => 'What you can do', 'items' => [
@@ -60,7 +60,7 @@
                 <p class="em-ink" style="margin: 0 0 6px; font-weight: 800; font-size: 16px; color: #12170F;">&#10003; You're still on the player list</p>
                 <p class="em-ink2" style="margin: 0 0 12px; font-size: 14px; line-height: 1.5; color: #3B4237;">{{ $paid ? 'Your '.$play->feeLabel().($play->hasPaymentQr() ? ' '.$play->payMethodLabel() : '')." payment to {$hostFirst} still counts, so you keep your spot." : 'You keep your spot.' }} Check in when you get to the courts.</p>
                 <p class="em-ink" style="margin: 0; font-weight: 700; font-size: 14px; color: #12170F;">{{ $play->title }}</p>
-                <p class="em-ink3" style="margin: 0; font-size: 13px; color: #5B6257;">{{ $play->starts_at->format('D, M j') }} · {{ $play->timeRange() }} · {{ $play->venue }}</p>
+                <p class="em-ink3" style="margin: 0; font-size: 13px; color: #5B6257;">{{ $play->starts_at->format('D, M j') }}, {{ $play->timeRange() }}, {{ $play->venue }}</p>
             </div>
         @endif
 

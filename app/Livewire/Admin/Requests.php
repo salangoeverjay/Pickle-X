@@ -11,7 +11,7 @@ use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 
-#[Title('Organizer requests · PickleX')]
+#[Title('Organizer requests | PickleX')]
 class Requests extends Component
 {
     use Pages;

@@ -18,7 +18,7 @@ use Livewire\Component;
 use Spatie\LaravelPasskeys\Actions\GeneratePasskeyRegisterOptionsAction;
 use Spatie\LaravelPasskeys\Actions\StorePasskeyAction;
 
-#[Title('Account settings · PickleX')]
+#[Title('Account settings | PickleX')]
 class Settings extends Component
 {
     // Profile
@@ -134,7 +134,7 @@ class Settings extends Component
 
         $user->save();
 
-        $this->dispatch('toast', message: $user->usesDisplayName() ? "Profile saved · others see you as {$user->display_name}" : 'Profile saved');
+        $this->dispatch('toast', message: $user->usesDisplayName() ? "Profile saved, others see you as {$user->display_name}" : 'Profile saved');
     }
 
     // ---------------------------------------------------------------- profile picture
@@ -203,7 +203,7 @@ class Settings extends Component
         }
         $unlock = Looks::EXCLUSIVE[$id][1] ?? null;
         if ($unlock && ! Looks::unlocked($unlock, (bool) $user->is_developer, $user->sponsor_tier)) {
-            $this->dispatch('toast', message: Looks::onlyFor($unlock).' · an admin unlocks this');
+            $this->dispatch('toast', message: Looks::onlyFor($unlock).', an admin unlocks this');
 
             return;
         }
@@ -309,7 +309,7 @@ class Settings extends Component
         Emails::send($user->email, $mail);
         session()->invalidate();
         session()->regenerateToken();
-        session()->flash('toast', 'Account deleted · we emailed you a confirmation');
+        session()->flash('toast', 'Account deleted, we emailed you a confirmation');
 
         return $this->redirect(route('home'));
     }
@@ -386,7 +386,7 @@ class Settings extends Component
     {
         $passkey = $this->user()->passkeys()->findOrFail($this->naming);
         $passkey->update(['name' => Str::limit(trim($this->passkeyName), 40, '') ?: $passkey->name]);
-        $this->dispatch('toast', message: ($this->replaced ? 'Passkey on this device replaced' : 'Passkey saved')." · we emailed {$this->user()->email} about it");
+        $this->dispatch('toast', message: ($this->replaced ? 'Passkey on this device replaced' : 'Passkey saved').", we emailed {$this->user()->email} about it");
         $this->reset('naming', 'passkeyName', 'replaced');
     }
 
@@ -397,7 +397,7 @@ class Settings extends Component
         $passkey->delete();
         Emails::send($user, Emails::passkeyRemoved($user, $passkey->name, $passkey->created_at, ForgotPassword::device((string) request()->userAgent())));
         $this->removing = null;
-        $this->dispatch('toast', message: "Removed the passkey for {$passkey->name} · we emailed {$user->email} about it");
+        $this->dispatch('toast', message: "Removed the passkey for {$passkey->name}, we emailed {$user->email} about it");
     }
 
     /** Remember me: stop this device keeping you logged in (other devices keep theirs). */

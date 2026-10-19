@@ -5,7 +5,7 @@
 
 @section('content')
     <x-mail.h1>Your week, {{ $user->firstName() }}.</x-mail.h1>
-    <p class="em-ink2" style="margin: 10px 0 22px; font-size: 16px; color: #464D42;">{{ $from->format('D, M j') }} to {{ $to->format('D, M j') }} · {{ $plays }} open {{ Str::plural('play', $plays) }}</p>
+    <p class="em-ink2" style="margin: 10px 0 22px; font-size: 16px; color: #464D42;">{{ $from->format('D, M j') }} to {{ $to->format('D, M j') }}, {{ $plays }} open {{ Str::plural('play', $plays) }}</p>
 
     @include('emails.partials.stats', ['stats' => [
         ['Games', $games, null],

@@ -70,9 +70,9 @@ class Results
         $big = $this->biggest();
 
         return array_values(array_filter([
-            $this->rows ? ['Most wins', $first($this->rows[0]).' · '.$this->rows[0]['w'].'-'.$this->rows[0]['l'], 'trophy'] : null,
-            $best ? ['Best point difference', $first($best).' · '.self::signed($best['diff']), 'trend'] : null,
-            $big ? ['Biggest win', self::score($big).' · '.$this->winners($big), 'bolt'] : null,
+            $this->rows ? ['Most wins', $first($this->rows[0]).', '.$this->rows[0]['w'].'-'.$this->rows[0]['l'], 'trophy'] : null,
+            $best ? ['Best point difference', $first($best).', '.self::signed($best['diff']), 'trend'] : null,
+            $big ? ['Biggest win', self::score($big).', '.$this->winners($big), 'bolt'] : null,
         ]));
     }
 

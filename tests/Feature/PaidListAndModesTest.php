@@ -23,15 +23,15 @@ class PaidListAndModesTest extends TestCase
         $c = Livewire::actingAs($org)->withQueryParams(['create' => 1])->test(OrganizerPlays::class)
             ->set(['title' => 'Paid Rally', 'venue' => 'Court A', 'cap' => 4])
             ->set('paid', "Rico Dizon\nmika@picklex.app\nCarla\nGrace Ong\nrico dizon")
-            ->assertSee('4 names · 0 linked · 3 to review · 1 guest')
+            ->assertSee('4 names, 0 linked, 3 to review, 1 guest')
             ->assertSee('Needs review')->assertSee('Same name')->assertSee('Email matches')->assertSee('Same first name')
-            ->assertSee('Guest · no matching account')
-            ->assertSee('None of these · keep as guest');
+            ->assertSee('Guest, no matching account')
+            ->assertSee('None of these, keep as guest');
 
         // Nothing links on its own: pick Rico and Mika, keep Carla as a guest.
         $c->call('linkPaid', 'rico dizon', $rico->id)->call('linkPaid', 'mika@picklex.app', $mika->id)->call('keepGuest', 'carla')
-            ->assertSee('4 names · 2 linked · 2 guests')
-            ->assertSee('Linked to Rico Dizon')->assertSee('Guest · you chose not to link an account')
+            ->assertSee('4 names, 2 linked, 2 guests')
+            ->assertSee('Linked to Rico Dizon')->assertSee('Guest, you chose not to link an account')
             ->call('unlinkPaid', 'carla')->assertSee('1 to review')->call('keepGuest', 'carla');
 
         $c->set('cap', 4)->set('paid', "a\nb\nc\nd\ne")->call('publish')
@@ -39,14 +39,14 @@ class PaidListAndModesTest extends TestCase
         $this->assertSame(0, OpenPlay::count());
 
         $c->set('paid', "Rico Dizon\nmika@picklex.app\nCarla\nGrace Ong")->call('publish')
-            ->assertDispatched('toast', message: 'Open play published · 4 paid players added, 2 linked to accounts');
+            ->assertDispatched('toast', message: 'Open play published, 4 paid players added, 2 linked to accounts');
 
         $play = OpenPlay::sole();
         $this->assertSame(4, $play->participants()->where('paid', true)->count());
         $this->assertTrue($play->participants()->where('user_id', $rico->id)->exists());
         $this->assertTrue($play->participants()->whereNull('user_id')->where('name', 'Carla')->exists(), 'Carla stays a guest');
 
-        $this->actingAs($org)->get(route('organizer.plays'))->assertSee('4 paid · 2 linked · 2 guests');
+        $this->actingAs($org)->get(route('organizer.plays'))->assertSee('4 paid, 2 linked, 2 guests');
     }
 
     public function test_unlinked_suggestions_show_on_the_review(): void

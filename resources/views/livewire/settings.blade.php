@@ -116,7 +116,7 @@
                                     <span aria-hidden="true" class="flex size-11 shrink-0 items-center justify-center rounded-[14px] bg-surface2 text-ink2"><x-icon :name="Str::contains($pk->name, ['iPhone', 'iOS', 'Android', 'iPad']) ? 'phone' : 'laptop'" :size="20" :stroke="1.9" /></span>
                                     <div class="flex min-w-0 flex-1 flex-col gap-0.5">
                                         <div class="flex min-w-0 flex-wrap items-center gap-2"><span class="truncate font-bold">{{ $pk->name }}</span><span x-show="isHere({{ $pk->id }})" x-cloak class="inline-flex h-5.5 shrink-0 items-center rounded-full bg-lime px-2 text-[11px] font-extrabold text-on-lime">This device</span></div>
-                                        <span class="text-[13px] text-ink3">{{ $pk->created_at->isToday() ? 'Added today' : 'Added '.$pk->created_at->format('M j') }} · {{ $pk->last_used_at ? 'Last used '.($pk->last_used_at->isToday() ? 'today' : $pk->last_used_at->format('M j')) : 'Not used yet' }}</span>
+                                        <span class="text-[13px] text-ink3">{{ $pk->created_at->isToday() ? 'Added today' : 'Added '.$pk->created_at->format('M j') }}, {{ $pk->last_used_at ? 'Last used '.($pk->last_used_at->isToday() ? 'today' : $pk->last_used_at->format('M j')) : 'Not used yet' }}</span>
                                     </div>
                                     <button type="button" wire:click="$set('removing', {{ $pk->id }})" aria-label="Remove the passkey for {{ $pk->name }}" class="{{ $ghost }} h-10 shrink-0 px-3.5 text-[13px] text-hot">Remove</button>
                                 </li>

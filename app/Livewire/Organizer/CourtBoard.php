@@ -16,7 +16,7 @@ use InvalidArgumentException;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-#[Title('Court board · PickleX')]
+#[Title('Court board | PickleX')]
 class CourtBoard extends Component
 {
     use Pages;
@@ -106,7 +106,7 @@ class CourtBoard extends Component
         $play->end();
         Emails::sendRecaps($play->fresh());
 
-        session()->flash('toast', "Session ended · {$games} ".($games === 1 ? 'game' : 'games').' logged');
+        session()->flash('toast', "Session ended, {$games} ".($games === 1 ? 'game' : 'games').' logged');
 
         return $this->redirectRoute('organizer.plays', navigate: true);
     }
@@ -188,7 +188,7 @@ class CourtBoard extends Component
         if ($entry && $this->attempt(fn () => $play->setPaused($entryId, $paused)) !== false) {
             $names = $play->names($entry['ids']);
             $two = count($entry['ids']) > 1;
-            $this->dispatch('toast', message: $paused ? "{$names} stepped out · ".($two ? 'keep' : 'keeps').' their spot' : "{$names} ".($two ? 'are' : 'is').' back in the rotation');
+            $this->dispatch('toast', message: $paused ? "{$names} stepped out, ".($two ? 'keep' : 'keeps').' their spot' : "{$names} ".($two ? 'are' : 'is').' back in the rotation');
         }
     }
 
@@ -207,7 +207,7 @@ class CourtBoard extends Component
             $pair = count($out['ids']) === 2;
             $outNames = $play->names($out['ids']);
             $keeps = $pair ? "{$outNames} keep their spot" : ($play->participant($out['ids'][0])?->firstName() ?? 'Guest').' keeps their spot';
-            $this->dispatch('toast', message: $play->names($inPids).(count($inPids) > 1 ? ' sub in for ' : ' subs in for ')."{$outNames} · {$keeps}");
+            $this->dispatch('toast', message: $play->names($inPids).(count($inPids) > 1 ? ' sub in for ' : ' subs in for ')."{$outNames}, {$keeps}");
         }
     }
 
@@ -219,7 +219,7 @@ class CourtBoard extends Component
             return;
         }
         $play->setRotation($rotation);
-        $this->dispatch('toast', message: $play->rotationLabel().' from the next game · games on court finish as they are');
+        $this->dispatch('toast', message: $play->rotationLabel().' from the next game, games on court finish as they are');
     }
 
     /** Warmup length, changed mid-session from the header. Applies to the next foursome that goes on. */
@@ -230,7 +230,7 @@ class CourtBoard extends Component
             return;
         }
         $play->setWarmup($minutes);
-        $this->dispatch('toast', message: ($minutes ? "{$minutes}-minute warmup" : 'No warmup').' from the next game · courts on now keep their clock');
+        $this->dispatch('toast', message: ($minutes ? "{$minutes}-minute warmup" : 'No warmup').' from the next game, courts on now keep their clock');
     }
 
     /** Skip the rest of a court's warmup: the game clock starts now. */
@@ -238,7 +238,7 @@ class CourtBoard extends Component
     {
         $warmed = $this->play()->startNow($n);
         if ($warmed !== null) {
-            $this->dispatch('toast', message: "Court {$n}: game on · warmed up for ".sprintf('%02d:%02d', intdiv($warmed, 60), $warmed % 60));
+            $this->dispatch('toast', message: "Court {$n}: game on, warmed up for ".sprintf('%02d:%02d', intdiv($warmed, 60), $warmed % 60));
         }
     }
 
@@ -276,9 +276,9 @@ class CourtBoard extends Component
         $this->crt = null;
         $court = collect($play->boardCourts())->firstWhere('n', $n);
         $this->dispatch('toast', message: "Court {$n} added".match (true) {
-            (bool) $court['a'] => ' · '.$play->names($court['a']['ids']).' vs '.$play->names($court['b']['ids']).' are on',
-            (bool) $play->nextUpTeams() => ' · tap Fill to put the next group on',
-            default => ' · fill it once 4 checked-in players are ready',
+            (bool) $court['a'] => ', '.$play->names($court['a']['ids']).' vs '.$play->names($court['b']['ids']).' are on',
+            (bool) $play->nextUpTeams() => ', tap Fill to put the next group on',
+            default => ', fill it once 4 checked-in players are ready',
         });
     }
 
@@ -313,9 +313,9 @@ class CourtBoard extends Component
             $this->csub = null;
         }
         $this->dispatch('toast', message: match (true) {
-            ! $court['a'] => "Court {$n} removed · ".count($play->boardCourts()).' '.Str::plural('court', count($play->boardCourts())).' tonight',
-            $how === 'finish' => "Court {$n} closes after this game · nobody new goes on it",
-            default => "Court {$n} removed · game not counted · ".$play->names([...$court['a']['ids'], ...$court['b']['ids']]).' are at the front of the line',
+            ! $court['a'] => "Court {$n} removed, ".count($play->boardCourts()).' '.Str::plural('court', count($play->boardCourts())).' tonight',
+            $how === 'finish' => "Court {$n} closes after this game, nobody new goes on it",
+            default => "Court {$n} removed, game not counted, ".$play->names([...$court['a']['ids'], ...$court['b']['ids']]).' are at the front of the line',
         });
     }
 
@@ -350,7 +350,7 @@ class CourtBoard extends Component
             $on = $play->names($inPids);
             $off = $play->names($cs['out']);
             $many = count($cs['out']) > 1;
-            $this->dispatch('toast', message: $on.($many ? ' sub in for ' : ' subs in for ')."{$off} on Court {$cs['court']} · ".match ($cs['after']) {
+            $this->dispatch('toast', message: $on.($many ? ' sub in for ' : ' subs in for ')."{$off} on Court {$cs['court']}, ".match ($cs['after']) {
                 'leave' => $off.($many ? ' are' : ' is').' done for the night',
                 'back' => $off.($many ? ' are' : ' is').' back in line',
                 default => "{$off} stepped out",
@@ -367,7 +367,7 @@ class CourtBoard extends Component
             return;
         }
         $this->subFor = collect($play->queue())->first(fn ($e) => $e['ids'] === [$participantId])['id'] ?? null;
-        $this->dispatch('toast', message: 'Partners unlocked · who subs in for '.($play->participant($participantId)?->firstName() ?? 'Guest').'?');
+        $this->dispatch('toast', message: 'Partners unlocked, who subs in for '.($play->participant($participantId)?->firstName() ?? 'Guest').'?');
     }
 
     public function updatedQq(): void
@@ -427,7 +427,7 @@ class CourtBoard extends Component
         $play = $this->play();
 
         if ($this->attempt(fn () => $play->addWalkin($this->walkin)) !== false) {
-            $this->dispatch('toast', message: "{$this->walkin} joined the queue as a guest · checked in");
+            $this->dispatch('toast', message: "{$this->walkin} joined the queue as a guest, checked in");
             $this->reset('walkin', 'walkinPick', 'walkinTried');
         }
     }
@@ -456,7 +456,7 @@ class CourtBoard extends Component
 
         $done = $this->attempt(fn () => $play->checkIn([$play->join($user)->id]));
         if ($done !== false) {
-            $this->dispatch('toast', message: "{$user->name} joined the queue · linked to their account");
+            $this->dispatch('toast', message: "{$user->name} joined the queue, linked to their account");
             $this->reset('walkin', 'walkinPick', 'walkinTried');
         }
     }
@@ -530,14 +530,14 @@ class CourtBoard extends Component
         $this->podNew = array_values(array_diff($after, $before));
         $podium = match (true) {
             $after === $before => '',
-            (bool) $this->podNew => ' · '.$play->names($this->podNew).(count($this->podNew) > 1 ? ' move' : ' moves').' onto the podium',
-            default => ' · podium reshuffled',
+            (bool) $this->podNew => ', '.$play->names($this->podNew).(count($this->podNew) > 1 ? ' move' : ' moves').' onto the podium',
+            default => ', podium reshuffled',
         };
 
         // wins > 0 only when winners-stay kept the winning team on this court.
         $stay = (collect($play->boardCourts())->firstWhere('n', $n)['wins'] ?? 0) > 0;
         $score = max($this->scoreA, $this->scoreB).'-'.min($this->scoreA, $this->scoreB);
-        $this->dispatch('toast', message: "Court {$n}: {$play->names($court[$game->winner]['ids'])} won {$score}".$podium.($stay ? ' · winners stay on' : '').($closing ? " · Court {$n} closed" : ''));
+        $this->dispatch('toast', message: "Court {$n}: {$play->names($court[$game->winner]['ids'])} won {$score}".$podium.($stay ? ', winners stay on' : '').($closing ? ", Court {$n} closed" : ''));
 
         $this->freshGame = $game->id;
         $this->closeScore();
@@ -618,12 +618,12 @@ class CourtBoard extends Component
             $reps = $open->filter(fn ($t) => $t[1] > 0);
             $passed = $play->passedForNext($next);
             $why = [
-                'mix' => 'Fewest games first · '.$games.match (true) {
+                'mix' => 'Fewest games first, '.$games.match (true) {
                     $open->isEmpty() => '',
-                    $reps->isEmpty() => ' · '.($open->count() === 2 ? 'both teams are new partners' : $play->names($open->first()[0]['ids']).' are new partners'),
-                    default => ' · '.$reps->map(fn ($t) => $play->names($t[0]['ids']).' partnered '.($t[1] === 1 ? 'once' : $t[1].' times'))->join(', ').', the fewest repeats possible',
+                    $reps->isEmpty() => ', '.($open->count() === 2 ? 'both teams are new partners' : $play->names($open->first()[0]['ids']).' are new partners'),
+                    default => ', '.$reps->map(fn ($t) => $play->names($t[0]['ids']).' partnered '.($t[1] === 1 ? 'once' : $t[1].' times'))->join(', ').', the fewest repeats possible',
                 },
-                'wait' => $passed ? $play->names($passed).(count($passed) > 1 ? ' wait' : ' waits').' a turn · they have played more games tonight or would repeat a partner' : null,
+                'wait' => $passed ? $play->names($passed).(count($passed) > 1 ? ' wait' : ' waits').' a turn, they have played more games tonight or would repeat a partner' : null,
             ];
         }
 
@@ -693,7 +693,7 @@ class CourtBoard extends Component
             'group' => $group,
             'where' => match (true) {
                 (bool) $free => "Court {$free['n']} ".($next ? 'is open' : 'is waiting'),
-                ($soon = $play->longestCourtIndex()) !== null => 'Courts full · Court '.$courts[$soon]['n'].' likely next',
+                ($soon = $play->longestCourtIndex()) !== null => 'Courts full, Court '.$courts[$soon]['n'].' likely next',
                 default => 'Next court to finish',
             },
             'skipped' => $group ? $play->skippedForNext($group) : ['', false],
@@ -709,7 +709,7 @@ class CourtBoard extends Component
             'total' => count($sessionIds),
             'running' => $started,
             'started' => ($started === 'just now' ? 'Started just now' : "Started {$started} ago").match (true) {
-                $play->organizer_id !== $user->id => ' · co-hosting for '.$play->organizer->name,
+                $play->organizer_id !== $user->id => ', co-hosting for '.$play->organizer->name,
                 $play->starter && ! $play->starter->is($user) => ' by '.$play->starter->name.' (co-host)',
                 default => '',
             },
@@ -726,7 +726,7 @@ class CourtBoard extends Component
             'why' => $why,
             'courtsDialog' => $this->crt ? $this->courtsDialog($play, $courts) : null,
             'subDialog' => $csub,
-            'courtSubs' => collect($courts)->mapWithKeys(fn ($c) => [$c['n'] => ($c['subs'] ?? null) ? $this->subLine($play, $c['subs']).' · '.(($s = now()->timestamp - end($c['subs'])['at']) < 60 ? 'just now' : ago($s).' ago') : null]),
+            'courtSubs' => collect($courts)->mapWithKeys(fn ($c) => [$c['n'] => ($c['subs'] ?? null) ? $this->subLine($play, $c['subs']).', '.(($s = now()->timestamp - end($c['subs'])['at']) < 60 ? 'just now' : ago($s).' ago') : null]),
             'subOut' => $subOut,
             'subCands' => $subCands,
             'canAddMe' => $user->isMember() && ! $play->participantMap()->only($sessionIds)->contains('user_id', $user->id),
@@ -734,8 +734,8 @@ class CourtBoard extends Component
             'qr' => $shareUrl ? $this->qrSvg($shareUrl) : null,
             'poster' => $shareUrl ? [
                 'title' => $play->title,
-                'sub' => implode(' · ', array_filter([$play->club, $play->venue])),
-                'when' => $play->whenLabel().' · '.$play->timeRange(),
+                'sub' => implode(', ', array_filter([$play->club, $play->venue])),
+                'when' => $play->whenLabel().', '.$play->timeRange(),
                 'code' => $play->share_code,
                 'url' => $shareUrl,
                 'shortUrl' => preg_replace('#^https?://#', '', $shareUrl),
@@ -778,12 +778,12 @@ class CourtBoard extends Component
         ];
     }
 
-    /** "Ben in for Mika · Ana in for Rico". */
+    /** "Ben in for Mika, Ana in for Rico". */
     private function subLine(OpenPlay $play, array $subs): string
     {
         $first = fn ($id) => $play->participant($id)?->firstName() ?? 'Guest';
 
-        return collect($subs)->map(fn ($s) => $first($s['in']).' in for '.$first($s['out']))->join(' · ');
+        return collect($subs)->map(fn ($s) => $first($s['in']).' in for '.$first($s['out']))->join(', ');
     }
 
     /** QR modules as '1'/'0' strings (no quiet zone) for the downloadable poster, drawn on a canvas in resources/js/share-poster.js. */

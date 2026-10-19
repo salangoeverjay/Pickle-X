@@ -37,7 +37,7 @@
                             @if ($invite)
                                 <x-icon name="lock" :size="13" :stroke="2.2" />
                             @endif
-                            {{ $state === 'mine' && $play->organizer_id === $user?->id ? ($invite ? 'Invite only · link' : 'Open to everyone') : ($invite ? "Invite only · you're invited" : 'Open play · anyone can join') }}
+                            {{ $state === 'mine' && $play->organizer_id === $user?->id ? ($invite ? 'Invite only, link' : 'Open to everyone') : ($invite ? "Invite only, you're invited" : 'Open play, anyone can join') }}
                         </span>
                         <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">{{ $play->club }}</span>
                     </div>
@@ -47,7 +47,7 @@
                             <x-avatar :src="$host->avatarUrl()" :frame="$host->frameClass()" :name="$host->shownName()" :color="$host->color()" class="ml-0.5 size-9.5 text-xs" aria-hidden="true" />
                             <span class="flex min-w-0 flex-col gap-px">
                                 <span class="text-sm text-ink2">Hosted by <strong class="text-ink">{{ $host->shownName() }}</strong></span>
-                                <span class="truncate text-xs text-ink3">Approved organizer · {{ $hosted ? $hosted.' '.Str::plural('open play', $hosted).' hosted' : 'New organizer' }}</span>
+                                <span class="truncate text-xs text-ink3">Approved organizer, {{ $hosted ? $hosted.' '.Str::plural('open play', $hosted).' hosted' : 'New organizer' }}</span>
                             </span>
                         </div>
                     @endif
@@ -55,7 +55,7 @@
                         @foreach ([
                             ['calendar', $play->starts_at->isToday() ? 'Today' : $play->starts_at->format('l, M j'), $play->timeRange()],
                             ['pin', $play->venue, $play->club],
-                            ['court', $play->fee ? $play->feeLabel().' per player' : 'Free', $play->courts.' '.Str::plural('court', $play->courts).' · race to '.$play->race_to.' · '.($play->rotation === 'winners' ? 'winners stay' : 'everyone rotates').' · '.Str::lower($play->warmupLabel()).($play->hasPaymentQr() ? ' · pay by '.$play->payMethodLabel() : '')],
+                            ['court', $play->fee ? $play->feeLabel().' per player' : 'Free', $play->courts.' '.Str::plural('court', $play->courts).', race to '.$play->race_to.', '.($play->rotation === 'winners' ? 'winners stay' : 'everyone rotates').', '.Str::lower($play->warmupLabel()).($play->hasPaymentQr() ? ', pay by '.$play->payMethodLabel() : '')],
                         ] as [$icon, $a, $b])
                             <span class="flex items-start gap-2.5">
                                 <x-icon :name="$icon" :size="18" class="mt-px shrink-0 text-ink3" />

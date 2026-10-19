@@ -69,7 +69,7 @@ Route::post('/demo-login', function (Request $request) {
     $request->session()->forget('mode');
     $request->session()->flash('loader', ['kind' => 'login']);
     if (Auth::user()->isAdmin()) {
-        $request->session()->flash('toast', 'Logged in as admin · '.User::where('organizer_status', 'pending')->count().' pending');
+        $request->session()->flash('toast', 'Logged in as admin, '.User::where('organizer_status', 'pending')->count().' pending');
     }
 
     return redirect()->route(Auth::user()->homeRoute());

@@ -9,14 +9,14 @@
             <td valign="middle" style="width: 64px; padding-right: 16px;"><x-mail.avatar :name="$player->name" :color="$player->color()" :src="$player->avatarUrl()" :size="58" ring="#D3F347" /></td>
             <td valign="middle">
                 <x-mail.h1 :size="28">{{ $player->name }} joined your open play</x-mail.h1>
-                <p class="em-ink3" style="margin: 4px 0 0; font-size: 14px; color: #5B6257;">Just now{{ $stats->count() ? ' · '.$stats->count().' '.Str::plural('game', $stats->count()).' on PickleX · '.$stats->rate().'% win rate' : ' · new to PickleX' }}</p>
+                <p class="em-ink3" style="margin: 4px 0 0; font-size: 14px; color: #5B6257;">Just now{{ $stats->count() ? ', '.$stats->count().' '.Str::plural('game', $stats->count()).' on PickleX, '.$stats->rate().'% win rate' : ', new to PickleX' }}</p>
             </td>
         </tr>
     </table>
 
     <div class="em-soft" style="margin: 0 0 22px; padding: 18px; border-radius: 18px; background: #F6F5EE;">
         <p class="em-ink" style="margin: 0; font-weight: 700; font-size: 16px; color: #12170F;">{{ $play->title }}</p>
-        <p class="em-ink3" style="margin: 0 0 12px; font-size: 13px; color: #5B6257;">{{ $play->starts_at->format('D, M j') }} · {{ $play->timeRange() }} · {{ $play->venue }}</p>
+        <p class="em-ink3" style="margin: 0 0 12px; font-size: 13px; color: #5B6257;">{{ $play->starts_at->format('D, M j') }}, {{ $play->timeRange() }}, {{ $play->venue }}</p>
         @include('emails.partials.progress', ['count' => $count, 'cap' => $play->cap])
         @if ($play->fee)
             <p style="margin: 12px 0 0;">
@@ -35,7 +35,7 @@
                 <td class="em-line" style="padding: 10px 12px 10px 0; width: 34px; border-top: 1px solid #DEDCD0;"><x-mail.avatar :name="$p->name" :color="$p->color()" :src="$p->avatarUrl()" /></td>
                 <td class="em-line" style="padding: 10px 0; border-top: 1px solid #DEDCD0;">
                     <p class="em-ink" style="margin: 0; font-weight: 700; font-size: 14px; color: #12170F;">{{ $p->name }}</p>
-                    <p class="em-ink3" style="margin: 0; font-size: 12px; color: #5B6257;">{{ $p->created_at?->diffForHumans() }}{{ $p->user_id ? '' : ' · guest' }}</p>
+                    <p class="em-ink3" style="margin: 0; font-size: 12px; color: #5B6257;">{{ $p->created_at?->diffForHumans() }}{{ $p->user_id ? '' : ', guest' }}</p>
                 </td>
                 @if ($play->fee)
                     <td align="right" class="em-line {{ $p->paid ? 'em-lime-text' : '' }}" style="padding: 10px 0; border-top: 1px solid #DEDCD0; font-size: 12px; font-weight: 800; color: {{ $p->paid ? '#496800' : '#B23A0A' }};">{{ $p->paid ? 'Paid' : 'Not paid' }}</td>

@@ -11,7 +11,7 @@ use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 
-#[Title('Sign up · PickleX')]
+#[Title('Sign up | PickleX')]
 class Signup extends Component
 {
     #[Url]

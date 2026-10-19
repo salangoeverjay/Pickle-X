@@ -2,7 +2,7 @@
 @php($play = $cohosts['play'])
 @php($now = $cohosts['now'])
 @php($row = function ($u) use ($cohosts) {
-    return ($u->isOrganizer() ? 'Organizer' : 'Player').(in_array($u->id, $cohosts['joined']) ? ' · joined this' : '').($u->club ? ' · '.$u->club : '').' · '.$u->email;
+    return ($u->isOrganizer() ? 'Organizer' : 'Player').(in_array($u->id, $cohosts['joined']) ? ', joined this' : '').($u->club ? ', '.$u->club : '').', '.$u->email;
 })
 <div wire:key="cohosts-{{ $play->id }}" x-data x-on:keydown.escape.window="$wire.closeCohosts()" class="fixed inset-0 z-66 flex items-end justify-center md:items-center md:p-6">
     <button type="button" wire:click="closeCohosts" aria-label="Close" class="absolute inset-0 animate-fade cursor-pointer bg-[rgba(18,23,15,.45)] dark:bg-black/62"></button>
@@ -11,7 +11,7 @@
             <div class="flex min-w-0 flex-col gap-0.5">
                 <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">Co-hosts</span>
                 <h2 id="coh-title" class="m-0 font-display text-[26px] leading-[1.1] font-extrabold tracking-[-0.03em]">{{ $play->title }}</h2>
-                <span class="truncate text-[13px] text-ink3">{{ $play->whenLabel() }} · {{ $play->timeRange() }} · {{ $play->venue }}</span>
+                <span class="truncate text-[13px] text-ink3">{{ $play->whenLabel() }}, {{ $play->timeRange() }}, {{ $play->venue }}</span>
             </div>
             <button type="button" wire:click="closeCohosts" aria-label="Close" class="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-line bg-surface text-ink transition hover:brightness-96 active:scale-97"><x-icon name="x" :size="18" /></button>
         </div>

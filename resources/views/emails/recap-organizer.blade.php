@@ -6,7 +6,7 @@
 
 @section('content')
     <x-mail.h1>{{ $play->title }} is a wrap.</x-mail.h1>
-    <p class="em-ink2" style="margin: 10px 0 22px; font-size: 16px; color: #464D42;">{{ $play->starts_at->format('D, M j') }} · {{ $play->timeRange() }} · {{ $play->venue }}</p>
+    <p class="em-ink2" style="margin: 10px 0 22px; font-size: 16px; color: #464D42;">{{ $play->starts_at->format('D, M j') }}, {{ $play->timeRange() }}, {{ $play->venue }}</p>
 
     @include('emails.partials.stats', ['stats' => [
         ['Players', $players, null],

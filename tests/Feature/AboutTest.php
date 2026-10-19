@@ -13,7 +13,7 @@ class AboutTest extends TestCase
     public function test_meet_the_developer_is_public_and_linked(): void
     {
         $this->get(route('about'))->assertOk()
-            ->assertSee('Meet the developer · PickleX')->assertSee("Hi, I'm", false)->assertSee('Sole developer of PickleX')
+            ->assertSee('Meet the developer | PickleX')->assertSee("Hi, I'm", false)->assertSee('Sole developer of PickleX')
             ->assertSee('What I built for PickleX')->assertSee('Pitched Coders')->assertSee('https://creativexph.com/')
             ->assertSee('/images/jayvee.webp');
         $this->assertFileExists(public_path('images/jayvee.webp'));
@@ -25,7 +25,7 @@ class AboutTest extends TestCase
     public function test_buy_me_a_coffee_shows_the_qr_ph_code(): void
     {
         $this->actingAs(User::factory()->create())->get(route('member.dashboard'))->assertOk()
-            ->assertSee('Buy me a coffee')->assertSee('QR Ph · InstaPay')->assertSee('/images/coffee-qr.svg')
+            ->assertSee('Buy me a coffee')->assertSee('QR Ph, InstaPay')->assertSee('/images/coffee-qr.svg')
             ->assertSee('Tips go to the PickleX developer, not to a club or organizer.');
         $this->assertFileExists(public_path('images/coffee-qr.svg'));
         $this->assertFileExists(public_path('images/jayvee-salango-qr-ph.png'));

@@ -21,7 +21,7 @@
                 <td align="center" valign="middle"><div style="width: 30px; height: 30px; margin: 0 auto; border-radius: 50%; background: #E2D2FF; border: 2px solid #FFFFFF;"></div></td>
             </tr>
         </table>
-        <p style="margin: 12px 0 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-size-adjust: 0.58; font-variant-numeric: tabular-nums; font-size: 10px; letter-spacing: .1em; color: #FFFFFF;"><span style="color: #DDF84E;">&#9679;</span> YOU'RE UP · COURT 2</p>
+        <p style="margin: 12px 0 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-size-adjust: 0.58; font-variant-numeric: tabular-nums; font-size: 10px; letter-spacing: .1em; color: #FFFFFF;"><span style="color: #DDF84E;">&#9679;</span> YOU'RE UP, COURT 2</p>
     </div>
 
     <x-mail.h1>Welcome to the queue, {{ $user->firstName() }}.</x-mail.h1>

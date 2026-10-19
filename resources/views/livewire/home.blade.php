@@ -67,7 +67,7 @@
                     </span>
                     <div class="flex flex-col gap-1">
                         <span class="flex items-center gap-1.5 font-mono text-[11px] leading-none font-semibold tracking-widest text-lime-text">
-                            <span class="size-1.75 animate-live rounded-full bg-lime"></span>LIVE · COURT 2
+                            <span class="size-1.75 animate-live rounded-full bg-lime"></span>LIVE ON COURT 2
                         </span>
                         <x-live-timer class="font-mono text-[22px] leading-none font-semibold text-ink" />
                     </div>
@@ -77,7 +77,7 @@
             {{-- Up next --}}
             <div class="absolute right-0 bottom-0 z-2 animate-float [animation-delay:-2.6s] lg:bottom-2">
                 <div class="flex w-53 animate-rise flex-col gap-2.5 rounded-[20px] border border-line bg-surface p-3.5 shadow-card [animation-delay:.65s] lg:w-65.5">
-                    <span class="font-mono text-[11px] leading-none font-medium tracking-[.12em] text-ink3 uppercase">Up next · Court 3</span>
+                    <span class="font-mono text-[11px] leading-none font-medium tracking-[.12em] text-ink3 uppercase">Up next on Court 3</span>
                     <div class="flex items-center gap-2.5">
                         <div class="flex">
                             <span class="flex size-7.5 items-center justify-center rounded-full border-2 border-surface bg-[#E2D2FF] text-[11px] font-extrabold text-on-lime">BT</span>
@@ -247,7 +247,7 @@
                      class="relative flex w-full max-w-[min(1100px,calc((100dvh-9rem)*1.6))] animate-rise flex-col gap-3">
                     <div class="flex items-center justify-between gap-3 text-white">
                         <div class="flex min-w-0 flex-col">
-                            <span class="font-mono text-[11px] tracking-[.12em] text-white/70 uppercase">PickleX for organizers · 3 min</span>
+                            <span class="font-mono text-[11px] tracking-[.12em] text-white/70 uppercase">PickleX for organizers, 3 min</span>
                             <h2 id="demo-title" class="m-0 font-display text-lg leading-tight font-extrabold tracking-[-0.03em] md:truncate md:text-xl lg:text-2xl">Your first open play, from sign-up to game point</h2>
                         </div>
                         <button type="button" x-on:click="closeDemo()" aria-label="Close video" class="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-white/12 text-white transition hover:bg-white/20 active:scale-97"><x-icon name="x" :size="18" :stroke="2.2" /></button>
@@ -292,9 +292,9 @@
             <div class="flex flex-col gap-1">
                 <span class="mb-1.5 font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">Played with most</span>
                 @foreach ([
-                    ['RD', '#CDEBB0', 'Rico Dizon', '11 games · 8-3'],
-                    ['ML', '#FFEFA3', 'Mika Lim', '7 games · 4-3'],
-                    ['BC', '#E2D2FF', 'Bea Castillo', '6 games · 4-2'],
+                    ['RD', '#CDEBB0', 'Rico Dizon', '11 games, 8-3'],
+                    ['ML', '#FFEFA3', 'Mika Lim', '7 games, 4-3'],
+                    ['BC', '#E2D2FF', 'Bea Castillo', '6 games, 4-2'],
                 ] as [$initials, $color, $name, $record])
                     <div @class(['flex items-center gap-3 py-2', 'border-t border-line' => ! $loop->first])>
                         <span class="flex size-8.5 items-center justify-center rounded-full text-xs font-extrabold text-on-lime" style="background: {{ $color }}">{{ $initials }}</span>

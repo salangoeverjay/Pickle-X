@@ -16,7 +16,7 @@ use Livewire\Component;
  * Forgot password: email -> 6-digit code (valid 10 minutes, 5 tries) -> new password.
  * Never says whether an account exists. The code is stored hashed in password_reset_tokens.
  */
-#[Title('Reset your password · PickleX')]
+#[Title('Reset your password | PickleX')]
 class ForgotPassword extends Component
 {
     public const TTL = 10;      // minutes a code stays valid
@@ -205,12 +205,12 @@ class ForgotPassword extends Component
         ];
     }
 
-    /** "k•••i@picklex.app" */
+    /** "k***i@picklex.app" */
     public static function mask(string $email): string
     {
         [$local, $domain] = explode('@', $email, 2) + ['', ''];
 
-        return $local && $domain ? mb_substr($local, 0, 1).'•••'.(mb_strlen($local) > 3 ? mb_substr($local, -1) : '').'@'.$domain : $email;
+        return $local && $domain ? mb_substr($local, 0, 1).'***'.(mb_strlen($local) > 3 ? mb_substr($local, -1) : '').'@'.$domain : $email;
     }
 
     /** "Chrome on macOS" from a user agent, for the reset email. */

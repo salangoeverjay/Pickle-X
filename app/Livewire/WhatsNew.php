@@ -8,7 +8,7 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 /** What's new (account menu): every update for your audience. Opening it marks the unread ones read; they keep a New badge this visit. */
-#[Title("What's new · PickleX")]
+#[Title("What's new | PickleX")]
 class WhatsNew extends Component
 {
     public string $tab = 'all'; // all | feature | enhancement | fix

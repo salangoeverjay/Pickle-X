@@ -29,13 +29,13 @@
             <div class="grid animate-fade items-center gap-5 rounded-[26px] border-2 border-lime bg-surface p-4.5 shadow-card lg:grid-cols-2 lg:p-6 {{ auth()->user()->queueBgClass() }}">
                 <div class="flex flex-col gap-3">
                     <span class="inline-flex h-7 items-center gap-2 self-start rounded-full bg-ink px-2.75 font-mono text-[11px] tracking-[.08em] text-bg uppercase">
-                        <span class="size-1.75 animate-live rounded-full bg-lime"></span>Live · {{ $play->title }}
+                        <span class="size-1.75 animate-live rounded-full bg-lime"></span>Live: {{ $play->title }}
                     </span>
                     <h2 class="m-0 font-display text-[32px] leading-none font-extrabold tracking-[-0.04em] md:text-[38px] xl:text-[44px]">{{ $head }}</h2>
                     <p class="m-0 text-[15px] text-ink2">
                         @switch($s['state'])
                             @case('court')
-                                {{ $s['partner'] ? "With {$s['partner']} vs " : 'Against ' }}{{ $s['opponents'] }} · <x-live-timer :start="now()->timestamp - $s['started_at']" before="warming up, game starts in " />
+                                {{ $s['partner'] ? "With {$s['partner']} vs " : 'Against ' }}{{ $s['opponents'] }}, <x-live-timer :start="now()->timestamp - $s['started_at']" before="warming up, game starts in " />
                                 @break
                             @case('next')
                                 {{ $s['partner'] ? "With {$s['partner']} vs " : 'Against ' }}{{ $s['opponents'] }}{{ $s['court'] ? " on Court {$s['court']}. Grab your paddle." : '. You go on as soon as a court finishes.' }}
@@ -50,14 +50,14 @@
                                 Someone subbed in for you. Tap I'm back when you're ready. You kept your spot at #{{ $s['position'] }}.
                                 @break
                             @default
-                                {{ $s['ahead'] }} {{ $s['ahead'] === 1 ? 'player' : 'players' }} ahead of you · {{ $play->busyCourtCount() }} of {{ $courts }} courts in play
+                                {{ $s['ahead'] }} {{ $s['ahead'] === 1 ? 'player' : 'players' }} ahead of you, {{ $play->busyCourtCount() }} of {{ $courts }} courts in play
                         @endswitch
                     </p>
 
                     @if ($mates = $my['mates'])
                         @php($uniq = array_values(array_unique($mates)))
                         <div class="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-2">
-                            <span class="font-mono text-[11px] tracking-widest text-ink3 uppercase">Partners tonight{{ $my['others'] ? ' · '.count($uniq).' of '.$my['others'].' players' : '' }}</span>
+                            <span class="font-mono text-[11px] tracking-widest text-ink3 uppercase">Partners tonight{{ $my['others'] ? ', '.count($uniq).' of '.$my['others'].' players' : '' }}</span>
                             <span class="flex">
                                 @foreach (array_slice($uniq, -8) as $id)
                                     @php($mp = $play->participant($id))
@@ -65,7 +65,7 @@
                                 @endforeach
                             </span>
                             <span class="basis-full text-[13px] leading-[1.4] text-ink2">
-                                {{ count($uniq) }} different {{ Str::plural('partner', count($uniq)) }} in {{ count($mates) }} {{ Str::plural('game', count($mates)) }} · {{ count($uniq) === count($mates) ? 'everyone rotates, so you keep meeting new partners' : 'repeats only when the line is short' }}
+                                {{ count($uniq) }} different {{ Str::plural('partner', count($uniq)) }} in {{ count($mates) }} {{ Str::plural('game', count($mates)) }}, {{ count($uniq) === count($mates) ? 'everyone rotates, so you keep meeting new partners' : 'repeats only when the line is short' }}
                             </span>
                         </div>
                     @endif
@@ -158,7 +158,7 @@
                             @endforeach
                         </span>
                     </div>
-                    <x-stat-tile label="Best finish" :value="'#'.$history['best']['row']['rank']" :sub="$history['best']['play']->title.' · '.$history['best']['play']->starts_at->format('D, M j')" />
+                    <x-stat-tile label="Best finish" :value="'#'.$history['best']['row']['rank']" :sub="$history['best']['play']->title.', '.$history['best']['play']->starts_at->format('D, M j')" />
                 </div>
                 <div class="flex flex-col gap-2.5">
                     @foreach ($historyPage as ['play' => $p, 'row' => $r])
@@ -168,7 +168,7 @@
                                 <x-date-tile :date="$p->starts_at" />
                                 <div class="flex min-w-0 flex-1 flex-col gap-1">
                                     <span class="font-display text-lg leading-[1.2] font-bold tracking-[-0.02em]">{{ $p->title }}</span>
-                                    <span class="text-[13px] leading-[1.4] text-ink3">{{ $p->club }} · {{ $p->timeRange() }} · {{ $r['of'] }} players</span>
+                                    <span class="text-[13px] leading-[1.4] text-ink3">{{ $p->club }}, {{ $p->timeRange() }}, {{ $r['of'] }} players</span>
                                 </div>
                             </div>
                             <div class="flex flex-auto flex-wrap items-center justify-between gap-x-3.5 gap-y-2.5 lg:justify-end">
@@ -234,7 +234,7 @@
                             <div class="flex flex-col gap-0.5">
                                 <span class="font-mono text-[11px] tracking-[.12em] text-ink3 uppercase">Amount</span>
                                 <span class="font-display text-[44px] leading-none font-extrabold tracking-[-0.04em]">{{ $payPlay->feeLabel() }}</span>
-                                <span class="text-[13px] text-ink3">per player · {{ $payPlay->whenLabel() }} · {{ $payPlay->timeRange() }}</span>
+                                <span class="text-[13px] text-ink3">per player, {{ $payPlay->whenLabel() }}, {{ $payPlay->timeRange() }}</span>
                             </div>
                             <dl class="m-0 flex flex-col overflow-hidden rounded-2xl border border-line bg-surface">
                                 <div class="flex items-center justify-between gap-3 border-b border-line px-3.5 py-2.75"><dt class="text-[13px] text-ink3">Send to</dt><dd class="m-0 text-right text-sm font-bold">{{ $payPlay->pay_name }}</dd></div>

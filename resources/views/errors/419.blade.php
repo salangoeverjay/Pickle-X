@@ -1,7 +1,7 @@
 @extends('errors.layout')
 @section('code', '419')
 @section('title', 'Time out. This page expired.')
-@section('kicker', 'Error 419 · Page expired')
+@section('kicker', 'Error 419: Page expired')
 @section('pill', 'TIME OUT')
 @section('scene', 'A stopwatch in the middle of the court during a time out')
 @section('foot', '419 Page Expired')

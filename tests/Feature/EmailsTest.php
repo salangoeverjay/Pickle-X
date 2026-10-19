@@ -208,6 +208,6 @@ class EmailsTest extends TestCase
         $this->assertSame('Your PickleX suspension ended', $auto->heading);
         $see($auto, ['Your 30-day suspension ended this morning', 'Nothing to do on your end.', 'Repeated no-shows']);
         $kai->suspend('conduct', null, null, auth()->user());
-        $see(Emails::accountRestored($kai, early: true), ['took another look and lifted the suspension', 'Lifted by', 'Lara Diaz · PickleX admin', 'Keep it friendly on court']);
+        $see(Emails::accountRestored($kai, early: true), ['took another look and lifted the suspension', 'Lifted by', 'Lara Diaz, PickleX admin', 'Keep it friendly on court']);
     }
 }

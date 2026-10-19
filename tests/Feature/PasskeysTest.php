@@ -101,15 +101,15 @@ class PasskeysTest extends TestCase
         Livewire::actingAs($user)->test(Settings::class)
             ->assertSee('No passkeys yet. Add one to log in without a password.');
 
-        $id = $this->passkey($user, 'MacBook · Chrome');
+        $id = $this->passkey($user, 'MacBook, Chrome');
         $other = $this->passkey(User::factory()->create(), 'Not mine');
 
         Livewire::actingAs($user)->test(Settings::class)
-            ->assertSee('MacBook · Chrome')->assertSee('Not used yet')->assertDontSee('Not mine')
+            ->assertSee('MacBook, Chrome')->assertSee('Not used yet')->assertDontSee('Not mine')
             ->set('naming', $id)->set('passkeyName', 'Work laptop')->call('namePasskey')
-            ->assertDispatched('toast', message: "Passkey saved · we emailed {$user->email} about it")
+            ->assertDispatched('toast', message: "Passkey saved, we emailed {$user->email} about it")
             ->set('removing', $id)->assertSee('Remove this passkey?')->assertSee('only passkey')
-            ->call('removePasskey')->assertDispatched('toast', message: "Removed the passkey for Work laptop · we emailed {$user->email} about it");
+            ->call('removePasskey')->assertDispatched('toast', message: "Removed the passkey for Work laptop, we emailed {$user->email} about it");
         Mail::assertSent(PickleXMail::class, fn ($m) => $m->template === 'passkey-removed' && $m->hasTo($user->email)
             && str_contains($m->render(), 'Work laptop') && str_contains($m->render(), 'Your password still works.'));
         $this->assertDatabaseMissing('passkeys', ['id' => $id]);

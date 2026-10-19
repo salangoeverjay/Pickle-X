@@ -113,7 +113,7 @@ document.addEventListener('alpine:init', () => {
             return '';
         },
         get summary() {
-            return `${this.dateLabel(this.date, true)} · ${fmtTime(this.starts)} - ${fmtTime(this.ends)}${this.overnight ? ' next day' : ''} · ${durLabel(duration(this.starts, this.ends))}`;
+            return `${this.dateLabel(this.date, true)}, ${fmtTime(this.starts)} - ${fmtTime(this.ends)}${this.overnight ? ' next day' : ''}, ${durLabel(duration(this.starts, this.ends))}`;
         },
 
         // ------------------------------------------------------------ calendar

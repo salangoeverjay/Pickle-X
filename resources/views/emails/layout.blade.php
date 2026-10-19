@@ -73,7 +73,7 @@
                         <td align="center" class="em-ink3" style="padding: 24px 12px 0; font-size: 12px; line-height: 1.55; color: #5B6257; text-align: center;">
                             <p style="margin: 0 auto 10px; max-width: 460px;">@yield('why')</p>
                             <p style="margin: 0 0 10px;"><a href="{{ $footerLink[1] }}" class="em-ink2" style="color: #464D42; font-weight: 600; text-decoration: underline;">{{ $footerLink[0] }}</a></p>
-                            <p style="margin: 0;">© {{ date('Y') }} PickleX · Made with <span style="color: #EF4452;">&#9829;</span> by <a href="https://creativexph.com/" class="em-ink2" style="color: #464D42; font-weight: 700; text-decoration: underline;">CreativeX Techlabs Inc.</a></p>
+                            <p style="margin: 0;">© {{ date('Y') }} PickleX. Made with <span style="color: #EF4452;">&#9829;</span> by <a href="https://creativexph.com/" class="em-ink2" style="color: #464D42; font-weight: 700; text-decoration: underline;">CreativeX Techlabs Inc.</a></p>
                         </td>
                     </tr>
                 </table>

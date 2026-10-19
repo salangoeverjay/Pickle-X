@@ -7,7 +7,7 @@
 @section('hot', 1)
 @section('dot', '#F59A3E')
 @section('title', 'Courts are being resurfaced.')
-@section('kicker', 'Error 503 · Maintenance')
+@section('kicker', 'Error 503: Maintenance')
 @section('pill', 'RESURFACING')
 @section('scene', 'A court taped off with cones while it is resurfaced')
 @section('foot', '503 Service Unavailable')

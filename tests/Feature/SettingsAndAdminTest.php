@@ -142,7 +142,7 @@ class SettingsAndAdminTest extends TestCase
 
         $this->assertModelMissing($user);
         $this->assertGuest();
-        $this->assertSame('Account deleted · we emailed you a confirmation', session('toast'));
+        $this->assertSame('Account deleted, we emailed you a confirmation', session('toast'));
         $this->assertSame(0, $next->activeParticipants()->count());
         $this->assertSame('Former player', $next->participants()->first()->name);
         Mail::assertSent(PickleXMail::class, fn ($m) => $m->template === 'account-deleted' && $m->hasTo($user->email) && ! $m->data['byAdmin']
@@ -158,11 +158,11 @@ class SettingsAndAdminTest extends TestCase
         $this->actingAs(User::factory()->create(['role' => 'member']))->get(route('admin.requests'))->assertForbidden();
         $this->actingAs($admin)->get(route('admin.requests'))
             ->assertOk()->assertSee('Pia Lacson')->assertSee('1 court')->assertSee('NEW')->assertSee('No details added.')->assertDontSee('Old Org')
-            ->assertDontSee('Already a player · same account');
+            ->assertDontSee('Already a player, same account');
 
         $play = OpenPlay::create(['organizer_id' => $admin->id, 'title' => 'Rally', 'club' => 'X', 'venue' => 'Y', 'starts_at' => now(), 'ends_at' => now()->addHours(2), 'courts' => 1, 'cap' => 8]);
         $play->participants()->create(['user_id' => $pia->id, 'name' => $pia->name]);
-        $this->actingAs($admin)->get(route('admin.requests'))->assertSee('Already a player · same account');
+        $this->actingAs($admin)->get(route('admin.requests'))->assertSee('Already a player, same account');
 
         Livewire::actingAs($admin)->test(Requests::class)
             ->call('approve', $pia->id)->assertDispatched('toast', message: 'Pia Lacson approved. They can host open plays now.')

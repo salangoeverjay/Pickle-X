@@ -9,7 +9,7 @@ use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 
-#[Title('Played with · PickleX')]
+#[Title('Played with | PickleX')]
 class PlayedWith extends Component
 {
     use Pages;

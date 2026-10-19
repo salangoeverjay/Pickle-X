@@ -175,15 +175,15 @@ document.addEventListener('alpine:init', () => {
         // ------------------------------------------------------------ preview + save
         get preview() {
             const presets = config.presets;
-            if (this.tab === 'upload' && this.crop) return { photo: true, label: 'New photo · not saved yet' };
-            if (this.tab === 'presets' && this.sel) return { url: presets[this.sel].url, color: this.current.color, label: 'PickleX avatar · ' + presets[this.sel].label };
+            if (this.tab === 'upload' && this.crop) return { photo: true, label: 'New photo, not saved yet' };
+            if (this.tab === 'presets' && this.sel) return { url: presets[this.sel].url, color: this.current.color, label: 'PickleX avatar, ' + presets[this.sel].label };
             if (this.tab === 'initials') return { url: null, color: this.color, label: 'Initials on ' + config.colors[this.color].toLowerCase() };
             return { url: this.current.url, color: this.current.color, label: this.currentLabel };
         },
 
         get currentLabel() {
             const [kind, value] = (this.current.avatar || '').split(':');
-            if (kind === 'preset') return 'PickleX avatar · ' + config.presets[value].label;
+            if (kind === 'preset') return 'PickleX avatar, ' + config.presets[value].label;
             return kind === 'photo' ? 'Your photo' : 'Initials';
         },
 

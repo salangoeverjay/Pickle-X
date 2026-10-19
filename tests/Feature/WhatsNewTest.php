@@ -26,13 +26,13 @@ class WhatsNewTest extends TestCase
             ->set('title', 'Warmup countdown on every court')->call('save')->assertSee('Add a short description of what changed.')
             ->set('body', 'Each new foursome gets a short warmup first.')->call('pick', 'audience', 'member')
             ->assertSee('Shows once to 3 people who only play')
-            ->call('save')->assertDispatched('toast', message: 'Draft saved · only admins can see it')->assertSet('tab', 'draft')
-            ->assertSee('Players only · Draft · saved Today');
+            ->call('save')->assertDispatched('toast', message: 'Draft saved, only admins can see it')->assertSet('tab', 'draft')
+            ->assertSee('Players only, Draft, saved Today');
 
         $n = News::sole();
         $this->assertFalse($n->isLive());
         Livewire::actingAs($admin)->test(AdminWhatsNew::class)
-            ->call('publish', $n->id)->assertDispatched('toast', message: 'Published · shows once to 3 people next time they open PickleX')
+            ->call('publish', $n->id)->assertDispatched('toast', message: 'Published, shows once to 3 people next time they open PickleX')
             ->assertSee('0 of 3 read')->assertSee('Published Today by PickleX Admin');
         $this->assertTrue($n->fresh()->isLive());
 
@@ -64,7 +64,7 @@ class WhatsNewTest extends TestCase
         News::create(['title' => 'Organizer fix', 'body' => 'Only for organizers.', 'kind' => 'fix', 'audience' => 'organizer', 'published_at' => now()]);
 
         Livewire::actingAs($org)->test(WhatsNew::class)
-            ->assertSee('1 new update · marked as read')->assertSee('Organizers only')
+            ->assertSee('1 new update, marked as read')->assertSee('Organizers only')
             ->set('tab', 'enhancement')->assertSee('Nothing here yet.');
         $this->assertSame(0, News::unreadBy($org)->count());
 
@@ -81,7 +81,7 @@ class WhatsNewTest extends TestCase
 
         Livewire::actingAs($admin)->test(AdminWhatsNew::class)
             ->set('deleting', $n->id)->assertSee("1 person who hasn't read it yet won't see it.")
-            ->call('delete')->assertDispatched('toast', message: "Update deleted · it's gone from everyone's What's new · Old news");
+            ->call('delete')->assertDispatched('toast', message: "Update deleted, it's gone from everyone's What's new, Old news");
         $this->assertSame(0, News::unreadBy($kai)->count());
     }
 }

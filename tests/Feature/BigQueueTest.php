@@ -46,7 +46,7 @@ class BigQueueTest extends TestCase
         $singles = collect($play->queue())->filter(fn ($e) => ! $e['locked'])->values()->slice(-2)->values();
         $inNames = $play->names($singles->flatMap(fn ($e) => $e['ids'])->all());
         $board->call('subIn', $pair['id'], $singles->pluck('id')->all())
-            ->assertDispatched('toast', message: "{$inNames} sub in for {$pairNames} · {$pairNames} keep their spot");
+            ->assertDispatched('toast', message: "{$inNames} sub in for {$pairNames}, {$pairNames} keep their spot");
 
         $after = collect($play->fresh()->queue());
         $at = $after->search(fn ($e) => $e['id'] === $pair['id']);
@@ -66,7 +66,7 @@ class BigQueueTest extends TestCase
         $board = Livewire::actingAs($this->org)->test(CourtBoard::class)
             ->set('subFor', $pair['id'])
             ->call('subOne', $pair['id'], $pid)
-            ->assertDispatched('toast', message: "Partners unlocked · who subs in for {$first}?")
+            ->assertDispatched('toast', message: "Partners unlocked, who subs in for {$first}?")
             ->assertSee('Next in line');
 
         $entry = collect($play->fresh()->queue())->first(fn ($e) => $e['ids'] === [$pid]);

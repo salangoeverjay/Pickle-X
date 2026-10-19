@@ -34,7 +34,7 @@ trait StartsSessions
         UpNext::notify($play);
         // A co-host started it: the host sees "started by" on the live card and the court board.
         $host = $play->organizer_id !== auth()->id() ? $play->organizer?->firstName() : null;
-        session()->flash('toast', "{$play->title} is live. Courts filled from the queue.".($host ? " · {$host} sees that you started it" : ''));
+        session()->flash('toast', "{$play->title} is live. Courts filled from the queue.".($host ? " {$host} sees that you started it" : ''));
 
         return $this->redirectRoute('organizer.board', navigate: true);
     }

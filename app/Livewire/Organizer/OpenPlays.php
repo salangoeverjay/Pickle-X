@@ -21,7 +21,7 @@ use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 
-#[Title('Your open plays · PickleX')]
+#[Title('Your open plays | PickleX')]
 class OpenPlays extends Component
 {
     use Pages, ShowsRoster, StartsSessions;
@@ -196,7 +196,7 @@ class OpenPlays extends Component
             'mon' => $form['starts']->format('M'),
             'day' => $form['starts']->format('j'),
             'dow' => $form['starts']->format('D'),
-            'line' => OpenPlay::rangeLabel($form['starts'], $form['ends']).' · '.$this->venue,
+            'line' => OpenPlay::rangeLabel($form['starts'], $form['ends']).', '.$this->venue,
             'paid' => collect($form['rows'])->map(fn ($r) => [
                 'name' => $r['name'], 'guest' => ! $r['user'], 'color' => $r['user']?->color(), 'avatar' => $r['user']?->avatarUrl(),
             ])->all(),
@@ -362,9 +362,9 @@ class OpenPlays extends Component
         $this->resetForm();
         $this->create = false;
         $this->dispatch('create-published', qrUrl: $play->payQrUrl());
-        $qrNote = $png ? " · {$play->payMethodLabel()} QR attached" : '';
+        $qrNote = $png ? ", {$play->payMethodLabel()} QR attached" : '';
         $this->dispatch('toast', message: match (true) {
-            $added > 0 => "Open play published · {$added} paid players added, {$linked} linked to accounts{$qrNote}",
+            $added > 0 => "Open play published, {$added} paid players added, {$linked} linked to accounts{$qrNote}",
             (bool) $png => "Open play published with a {$play->payMethodLabel()} QR. Members can join now.",
             default => 'Open play published. Members can join now.',
         });
@@ -427,7 +427,7 @@ class OpenPlays extends Component
 
         $this->resetForm();
         $this->create = false;
-        $this->dispatch('toast', message: "{$play->title} updated".($told ? " · {$told} ".Str::plural('player', $told).' notified' : ''));
+        $this->dispatch('toast', message: "{$play->title} updated".($told ? ", {$told} ".Str::plural('player', $told).' notified' : ''));
     }
 
     /** Pay columns for a saved or removed QR. */
@@ -458,24 +458,24 @@ class OpenPlays extends Component
         $play = $this->editId ? $this->editable($this->editId) : null;
         $method = OpenPlay::PAY_METHODS[$this->payMethod][0] ?? 'Payment';
         $payment = fn ($has, $label, $name, $number, $fee) => $has
-            ? "{$label} QR · ".($name ?: 'no account name').($number ? " · {$number}" : '')
+            ? "{$label} QR, ".($name ?: 'no account name').($number ? ", {$number}" : '')
             : ($fee ? 'No QR, players pay at the venue' : 'Not needed');
         $paidTotals = function (array $rows, int $base = 0, int $baseLinked = 0) {
             $linked = $baseLinked + collect($rows)->whereNotNull('user')->count();
             $n = $base + count($rows);
 
-            return $n ? "{$n} · {$linked} linked, ".($n - $linked).' '.Str::plural('guest', $n - $linked) : 'None yet';
+            return $n ? "{$n}, {$linked} linked, ".($n - $linked).' '.Str::plural('guest', $n - $linked) : 'None yet';
         };
 
         $now = [
             'title' => ['Title', $this->title],
-            'when' => ['When', $form['starts']->format('l, M j').' · '.OpenPlay::rangeLabel($form['starts'], $form['ends']).' · '.OpenPlay::lengthLabel($form['minutes'])],
+            'when' => ['When', $form['starts']->format('l, M j').', '.OpenPlay::rangeLabel($form['starts'], $form['ends']).', '.OpenPlay::lengthLabel($form['minutes'])],
             'venue' => ['Venue', $this->venue],
             'format' => ['Format', self::format($this->courts, $this->raceTo, $this->rotation, $this->warmup)],
             'cap' => ['Player cap', "{$this->cap} players"],
             'vis' => ['Who can join', $this->visibility === 'invite' ? 'Invite only' : 'Any member'],
             'fee' => ['Fee', $form['fee'] ? "{$form['fee']} per player" : 'Free'],
-            'pay' => ['Payment', $payment((bool) $form['png'], $method, trim($this->payName), trim($this->payNumber), $form['fee']).($play && $qr && $qr !== 'saved' ? ' · new QR image' : '')],
+            'pay' => ['Payment', $payment((bool) $form['png'], $method, trim($this->payName), trim($this->payNumber), $form['fee']).($play && $qr && $qr !== 'saved' ? ', new QR image' : '')],
         ];
 
         if ($play) {
@@ -483,7 +483,7 @@ class OpenPlays extends Component
             $now['paid'] = ['Paid players', $paidTotals($form['newRows'], (clone $paidNow)->count() - $form['dropped']->count(), (clone $paidNow)->whereNotNull('user_id')->count() - $form['dropped']->whereNotNull('user_id')->count())];
             $was = [
                 'title' => $play->title,
-                'when' => $play->starts_at->format('l, M j').' · '.$play->timeRange().' · '.OpenPlay::lengthLabel((int) $play->starts_at->diffInMinutes($play->ends_at)),
+                'when' => $play->starts_at->format('l, M j').', '.$play->timeRange().', '.OpenPlay::lengthLabel((int) $play->starts_at->diffInMinutes($play->ends_at)),
                 'venue' => $play->venue,
                 'format' => self::format($play->courts, $play->race_to, $play->rotation, $play->warmup),
                 'cap' => "{$play->cap} players",
@@ -508,7 +508,7 @@ class OpenPlays extends Component
 
     private static function format(int $courts, int $raceTo, string $rotation, int $warmup): string
     {
-        return $courts.' '.Str::plural('court', $courts)." · race to {$raceTo} · ".($rotation === 'winners' ? 'winners stay (2 max)' : 'everyone rotates').' · '.($warmup ? "{$warmup} min warmup" : 'no warmup');
+        return $courts.' '.Str::plural('court', $courts).", race to {$raceTo}, ".($rotation === 'winners' ? 'winners stay (2 max)' : 'everyone rotates').', '.($warmup ? "{$warmup} min warmup" : 'no warmup');
     }
 
     private function paidRows(): array
@@ -611,7 +611,7 @@ class OpenPlays extends Component
         $play->cohosts()->attach($user);
         $this->cohostQ = '';
         Emails::send($user, Emails::cohost($play, $user, true));
-        $this->dispatch('toast', message: "{$user->name} can start and run {$play->title} · we emailed them");
+        $this->dispatch('toast', message: "{$user->name} can start and run {$play->title}, we emailed them");
     }
 
     public function removeCohost(int $userId): void
@@ -621,7 +621,7 @@ class OpenPlays extends Component
         $play->cohosts()->detach($user);
         Emails::send($user, Emails::cohost($play, $user, false));
         $still = $play->activeParticipants()->where('user_id', $user->id)->exists();
-        $this->dispatch('toast', message: "{$user->name} is no longer a co-host · we emailed them".($still ? ', and they stay on the player list' : ''));
+        $this->dispatch('toast', message: "{$user->name} is no longer a co-host, we emailed them".($still ? ', and they stay on the player list' : ''));
     }
 
     /**
@@ -674,7 +674,7 @@ class OpenPlays extends Component
             return;
         }
         $play->update(['visibility' => $visibility]);
-        $this->dispatch('toast', message: $visibility === 'invite' ? "{$play->title} is invite only · only people with the link can find it" : "{$play->title} shows in Open plays for everyone");
+        $this->dispatch('toast', message: $visibility === 'invite' ? "{$play->title} is invite only, only people with the link can find it" : "{$play->title} shows in Open plays for everyone");
     }
 
     public function toggleLinkGuests(): void
@@ -686,7 +686,7 @@ class OpenPlays extends Component
     public function resetShareLink(): void
     {
         $this->editable((int) $this->share)->resetLink();
-        $this->dispatch('toast', message: 'New link ready · the old link stops working');
+        $this->dispatch('toast', message: 'New link ready, the old link stops working');
     }
 
     public function rosterEdit(): void
@@ -726,7 +726,7 @@ class OpenPlays extends Component
             $this->resetForm();
         }
         $n = $mails->count();
-        $this->dispatch('toast', message: "{$title} deleted".($n ? " · {$n} ".Str::plural('player', $n).' notified' : ''));
+        $this->dispatch('toast', message: "{$title} deleted".($n ? ", {$n} ".Str::plural('player', $n).' notified' : ''));
     }
 
     /** Validate an uploaded QR data URL and re-encode it as PNG (base64). Null if unusable. */

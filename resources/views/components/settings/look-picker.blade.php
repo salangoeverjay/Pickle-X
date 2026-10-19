@@ -46,7 +46,7 @@
         'still' => ['Still', count($std[2][3]), 'M12 20.5a8.5 8.5 0 1 0 0-17 8.5 8.5 0 0 0 0 17ZM12 16.5a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Z'],
         'ex' => ['Exclusive', $open.'/'.count($exItems), 'M7 4h10l4 5-9 11L3 9l4-5ZM3 9h18M12 20 8.5 9 12 4l3.5 5L12 20'],
     ];
-    $frName = $cur['frame'] ? Looks::label('frame', $cur['frame']).(isset(Looks::EXCLUSIVE[$cur['frame']]) ? ' · exclusive' : (($c = Looks::collectionOf($cur['frame'])) ? ' · '.Looks::COLLECTIONS[$c][0] : (Looks::FRAMES[$cur['frame']][1] ? ' · animated' : ''))) : 'No border';
+    $frName = $cur['frame'] ? Looks::label('frame', $cur['frame']).(isset(Looks::EXCLUSIVE[$cur['frame']]) ? ', exclusive' : (($c = Looks::collectionOf($cur['frame'])) ? ', '.Looks::COLLECTIONS[$c][0] : (Looks::FRAMES[$cur['frame']][1] ? ', animated' : ''))) : 'No border';
     $pvFr = $user->frameClass();
 @endphp
 
@@ -69,7 +69,7 @@
             </div>
         </div>
         <div class="flex min-w-0 flex-1 flex-col gap-1.5">
-            <span class="font-mono text-[11px] tracking-widest text-ink3 uppercase">In the queue · {{ $cur['queue'] ? Looks::label('queue', $cur['queue']) : 'plain' }}</span>
+            <span class="font-mono text-[11px] tracking-widest text-ink3 uppercase">In the queue: {{ $cur['queue'] ? Looks::label('queue', $cur['queue']) : 'plain' }}</span>
             <div role="img" aria-label="Preview of your queue spot" class="flex min-h-14.5 items-center gap-2.5 rounded-2xl border-[1.5px] border-line bg-surface py-1 pr-3.5 pl-3 {{ $user->queueBgClass() }}">
                 <span class="w-5 shrink-0 font-mono text-xs text-ink3">3</span>
                 <x-avatar :src="$user->avatarUrl()" :frame="$pvFr" :name="$user->shownName()" :color="$user->color()" class="size-9 text-xs" />
@@ -132,7 +132,7 @@
                             </button>
                         @endforeach
                     </div>
-                    <p class="-mt-1 mb-0 text-[13px] leading-[1.4] text-ink3">{{ $colDef[0] }} · {{ $colDef[1] }}</p>
+                    <p class="-mt-1 mb-0 text-[13px] leading-[1.4] text-ink3">{{ $colDef[0] }}, {{ $colDef[1] }}</p>
                 @elseif ($isEx)
                     <p class="-mt-1 mb-0 text-[13px] leading-[1.4] text-ink3">{{ $exNote }}</p>
                 @endif

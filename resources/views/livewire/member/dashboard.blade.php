@@ -12,7 +12,7 @@
                 <a href="{{ route('member.plays') }}" wire:navigate class="flex items-center gap-4 rounded-3xl bg-ink px-5 py-4.5 text-left text-bg transition hover:brightness-96 active:scale-97 {{ auth()->user()->queueBgClass() }}">
                     <span class="flex size-12 shrink-0 items-center justify-center rounded-full bg-lime text-on-lime"><x-icon name="court" :size="22" :stroke="1.9" /></span>
                     <div class="flex min-w-0 flex-1 flex-col gap-0.75">
-                        <span class="flex items-center gap-2 font-mono text-[11px] tracking-widest uppercase"><span class="size-1.75 animate-live rounded-full bg-lime"></span>Live · {{ $live['title'] }}</span>
+                        <span class="flex items-center gap-2 font-mono text-[11px] tracking-widest uppercase"><span class="size-1.75 animate-live rounded-full bg-lime"></span>Live: {{ $live['title'] }}</span>
                         <span class="font-display text-[22px] leading-[1.1] font-extrabold tracking-[-0.03em]">{{ $live['head'] }}</span>
                         <span class="text-sm opacity-80">{{ $live['sub'] }}@isset($live['timer'])<x-live-timer :start="$live['timer']" before="warming up, game starts in " />@endisset</span>
                         @if ($live['standing'])
@@ -30,7 +30,7 @@
             <div class="flex flex-col gap-2.5 rounded-[22px] border border-line bg-surface p-4 lg:p-5">
                 <span class="font-mono text-[11px] tracking-widest text-ink3 uppercase">Games played</span>
                 <span class="font-display text-[32px] leading-none font-extrabold tracking-[-0.04em] lg:text-[42px]">{{ $stats->count() }}</span>
-                <span class="text-[13px] text-ink2">{{ $stats->wins() }} wins · {{ $stats->losses() }} losses</span>
+                <span class="text-[13px] text-ink2">{{ $stats->wins() }} wins, {{ $stats->losses() }} losses</span>
             </div>
             <div class="flex flex-col gap-2.5 rounded-[22px] border border-line bg-surface p-4 lg:p-5">
                 <span class="font-mono text-[11px] tracking-widest text-ink3 uppercase">Win rate</span>
@@ -45,7 +45,7 @@
             <div class="flex flex-col gap-2.5 rounded-[22px] bg-lime p-4 text-on-lime lg:p-5">
                 <span class="font-mono text-[11px] tracking-widest uppercase">PickleX points</span>
                 <span class="font-display text-[32px] leading-none font-extrabold tracking-[-0.04em] lg:text-[42px]">{{ $stats->points() }}</span>
-                <span class="text-[13px] font-semibold">{{ $rankAll ? ($rankMonth ? "#{$rankMonth} this month" : 'Not ranked this month').' · #'.$rankAll.' all-time' : 'Not ranked yet' }}</span>
+                <span class="text-[13px] font-semibold">{{ $rankAll ? ($rankMonth ? "#{$rankMonth} this month" : 'Not ranked this month').', #'.$rankAll.' all-time' : 'Not ranked yet' }}</span>
             </div>
         </div>
 
@@ -54,7 +54,7 @@
                 <div class="flex flex-col gap-3.5">
                     <div class="flex min-h-9 flex-wrap items-center justify-between gap-x-2 gap-y-1">
                         <h2 class="m-0 font-display text-xl font-bold tracking-[-0.02em]">Recent form</h2>
-                        <span class="text-[13px] text-ink3">Last 10 games · newest first</span>
+                        <span class="text-[13px] text-ink3">Last 10 games, newest first</span>
                     </div>
                     <div class="grid grid-cols-10 gap-1.5">
                         @forelse ($stats->form() as $r)

@@ -106,12 +106,12 @@ class MemberStatsTest extends TestCase
         $this->assertSame('Davao', MemberStats::homeTable($outsider));
 
         Livewire::actingAs($kai)->test(Rankings::class)
-            ->assertSee('Club · This month')->assertSee('Home club')->assertSee('1 open play')->assertSee('All clubs')
+            ->assertSee('Club, This month')->assertSee('Home club')->assertSee('1 open play')->assertSee('All clubs')
             ->assertSee('Players at Club open plays, this month.')->assertSee("That's you", false)->assertSee('pts behind')
             ->assertDontSee($rico->name)
-            ->set('club', 'Davao')->assertSee('Davao · This month')->assertSee($outsider->name)
-            ->set('club', 'all')->assertSee('All clubs · All time')->assertSee('Every PickleX player, all clubs added up, all time.')
-            ->set('club', 'Nowhere')->assertSee('Club · This month');
+            ->set('club', 'Davao')->assertSee('Davao, This month')->assertSee($outsider->name)
+            ->set('club', 'all')->assertSee('All clubs, All time')->assertSee('Every PickleX player, all clubs added up, all time.')
+            ->set('club', 'Nowhere')->assertSee('Club, This month');
     }
 
     public function test_played_with_tabs_search_and_sort(): void
@@ -132,9 +132,9 @@ class MemberStatsTest extends TestCase
         $kai = User::firstWhere('email', 'kai@picklex.app');
 
         $this->actingAs($kai)->get(route('member.dashboard'))
-            ->assertOk()->assertSee('Live · Monday Night Open Play')->assertSee('Check in to get on court')->assertSee('Top partners');
+            ->assertOk()->assertSee('Live: Monday Night Open Play')->assertSee('Check in to get on court')->assertSee('Top partners');
         $this->actingAs($kai)->get(route('member.rankings'))->assertOk()->assertSee('Panabo Dink Society');
-        $this->actingAs($kai)->get(route('member.played-with'))->assertOk()->assertSee('partners ·', false);
+        $this->actingAs($kai)->get(route('member.played-with'))->assertOk()->assertSee('partners,', false);
     }
 
     public function test_members_without_a_club_join_the_club_of_their_first_open_play(): void
@@ -176,10 +176,10 @@ class MemberStatsTest extends TestCase
 
         // No clubs yet: only the All clubs table.
         Livewire::actingAs($lia)->test(Rankings::class)
-            ->assertSee('All clubs · All time')->assertSee('Join an open play and its club gets its own table here.')
-            ->assertSee("You're not ranked yet", false)->assertSee('Not ranked yet · 0 games all time')
+            ->assertSee('All clubs, All time')->assertSee('Join an open play and its club gets its own table here.')
+            ->assertSee("You're not ranked yet", false)->assertSee('Not ranked yet, 0 games all time')
             ->assertSee('Play one game at any open play to get on the table.')
-            ->assertSee('Up to 15 pts')->assertSee('Top 10 · all clubs')->assertSee('fewer than 10 players are ranked')->assertSee('You, not ranked yet')
+            ->assertSee('Up to 15 pts')->assertSee('Top 10, all clubs')->assertSee('fewer than 10 players are ranked')->assertSee('You, not ranked yet')
             ->assertDontSee("That's you", false);
         // Nothing logged: a guide replaces the empty tiles, tabs and table.
         Livewire::actingAs($lia)->test(PlayedWith::class)->assertSee('No logged games yet')->assertSee('Your people show up here')
@@ -188,7 +188,7 @@ class MemberStatsTest extends TestCase
         $soon = OpenPlay::create(['organizer_id' => $this->play->organizer_id, 'title' => 'Friday Rally', 'club' => 'Club', 'venue' => 'Venue',
             'starts_at' => now()->addDays(2), 'ends_at' => now()->addDays(2)->addHours(3), 'courts' => 1, 'cap' => 8]);
         $soon->join($lia);
-        Livewire::actingAs($lia)->test(PlayedWith::class)->assertSee("You're in · first game coming up")
+        Livewire::actingAs($lia)->test(PlayedWith::class)->assertSee("You're in, first game coming up")
             ->assertSee('Your first game at Friday Rally adds a partner and two opponents.')->assertSee('See your open play')->assertSee('Done');
         $soon->leave($lia);
         $this->actingAs($lia)->get(route('member.dashboard'))->assertOk()->assertSee('Not ranked yet')->assertDontSee('>0%</span>', false);
@@ -197,12 +197,12 @@ class MemberStatsTest extends TestCase
         $quiet = OpenPlay::create(['organizer_id' => $this->play->organizer_id, 'title' => 'Quiet', 'club' => 'Quiet Club', 'venue' => 'Venue',
             'starts_at' => now()->addDay(), 'ends_at' => now()->addDay()->addHours(3), 'courts' => 1, 'cap' => 8]);
         $quiet->join($solo = User::factory()->create());
-        Livewire::actingAs($solo)->test(Rankings::class)->assertSee('Quiet Club · This month')
+        Livewire::actingAs($solo)->test(Rankings::class)->assertSee('Quiet Club, This month')
             ->assertSee('No games logged this month yet at Quiet Club.')->assertDontSee('Top of the table');
 
         // Played at a club before, just not this month.
         $this->game([$lia, $ben], [$mika, $rico], true, '2 months');
-        Livewire::actingAs($lia)->test(Rankings::class)->assertSee('Club · This month')
+        Livewire::actingAs($lia)->test(Rankings::class)->assertSee('Club, This month')
             ->assertSee('No games at Club open plays this month. Play one to get on the table.')
             ->set('period', 'all')->assertSee("That's you", false);
     }

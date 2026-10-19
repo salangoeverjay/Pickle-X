@@ -98,7 +98,7 @@ class EditOpenPlayTest extends TestCase
             ->assertSee('Review changes')->assertSee('1 change to review')->assertSee('CHANGED')
             ->assertSee('1 player who joined gets an email about what changed.')
             ->call('publish')
-            ->assertDispatched('toast', message: 'Friday Rally updated · 1 player notified');
+            ->assertDispatched('toast', message: 'Friday Rally updated, 1 player notified');
 
         $this->assertSame('19:00', $play->fresh()->starts_at->format('H:i'));
         $this->assertSame(2, $play->activeParticipants()->count(), 'paid players are not added twice');
@@ -169,7 +169,7 @@ class EditOpenPlayTest extends TestCase
             ->assertSee('1 player has already paid ₱120.', false)
             ->call('cancelDelete')->assertDontSee('Delete Friday Rally?')
             ->call('askDelete', $play->id)->call('deletePlay')
-            ->assertDispatched('toast', message: 'Friday Rally deleted · 2 players notified');
+            ->assertDispatched('toast', message: 'Friday Rally deleted, 2 players notified');
 
         $this->assertNull(OpenPlay::find($play->id));
         $paidMail = Mail::sent(PickleXMail::class, fn ($m) => $m->template === 'play-cancelled' && $m->hasTo($mika->email))->first();

@@ -53,16 +53,16 @@ class AdminOpenPlaysTest extends TestCase
             ->assertSee('Concluded open plays')->assertSeeInOrder(['TEST - please ignore', 'Looks like a test'])
             ->set('tab', 'test')->assertSee('TEST - please ignore')->assertDontSee('Sunday Social')
             ->call('askDelete', $test->id)->assertSet('why', 'test')
-            ->assertSee('Delete TEST - please ignore?')->assertSee('Hosted by Gerald Uy · gerald@davaopaddle.ph')
+            ->assertSee('Delete TEST - please ignore?')->assertSee('Hosted by Gerald Uy, gerald@davaopaddle.ph')
             ->assertSee("Comes off these 8 players' stats")->assertSee('We email Gerald Uy that it was deleted, with this reason.')
             ->call('delete')
-            ->assertDispatched('toast', message: "TEST - please ignore deleted · 6 games came off 8 players' stats · we emailed Gerald");
+            ->assertDispatched('toast', message: "TEST - please ignore deleted, 6 games came off 8 players' stats, we emailed Gerald");
 
         $this->assertModelMissing($test);
         $this->assertModelExists($real);
         $this->assertSame(0, $test->games()->count());
         $this->assertLessThan($before, $kaiGames());
-        $c->assertSee('Deleted')->assertSee('hosted by Gerald Uy · reason: a test')->assertSee('Gerald was emailed');
+        $c->assertSee('Deleted')->assertSee('hosted by Gerald Uy, reason: a test')->assertSee('Gerald was emailed');
 
         Mail::assertSent(PickleXMail::class, fn ($m) => $m->template === 'play-deleted' && $m->hasTo($gerald->email)
             && str_contains(html_entity_decode($m->render(), ENT_QUOTES), 'because it was a test') && str_contains($m->render(), 'Trying PickleX out again?'));

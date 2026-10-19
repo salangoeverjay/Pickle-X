@@ -48,8 +48,8 @@ class WhosInTest extends TestCase
         $c = Livewire::actingAs($kai)->test(MemberPlays::class)
             ->assertSee("See who's in")
             ->call('openWho', $play->id)
-            ->assertSee("Upcoming open play · who's in")
-            ->assertSeeInOrder(['Mik', 'Tagum Picklers', 'Ben Tan', 'Grace Ong'])->assertSee('Guest · added by the organizer')
+            ->assertSee("Upcoming open play, who's in")
+            ->assertSeeInOrder(['Mik', 'Tagum Picklers', 'Ben Tan', 'Grace Ong'])->assertSee('Guest, added by the organizer')
             ->assertDontSee('Mika Lim')->assertDontSee('mika@example.com')->assertDontSee('Unpaid')
             ->assertSee('Only the organizer sees emails and payments.')
             ->assertSee('Guests')->assertSee('Join open play');
@@ -79,11 +79,11 @@ class WhosInTest extends TestCase
         Livewire::actingAs($me)->test(MemberPlays::class)
             ->assertSee("See who's here")
             ->call('openWho', $play->id)
-            ->assertSee("Live now · who's here")
-            ->assertSee('Court 1')->assertSee('In line · #1')->assertSee('Not checked in')->assertSee('Walk-in guest')
+            ->assertSee("Live now, who's here")
+            ->assertSee('Court 1')->assertSee('In line, #1')->assertSee('Not checked in')->assertSee('Walk-in guest')
             ->assertSee('On court, then the queue')->assertSee('Watch live')->assertDontSee('Join open play')
             ->set('whoF', 'court')->assertSee('4 of 7 players')
             ->set('whoF', 'away')->assertSee('Late Larry')->assertDontSee('YOU')
-            ->call('closeWho')->assertDontSee("Live now · who's here");
+            ->call('closeWho')->assertDontSee("Live now, who's here");
     }
 }

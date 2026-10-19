@@ -159,7 +159,7 @@ class OpenPlay extends Model
     /** The message organizers and players paste into Messenger, Viber or a group chat. */
     public function shareMessage(): string
     {
-        return "Join me at {$this->title}, {$this->whenLabel()} · {$this->timeRange()} at {$this->venue}. "
+        return "Join me at {$this->title}, {$this->whenLabel()}, {$this->timeRange()} at {$this->venue}. "
             .($this->fee ? "{$this->feeLabel()} per player" : 'Free').'. Join here: '.preg_replace('#^https?://#', '', $this->linkUrl());
     }
 

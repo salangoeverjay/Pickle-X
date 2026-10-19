@@ -11,12 +11,12 @@
 
     <div class="em-soft" style="margin: 0 0 22px; padding: 14px 16px; border-radius: 18px; background: #F6F5EE; border: 1px dashed #C8C6B8;">
         <p class="em-ink2" style="margin: 0 0 3px; font-weight: 800; font-size: 17px; color: #464D42; text-decoration: line-through; text-decoration-color: #B23A0A;">{{ $name }}</p>
-        <p class="em-ink3" style="margin: 0; font-size: 13px; color: #5B6257;">Added {{ $added->format('M j') }} · Removed {{ $at->format('D, M j · g:i A') }}</p>
+        <p class="em-ink3" style="margin: 0; font-size: 13px; color: #5B6257;">Added {{ $added->format('M j') }}, Removed {{ $at->format('D, M j, g:i A') }}</p>
     </div>
 
     <p class="em-ink2" style="margin: 0 0 10px; font-size: 13px; font-weight: 700; color: #464D42;">Details</p>
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 0 0 22px; font-size: 14px;">
-        <tr><td class="em-ink3" style="padding: 3px 16px 3px 0; color: #5B6257; width: 90px;">When</td><td class="em-ink">{{ $at->format('D, M j, Y · g:i A') }}</td></tr>
+        <tr><td class="em-ink3" style="padding: 3px 16px 3px 0; color: #5B6257; width: 90px;">When</td><td class="em-ink">{{ $at->format('D, M j, Y, g:i A') }}</td></tr>
         <tr><td class="em-ink3" style="padding: 3px 16px 3px 0; color: #5B6257;">Removed on</td><td class="em-ink">{{ $device }}</td></tr>
         <tr><td class="em-ink3" style="padding: 3px 16px 3px 0; color: #5B6257;">Passkeys</td><td class="em-ink">{{ $left ? $left.' left on your account' : 'None left on your account' }}</td></tr>
     </table>

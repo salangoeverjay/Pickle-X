@@ -44,12 +44,12 @@ class ShareLinkTest extends TestCase
             ->assertSee('Share link')
             ->call('openShare', $play->id)
             ->assertSee('Message to send with it')->assertSee('Join me at Friday Rally')->assertSee('/j/'.$play->fresh()->link_code)
-            ->call('setShareVisibility', 'invite')->assertDispatched('toast', message: 'Friday Rally is invite only · only people with the link can find it')
+            ->call('setShareVisibility', 'invite')->assertDispatched('toast', message: 'Friday Rally is invite only, only people with the link can find it')
             ->assertSee('Hidden from Open plays.');
         $this->assertSame('invite', $play->fresh()->visibility);
 
         $old = $play->fresh()->link_code;
-        $c->call('resetShareLink')->assertDispatched('toast', message: 'New link ready · the old link stops working')
+        $c->call('resetShareLink')->assertDispatched('toast', message: 'New link ready, the old link stops working')
             ->call('toggleLinkGuests');
         $this->assertNotSame($old, $play->fresh()->link_code);
         $this->assertFalse($play->fresh()->link_guests);
@@ -92,7 +92,7 @@ class ShareLinkTest extends TestCase
         $kai = User::factory()->create(['name' => 'Kai Santos', 'role' => 'member']);
 
         Livewire::actingAs($kai)->test(JoinLink::class, ['code' => $play->linkCode()])
-            ->assertSee("Invite only · you're invited")->assertSee("You're in, Kai.")->assertSee('See my open plays')
+            ->assertSee("Invite only, you're invited")->assertSee("You're in, Kai.")->assertSee('See my open plays')
             ->call('leave')->assertSee('Join as Kai')->call('join')->assertSee("You're in, Kai.");
         $this->assertTrue($play->activeParticipants()->where('user_id', $kai->id)->exists());
         Mail::assertSent(PickleXMail::class, fn ($m) => $m->template === 'joined' && $m->hasTo($kai->email));

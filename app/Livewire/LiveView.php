@@ -27,7 +27,7 @@ class LiveView extends Component
         $view = view('livewire.live-view', ['live' => $play->isLive()]);
 
         if (! $play->isLive()) {
-            return $view->title("{$play->title} · Live · PickleX");
+            return $view->title("{$play->title} | Live | PickleX");
         }
 
         $me = auth()->user();
@@ -46,7 +46,7 @@ class LiveView extends Component
             [$meta, $metaClass] = match (true) {
                 $notHere => ['Not checked in', 'text-hot'],
                 $e['paused'] ?? false => ['Stepped out', 'text-hot'],
-                $up => [$pair ? 'Up next · locked pair' : 'Up next', 'text-lime-text'],
+                $up => [$pair ? 'Up next, locked pair' : 'Up next', 'text-lime-text'],
                 $pair => ['Locked pair', 'text-lime-text'],
                 default => [null, null],
             };
@@ -101,12 +101,12 @@ class LiveView extends Component
             'skipped' => $group ? $play->skippedForNext($group) : ['', false],
             'where' => match (true) {
                 (bool) $free => "Court {$free['n']} ".($next ? 'is open' : 'is waiting'),
-                ($soon = $play->longestCourtIndex()) !== null => 'Courts full · Court '.$courts[$soon]['n'].' likely next',
+                ($soon = $play->longestCourtIndex()) !== null => 'Courts full, Court '.$courts[$soon]['n'].' likely next',
                 default => 'Next court to finish',
             },
             'busy' => $play->busyCourtCount().' of '.count($courts).' courts in play',
             'here' => $play->checkedInCount().' of '.count($play->sessionPlayerIds()).' checked in',
             'started' => ($s = now()->timestamp - ($play->started_at ?? now())->timestamp) < 60 ? 'Started just now' : 'Started '.ago($s).' ago',
-        ])->title("{$play->title} · Live · PickleX");
+        ])->title("{$play->title} | Live | PickleX");
     }
 }
